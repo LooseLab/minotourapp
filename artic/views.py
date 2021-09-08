@@ -71,18 +71,22 @@ def export_artic_report(request, pk):
                 artic_task_id,
                 coverage_path,
             ) = quick_get_artic_results_directory(flowcell.id, selected_barcode)
-            with open(str(coverage_path), "rb") as fh:
-                arr = np.fromfile(fh, dtype=np.uint16)
-                fig = Figure(figsize=(8, 2))
-                ax = fig.subplots()
-                ax.plot(arr)
-                fig.suptitle(f"{selected_barcode} Coverage across genome")
-                ax.set_xlabel(f"Reference position")
-                ax.set_ylabel(f"Coverage")
-                fig.savefig(f"/tmp/{task.id}_{selected_barcode}.png")
-                data_2[
-                    "coverage_graph"
-                ] = f"file:///tmp/{task.id}_{selected_barcode}.png"
+            try:
+                with open(str(coverage_path), "rb") as fh:
+                    arr = np.fromfile(fh, dtype=np.uint16)
+                    fig = Figure(figsize=(8, 2))
+                    ax = fig.subplots()
+                    ax.plot(arr)
+                    fig.suptitle(f"{selected_barcode} Coverage across genome")
+                    ax.set_xlabel(f"Reference position")
+                    ax.set_ylabel(f"Coverage")
+                    fig.savefig(f"/tmp/{task.id}_{selected_barcode}.png")
+                    data_2[
+                        "coverage_graph"
+                    ] = f"file:///tmp/{task.id}_{selected_barcode}.png"
+            except FileNotFoundError as e:
+                print(f"Error {repr(e)}")
+                continue
             json_path = (
                 artic_results_path
                 / selected_barcode
@@ -133,12 +137,12 @@ def export_artic_report(request, pk):
             )
             data["barcode_name"] = selected_barcode
             data["voc_report_html"] = voc_report_html_string
-            data[
-                "artic_bar_plot_path"
-            ] = f"file:///{str(artic_results_path)}/{selected_barcode}/{selected_barcode}-barplot.png"
-            data[
-                "artic_box_plot_path"
-            ] = f"file:///{str(artic_results_path)}/{selected_barcode}/{selected_barcode}-boxplot.png"
+            # data[
+            #     "artic_bar_plot_path"
+            # ] = f"file:///{str(artic_results_path)}/{selected_barcode}/{selected_barcode}-barplot.png"
+            # data[
+            #     "artic_box_plot_path"
+            # ] = f"file:///{str(artic_results_path)}/{selected_barcode}/{selected_barcode}-boxplot.png"
             data.update(data_2)
             HTML(
                 string=render(
@@ -165,6 +169,15 @@ def export_artic_report(request, pk):
             tar.add(artic_summary_pdf_path, recursive=False)
         except FileNotFoundError as e:
             print("file not found")
+        try:
+            tar.add(f"/tmp/{flowcell.id}_tree-plot.svg", recursive=False)
+        except FileNotFoundError as e:
+            print("tree svg file not found")
+        try:
+            os.chdir(artic_results_path)
+            tar.add("snp_plot.svg", recursive=False)
+        except FileNotFoundError as e:
+            print("snipit file not found")
     with open(tar_file_path, "rb") as fh:
         response = HttpResponse(fh.read(), content_type="application/zip")
         response["Content-Disposition"] = f"attachment; filename={tar_file_name}"
