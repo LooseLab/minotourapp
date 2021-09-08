@@ -1,7 +1,7 @@
 {% load humanize %}
 <!DOCTYPE html>
 <html lang="en">
- <style> @page { size: 22in 11in ; margin: 1cm; } </style>
+ <style> @page { size: 22in 11in ; margin: 1cm; }     body {font-family: 'Helvetica', sans-serif !important;}</style>
 <head>
     <meta charset="UTF-8">
     <title>{{ data.barcode_name }} Report</title>
@@ -12,8 +12,6 @@
         <h4 id="report-title"> Report for artic output of {{ data.barcode_name }} generated {% now "jS F Y H:i" %} </h4>
         <section id="coverage">
             <img src="{{ data.coverage_graph }}" alt="Coverage across the genome">
-            <img style="width:6in" src="{{ data.artic_bar_plot_path }}" alt="artic_bar_plot.png should be displayed here.">
-            <img style="width:6in" src="{{ data.artic_box_plot_path }}" alt="artic_box_plot.png should be displayed here.">
         </section>
     </article>
     <article id="vocs">
