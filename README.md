@@ -6,8 +6,13 @@ minoTour is a web-based real-time laboratory information management system (LIMS
 
 An example instance can be found at http://137.44.59.170. Credentials to log in to a deactivated account (one which cannot upload data) are: 
 
-    Username: demo-account
+    Username: demoAccount
     Password: Welcome-to-minotour
+
+Note that we are working on setting up HTPPS but it's currently friday
+
+## Running minoTour with docker (super recommended)
+See our sister repo for a nice friendly docker-compose solution (https://github.com/LooseLab/minotour-docker)
 
 # Table of contents
 * [Preconfiguration](#preconf)  
@@ -121,6 +126,12 @@ To run Artic analyses, conda must be installed, and the Artic and Pangolin envir
 The miniconda installation instructions can be found [here](https://docs.conda.io/en/latest/miniconda.html)
 
 The [Artic](https://artic.network/ncov-2019/ncov2019-bioinformatics-sop.html) instructions, and [Pangolin](https://github.com/cov-lineages/pangolin#install-pangolin) instructions.
+
+There is also a custom tree building environment found in `/scripts`
+
+```bash
+conda env create -f scripts/tree_environment.yml
+```
 
 ## Running minoTour with tmux (Recommended)
 
