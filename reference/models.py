@@ -86,6 +86,12 @@ def delete_reference_files(sender, instance=None, created=False, **kwargs):
     """
     Delete the actual reference files when a reference info is deleted
     """
-    os.unlink(f"{instance.file_location.path}.fxi")
+    try:
+        os.unlink(f"{instance.file_location.path}.fxi")
+    except FileNotFoundError as e:
+        pass
     instance.file_location.delete(save=False)
-    os.unlink(instance.minimap2_index_file_location)
+    try:
+        os.unlink(instance.minimap2_index_file_location)
+    except FileNotFoundError as e:
+        pass
