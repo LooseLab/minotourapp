@@ -162,7 +162,7 @@ class Command(BaseCommand):
                 # Check that the minimap2 index location folder exists
                 index_dir_path = (
                     MEDIA_ROOT
-                    if not get_env_variable("MT_MINIMAP2_INDEX_DIR").isdigit()
+                    if get_env_variable("MT_MINIMAP2_INDEX_DIR").isdigit()
                     else get_env_variable("MT_MINIMAP2_INDEX_DIR")
                 )
                 minimap2_index_path = f"{index_dir_path}/minimap2_indexes/"
@@ -188,7 +188,7 @@ class Command(BaseCommand):
                 # Create the Reference info entry in the database
                 ref_info, created = ReferenceInfo.objects.update_or_create(
                     name=ref_file_stem,
-                    file_location=ref_file.as_posix(),
+                    file_location=ref_file.resolve().as_posix(),
                     file_name=ref_file.name,
                     length=fa.size,
                     private=private,
