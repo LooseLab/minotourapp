@@ -6,8 +6,8 @@ minoTour is a web-based real-time laboratory information management system (LIMS
 
 An example instance can be found at http://137.44.59.170. Credentials to log in to a deactivated account (one which cannot upload data) are: 
 
-    Username: demoAccount
-    Password: Welcome-to-minotour
+    Username: test-account
+    Password: TestMinotour
 
 Note that we are working on setting up HTPPS but it's currently friday
 
