@@ -31,6 +31,7 @@ from reads.models import JobMaster
 colour_palette = ["#ffd9dc", "#ffefdc", "#ffffbc", "#dcffe4", "#bae1ff"]
 logger = get_task_logger(__name__)
 
+
 def get_sequencing_stats_pdf():
     """
     Get the stats for a sequencing report into a pdf
@@ -50,17 +51,35 @@ def unique_amplicon_coordinates(scheme_bed_file):
     numpy.ndarray
 
     """
-    df = pd.read_csv(scheme_bed_file, sep="\t", header=None,
-                     names=["chromosome", "start", "end", "name", "even", "plus_sign"])
+    df = pd.read_csv(
+        scheme_bed_file,
+        sep="\t",
+        header=None,
+        names=["chromosome", "start", "end", "name", "even", "plus_sign"],
+    )
     df["primer_position"] = df["name"].str.split("_").str[1]
     df = df.set_index("primer_position")
-    df[["primer_start", "primer_end"]] = df.groupby("primer_position").agg({"start": np.min, "end": np.max})
+    df[["primer_start", "primer_end"]] = df.groupby("primer_position").agg(
+        {"start": np.min, "end": np.max}
+    )
     df = df.loc[~df.index.duplicated(keep="last")]
-    df["primer_end"] = ((df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])).astype(int)
-    df["pair_end"] = ((df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])).astype(int)
+    df["primer_end"] = (
+        (df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])
+    ).astype(int)
+    df["pair_end"] = (
+        (df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])
+    ).astype(int)
     df["previous_end"] = df["end"].shift()
-    unqiue_amplicon_coords = np.column_stack((np.where(df["primer_start"] < df["previous_end"], df["previous_end"],
-                                                       df["primer_start"]), df["primer_end"].values))
+    unqiue_amplicon_coords = np.column_stack(
+        (
+            np.where(
+                df["primer_start"] < df["previous_end"],
+                df["previous_end"],
+                df["primer_start"],
+            ),
+            df["primer_end"].values,
+        )
+    )
     unqiue_amplicon_coords = unqiue_amplicon_coords.astype(int)
     return unqiue_amplicon_coords
 
@@ -83,9 +102,7 @@ def get_artic_run_stats(pk, svg_data, request, task):
     str
         File path to artic summary PDF
     """
-    flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(
-        pk
-    )
+    flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(pk)
     artic_task = JobMaster.objects.get(pk=jm_id)
     queryset = PafSummaryCov.objects.filter(job_master=artic_task).values(
         "barcode_name",
@@ -107,7 +124,9 @@ def get_artic_run_stats(pk, svg_data, request, task):
     scheme = task.primer_scheme.scheme_species
     scheme_version = task.primer_scheme.scheme_version
     scheme_dir = task.primer_scheme.scheme_directory
-    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version, scheme_dir)
+    amplicon_band_coords, colours = get_amplicon_band_data(
+        scheme, scheme_version, scheme_dir
+    )
     num_amplicons = len(amplicon_band_coords)
     time_stamp = datetime.now()
     for paf_summary_cov in queryset:
@@ -160,26 +179,21 @@ def get_artic_run_stats(pk, svg_data, request, task):
         ].projected_to_finish
     svg_data["sample_name"] = flowcell.name
     l = sorted(list(queryset), key=lambda x: x["barcode_name"])
-    svg_path = (
-            artic_results_path / "snp_plot.svg"
-    )
-    tree_path = (
-            artic_results_path
-            /
-            "iqtree_.treefile"
-    )
+    svg_path = artic_results_path / "snp_plot.svg"
+    tree_path = artic_results_path / "iqtree_.treefile"
     svg_data["treesnstuff"] = False
     if tree_path.exists():
-        with open("/home/rory/Projects/data/Artic/artic/Temp_results/10_103_artic/iqtree_.treefile", "r") as fh:
+        with open(
+            "/home/rory/Projects/data/Artic/artic/Temp_results/10_103_artic/iqtree_.treefile",
+            "r",
+        ) as fh:
             trey = toytree.tree(fh.read(), tree_format=0)
-            canvas, axes, mark = trey.draw(width=1000, height=700,
-
-                                          node_sizes=12,
-                                          node_style={
-                                              "fill": "green",
-                                              "stroke": "black",
-                                              "stroke-width": 0.75,
-                                          });
+            canvas, axes, mark = trey.draw(
+                width=1000,
+                height=700,
+                node_sizes=12,
+                node_style={"fill": "green", "stroke": "black", "stroke-width": 0.75,},
+            )
             tree_path_svg = f"/tmp/{flowcell.id}_tree-plot.svg"
             toyplot.svg.render(canvas, tree_path_svg)
         svg_data["treesnstuff"] = True
@@ -187,22 +201,20 @@ def get_artic_run_stats(pk, svg_data, request, task):
 
     svg_data["snipit_svg_available"] = False
     if svg_path.exists():
-        svg_data[
-            "snipit_path"
-        ] = f"file:///{svg_path}"
+        svg_data["snipit_path"] = f"file:///{svg_path}"
         svg_data["snipit_svg_available"] = True
 
     svg_data["overall_results"] = l
     # print(svg_data)
-    HTML(string=render(
-        request, "artic-report.html", context={"data": svg_data}
-    ).getvalue()).write_pdf(
+    HTML(
+        string=render(
+            request, "artic-report.html", context={"data": svg_data}
+        ).getvalue()
+    ).write_pdf(
         f"/tmp/{task.id}_artic_report.pdf",
         stylesheets=[
             CSS("web/static/web/css/artic-report.css"),
-            CSS(
-                "web/static/web/libraries/bootstrap-4.5.0-dist/css/bootstrap.css"
-            ),
+            CSS("web/static/web/libraries/bootstrap-4.5.0-dist/css/bootstrap.css"),
         ],
     )
     return f"/tmp/{task.id}_artic_report.pdf"
@@ -309,7 +321,9 @@ def get_amplicon_band_data(scheme, scheme_version, scheme_dir):
         A list of coordinates, start and stop on x axis, and a colour scheme lookup dictionary for amplicon pools.
 
     """
-    json_file_path = get_amplicon_json_file_path(scheme, scheme_version, Path(scheme_dir))
+    json_file_path = get_amplicon_json_file_path(
+        scheme, scheme_version, Path(scheme_dir)
+    )
     with open(json_file_path, "r") as fh:
         amplicon_bands = json.load(fh)
     # Get data
@@ -622,9 +636,9 @@ def get_amplicon_stats(
         amplicon_coverages_mean.append(np.mean(amplicon_coverage))
         amplicon_median_coverage = np.median(amplicon_coverage)
         amplicon_coverages_median.append(amplicon_median_coverage)
-        #For some amplicon schemes we end up with a situation where amplicons basically don't exits so need to chack for nan
+        # For some amplicon schemes we end up with a situation where amplicons basically don't exits so need to chack for nan
         if math.isnan(amplicon_median_coverage):
-            cant_count +=1
+            cant_count += 1
         elif int(amplicon_median_coverage) == 0:
             failed_amplicon_count += 1
         elif int(amplicon_median_coverage) < 20:
@@ -690,8 +704,10 @@ def predict_barcode_will_finish(
         * ideal_reads_count_constant
     )
     return (
-        predicted_coverages[predicted_coverages > coverage_per_amplicon].size / amplicon_median_array.size
+        predicted_coverages[predicted_coverages > coverage_per_amplicon].size
+        / amplicon_median_array.size
     ) * 100 > minimum_required_amplicons
+
 
 @app.task()
 def update_pangolin():
