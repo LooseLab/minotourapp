@@ -23,6 +23,7 @@ urlpatterns = [
     url(r'^', include('metagenomics.urls')),
     url(r'^', include('artic.urls')),
     url(r'^', include('minknow_data.urls')),
+    url(r'^readfish/', include("readfish.urls")),
     url(r'^$', index),
     url(r'^api-token-auth/', tok_views.obtain_auth_token),
     path('accounts/', include('django.contrib.auth.urls')),
