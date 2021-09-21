@@ -115,7 +115,7 @@ class GetToTheChopper(APIView):
         run = Run.objects.get(runid=run_id)
         flowcell = run.flowcell
         job_master = JobMaster.objects.filter(
-            job_type_id=17, flowcell_id=flowcell.id
+            job_type_id=16, flowcell_id=flowcell.id
         ).last()
         reference_contig_name = str(
             ReferenceLine.objects.filter(reference_id=job_master.reference_id)
