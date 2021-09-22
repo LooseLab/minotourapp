@@ -128,7 +128,7 @@ class GetToTheChopper(APIView):
             )
         )
         barcodes_on_record = set(
-            ArticBarcodeMetadata.objects.filter(flowcell=flowcell).values_list(
+            ArticBarcodeMetadata.objects.filter(flowcell=flowcell).exclude(barcode__name="unclassified").values_list(
                 "barcode__name", flat=True
             )
         )
@@ -140,10 +140,10 @@ class GetToTheChopper(APIView):
         bed = get_start_to_start_coords(job_master)
         positive_starts = bed[bed["strand"].eq("+")][
             ["range_start", "range_end"]
-        ].values.tolist()
+        ].values.astype(int).tolist()
         negative_starts = bed[bed["strand"].eq("-")][
             ["range_start", "range_end"]
-        ].values.tolist()
+        ].values.astype(int).tolist()
         amplicon_band_coords, _ = get_amplicon_band_data(
             job_master.primer_scheme.scheme_species,
             job_master.primer_scheme.scheme_version,
@@ -191,8 +191,8 @@ class GetToTheChopper(APIView):
                 "max_chunks": 4,
                 "targets": positive_barcode_rejection_targets,
                 "single_on": "unblock",
-                "single_off": "unblock",
-                "multi_on": "stop_receiving",
+                "single_off": "stop_receiving",
+                "multi_on": "unblock",
                 "multi_off": "stop_receiving",
                 "no_seq": "proceed",
                 "no_map": "proceed"
