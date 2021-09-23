@@ -1279,6 +1279,15 @@ class PrimerSchemeList(APIView):
             if file.name.endswith(".scheme.bed"):
                 file_dict["bed_file"] = pathy
             elif file.name.endswith(".reference.fasta"):
+                if file.multiple_chunks():
+                    fasta_sequences = 0
+                    for chunk in file.chunks():
+                        print(chunk.decode().count(">"))
+                        fasta_sequences += chunk.decode().count(">")
+                else:
+                    fasta_sequences = file.read().decode().count("\n>")
+                if fasta_sequences:
+                    return Response("Reference FASTA file must contain only one sequence.", status=status.HTTP_400_BAD_REQUEST)
                 file_dict["ref_file"] = pathy
             else:
                 return Response(

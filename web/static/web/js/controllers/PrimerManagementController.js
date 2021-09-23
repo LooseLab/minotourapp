@@ -145,8 +145,8 @@ class PrimerManagementController {
       })
       .catch(error => {
         this._clearModalData()
-        alert(error.message)
-        console.error(error)
+        console.log(error.response.data)
+        alert(error.response.data)
       })
   }
 
