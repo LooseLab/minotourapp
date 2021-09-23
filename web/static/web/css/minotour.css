@@ -887,3 +887,7 @@ body {
     font-size: 12pt;
     font-weight: 300;
 }
+
+.deletey:hover {
+    cursor: pointer;
+}
