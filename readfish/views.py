@@ -111,7 +111,7 @@ class GetToTheChopper(APIView):
         """
         CompletedBarcodes.objects.create(run_id=run_id, barcode=barcode_name)
 
-    def get(self, request, run_id, coverage, format=None):
+    def get(self, request, run_id, coverage_threshold, format=None):
         """
         Get the dict for toml in swordfish. Formatted as it should be probably
         Parameters
@@ -120,6 +120,8 @@ class GetToTheChopper(APIView):
 
         run_id: str
             The runid hash for the ongoing run
+        coverage_threshold: int
+            The threshold X coverage to start switching amplicons reject
         format:
             ?
         Returns
@@ -182,7 +184,7 @@ class GetToTheChopper(APIView):
                 amplicon_median_coverage = np.median(amplicon_coverage)
                 amplicon_coverages_median.append(amplicon_median_coverage)
             amplicon_coverages_median = np.array(amplicon_coverages_median)
-            amps_to_reject = np.where(amplicon_coverages_median > int(coverage))[0]
+            amps_to_reject = np.where(amplicon_coverages_median > int(coverage_threshold))[0]
             if amps_to_reject.size == len(amplicon_band_coords):
                 self.add_barcode_to_completed_table(barcode_name, run_id)
                 completed_barcodes.add(barcode_name)
