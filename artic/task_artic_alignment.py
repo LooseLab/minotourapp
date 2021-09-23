@@ -8,7 +8,6 @@ from collections import defaultdict, Counter
 from copy import deepcopy
 from datetime import datetime, timezone, timedelta
 from io import StringIO
-from pathlib import Path
 from shutil import rmtree
 from textwrap import fill
 
@@ -382,7 +381,7 @@ def run_variant_command(base_results_directory, barcode_name, jm):
         separator = ", "
         VoCs = separator.join(VoCs_df["phe-label"].to_list())
 
-        if len(VoCs_df) > 0:
+        if not VoCs_df.empty:
             m, created = Message.objects.get_or_create(
                 recipient=jm.flowcell.owner,
                 sender=jm.flowcell.owner,
