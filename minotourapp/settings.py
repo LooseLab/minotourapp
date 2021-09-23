@@ -265,11 +265,11 @@ CELERY_BEAT_SCHEDULE = {
         }
     },
     'update_pangolin': {
-        'task': 'update_pangolin',
+        'task': 'artic.utils.update_pangolin',
         'schedule': crontab(minute=0, hour=0)
     },
     'update_vocs': {
-        'task': 'update_vocs',
+        'task': 'artic.task_artic_alignment.update_vocs',
         'schedule': crontab(minute=0, hour=0)
     }
 }
