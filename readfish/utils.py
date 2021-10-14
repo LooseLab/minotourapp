@@ -19,6 +19,7 @@ def get_start_to_start_coords(jm):
         jm.primer_scheme.bed_file,
         sep="\t",
         header=None,
+        usecols=range(5),
         names=["chromosome", "start", "stop", "primer", "group"],
     )
     bed[["amplicon", "strand"]] = bed["primer"].str.split("_", expand=True)[[1, 2]]
