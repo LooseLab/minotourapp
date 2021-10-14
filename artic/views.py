@@ -1308,7 +1308,7 @@ class PrimerSchemeList(APIView):
             reference_file=file_dict["ref_file"],
             owner=request.user,
         )
-        coords, cols = get_amplicon_band_data(ps.scheme_species, ps.scheme_version, ps.scheme_directory)
+        coords, cols = get_amplicon_band_data(ps.scheme_species, ps.scheme_version, ps.scheme_directory,nooverlap=False)
         coords = np.array(coords)[:,:2].astype(int)
         coords = (coords[:,1:2] - coords[:,:1]) + 150
         mean_length = coords.mean()
