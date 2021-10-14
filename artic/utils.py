@@ -292,7 +292,7 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
         return response
 
 
-def get_amplicon_band_data(scheme, scheme_version, scheme_dir):
+def get_amplicon_band_data(scheme, scheme_version, scheme_dir, nooverlap=True):
     """
     Retrieve coordinates on reference for amplicon bands, and a colour scheme for any amplicon pools
     Parameters
@@ -313,7 +313,10 @@ def get_amplicon_band_data(scheme, scheme_version, scheme_dir):
     with open(json_file_path, "r") as fh:
         amplicon_bands = json.load(fh)
     # Get data
-    amplicon_band_coords = json.loads(amplicon_bands["amplicons"])
+    if nooverlap:
+        amplicon_band_coords = json.loads(amplicon_bands["unique_amplicons"])
+    else:
+        amplicon_band_coords = json.loads(amplicon_bands["amplicons"])
     colours = {
         amplicon_bands["pools"][index]: colour_palette[index]
         for index in range(len(amplicon_bands["pools"]))
@@ -387,9 +390,10 @@ def convert_amplicon_bed_file_to_json(filepath, json_file, artic_results_primer_
     df = df.set_index(["primer_start", "primer_end"])
     df = df.loc[~df.index.duplicated(keep="first")]
     df = df.reset_index()
-    df[["primer_start", "primer_end"]] = unique_amplicon_coordinates(filepath)
+    df[["unique_primer_start", "unique_primer_end"]] = unique_amplicon_coordinates(filepath)
     json_data = {
         "amplicons": df[["primer_start", "primer_end", 4]].to_json(orient="values"),
+        "unique_amplicons":df[["unique_primer_start", "unique_primer_end", 4]].to_json(orient="values"),
         "name": f"{df[0].unique()[0]}_primer_scheme",
         "pools": df[4].unique().tolist(),
     }
