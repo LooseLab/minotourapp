@@ -4,7 +4,7 @@ from __future__ import absolute_import, unicode_literals
 
 from celery.utils.log import get_task_logger
 
-from alignment.tasks_alignment import run_minimap2_alignment
+from alignment.task_alignment_2 import run_minimap2_alignment
 from artic.task_artic_alignment import (
     run_artic_command, run_artic_pipeline,
 )
