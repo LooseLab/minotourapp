@@ -6,11 +6,12 @@ from django.db.models import F, Sum, Avg
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-import random
 
-from alignment.models import PafSummaryCov, MattsAmazingAlignmentSum
-from reads.models import Barcode
-from alignment.utils import _human_key
+from alignment.models import PafSummaryCov
+from alignment.utils import _human_key, get_alignment_result_dir, get_or_create_array
+from reads.models import Barcode, JobMaster
+from reference.models import ReferenceLine
+
 
 def sampler(array,array_length=5000):
     """
@@ -26,11 +27,11 @@ def sampler(array,array_length=5000):
     return sampled_array
 
 @api_view(["GET"])
-def rough_coverage_partial_chromosome_flowcell(
+def coverage_detail(
     request, task_id, barcode_id, read_type_id, chromosome_id, start, end
 ):
     """
-    Fetch data for coverage master charts
+    Fetch data for coverage detail charts
     Parameters
     ----------
     request: rest_framework.request.Request
@@ -55,73 +56,44 @@ def rough_coverage_partial_chromosome_flowcell(
 
     # Get the barcode name so we can recover all the results for this run.
 
-    my_barcode = Barcode.objects.get(pk=barcode_id)
+    barcode = Barcode.objects.get(pk=barcode_id)
+    job_master = JobMaster.objects.get(pk=task_id)
+    # todo i guess this should be different (add a run to the drop downs)
+    run = job_master.flowcell.runs.last()
+    contig = ReferenceLine.objects.get(pk=chromosome_id)
+    folder_dir = get_alignment_result_dir(run.runid, create=False)
+    array_path = get_or_create_array(folder_dir, contig_name=contig.line_name, barcode_name=barcode.name)
+    if not array_path.exists():
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    mem_map = np.memmap(array_path, dtype=np.uint16)
+    # TODO limits to just one reference here when fetching length, could be an issue
+    #  in the future displaying multiple references on a plot
+    length = contig.chromosome_length
+    x_coords = np.arange(int(start), int(end) + 10, 10, dtype=int)
+    if not x_coords[0]:
+        x_coords[0] += 1
 
-    test = MattsAmazingAlignmentSum.objects.filter(job_master__id=task_id,
-                                                   flowcell__owner=request.user,
-                                                   barcode__name=my_barcode.name,
-                                                   chromosome_pk=chromosome_id,
-                                                   read_type_id=read_type_id, )
+    start, end = int(start) // 10, np.ceil(int(end) / 10).astype(int)
+    factor = int((end - start) / 1800)
+    factor = 1 if factor < 1 else factor
+    x_coords = x_coords[::factor]
+    print("!!!!!!!!!!!!\n")
+    print(factor)
+    print(start, end)
+    new_data = mem_map[start:end:factor]
+    coords = list(zip(x_coords, new_data))
+    sum_to_check = new_data.sum()
+    new_data = {"sequenced": coords, "unblocked": np.zeros(len(coords)).tolist()}
+
+    return Response(
+        {"newChartData": new_data, "refLength": length, "sumToCheck": sum_to_check},
+        status=status.HTTP_200_OK,
+    )
 
 
-    testDF = pd.DataFrame.from_records(test.values())
-    if not testDF.empty:
-        func = lambda s: np.fromstring(s, dtype=int, sep=",")
-        testDF['Numpy_bin_position_start'] = testDF['bin_position_start_str'].str.strip("[]").apply(func)
-        testDF['Numpy_bin_change'] = testDF['bin_coverage_str'].str.strip("[]").apply(func)
-        testarray = testDF[['Numpy_bin_position_start', 'Numpy_bin_change', 'rejected_barcode_id']]
-        testarray = testarray.set_index(['rejected_barcode_id']).apply(pd.Series.explode).reset_index().astype('int64')
-
-        ### This generates the new data set which will have a labelled dictionary.
-        testarray = testarray.groupby(['rejected_barcode_id', 'Numpy_bin_position_start'], as_index=False).agg(
-            {'Numpy_bin_change': np.sum})
-        #testarray = testarray.set_index(['Numpy_bin_position_start','rejected_barcode_id']).unstack().fillna(0).stack().reset_index()
-        ## If we want to manipulate the positions we are looking at we must do it now.
-        #testarray = testarray[testarray["Numpy_bin_position_start"].gt(2000000)]
-        testarray['cumsum'] = testarray.groupby(['rejected_barcode_id'])['Numpy_bin_change'].transform(np.cumsum)
-        testarray = testarray.drop(columns=['Numpy_bin_change'])
-
-
-        testarray = testarray[(testarray['Numpy_bin_position_start']>=int(start)) & (testarray['Numpy_bin_position_start']<=int(end))].set_index(['Numpy_bin_position_start', 'rejected_barcode_id']).unstack().ffill().stack().reset_index()
-        #testarray = testarray.set_index(['Numpy_bin_position_start', 'rejected_barcode_id']).unstack().ffill().stack().reset_index()
-        testarray = testarray.set_index('rejected_barcode_id')
-        testarray = testarray.rename(columns={'Numpy_bin_position_start': 'bin_position_start', 'cumsum': 'bin_coverage'})
-
-        results_dict = dict()
-        #variable to specify array length to return
-        array_length = 10000
-        for name, group in testarray.groupby(['rejected_barcode_id']):
-            mybarcode = Barcode.objects.get(pk=name)
-            #Check if we have more data than we want to send we downsample it.
-            if len(group.values)>=array_length:
-                results_dict[mybarcode.name] = sampler(group.values.astype(int),array_length=array_length)
-            else:
-                results_dict[mybarcode.name] = group.values.astype(int)
-
-        #queryset = testarray2[['bin_position_start', 'bin_coverage']].values
-        new_data = results_dict
-        #sum_to_check=test.count()
-        sum_to_check = random.randint(1,100)
-
-        # TODO limits to just one reference here when fetching length, could be an issue
-        #  in the future displaying multiple rferences on a plot
-        length = (
-            PafSummaryCov.objects.filter(job_master_id=task_id, chromosome_pk=chromosome_id)
-            .first()
-            .reference_line_length
-        )
-        return Response(
-            {"newChartData": new_data, "refLength": length, "sumToCheck": sum_to_check},
-            status=status.HTTP_200_OK,
-        )
-    else:
-        return Response(
-            {"newChartData": None, "refLength": None, "sumToCheck": None},
-            status=status.HTTP_200_OK,
-        )
 
 @api_view(["GET"])
-def rough_coverage_complete_chromosome_flowcell(
+def coverage_master(
     request, task_id, barcode_id, read_type_id, chromosome_id
 ):
     """
@@ -144,90 +116,33 @@ def rough_coverage_complete_chromosome_flowcell(
 
     """
     #Get the barcode name so we can recover all the results for this run.
+    pixels = 3600
+    barcode = Barcode.objects.get(pk=barcode_id)
+    job_master = JobMaster.objects.get(pk=task_id)
+    # todo i guess this should be different (add a run to the drop downs)
+    run = job_master.flowcell.runs.last()
+    contig = ReferenceLine.objects.get(pk=chromosome_id)
+    folder_dir = get_alignment_result_dir(run.runid, create=False)
+    array_path = get_or_create_array(folder_dir, contig_name=contig.line_name, barcode_name=barcode.name)
+    if not array_path.exists():
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    mem_map = np.memmap(array_path, dtype=np.uint16)
+    # TODO limits to just one reference here when fetching length, could be an issue
+    #  in the future displaying multiple references on a plot
+    length = contig.chromosome_length
+    step = int((length / 10) / pixels)
+    step = 1 if step < 1 else step
+    data = mem_map[::step]
+    x_coords = np.arange(0, length + 10, 10)[::step]
+    coords = list(zip(x_coords, data))
 
-    my_barcode = Barcode.objects.get(pk=barcode_id)
-
-    test = MattsAmazingAlignmentSum.objects.filter(job_master__id=task_id,
-            flowcell__owner=request.user,
-            barcode__name=my_barcode.name,
-            chromosome_pk=chromosome_id,
-            read_type_id=read_type_id,)
-
-    testDF = pd.DataFrame.from_records(test.values())
-    if not testDF.empty:
-        func = lambda s: np.fromstring(s, dtype=int, sep=",")
-        testDF['Numpy_bin_position_start'] = testDF['bin_position_start_str'].str.strip("[]").apply(func)
-        testDF['Numpy_bin_change'] = testDF['bin_coverage_str'].str.strip("[]").apply(func)
-        testarray = testDF[['Numpy_bin_position_start', 'Numpy_bin_change', 'rejected_barcode_id']]
-        testarray = testarray.set_index(['rejected_barcode_id']).apply(pd.Series.explode).reset_index().astype('int64')
-
-
-        ###This will generate the old style data we need for now:
-        #testarray2 = testarray.groupby(['Numpy_bin_position_start'], as_index=False).agg(
-        #            {'Numpy_bin_change': np.sum})
-        #testarray2['cumsum'] = testarray2['Numpy_bin_change'].transform(np.cumsum)
-        #testarray2 = testarray2.rename(columns={'Numpy_bin_position_start': 'bin_position_start', 'cumsum': 'bin_coverage'})
-
-
-        ### This generates the new data set which will have a labelled dictionary.
-        testarray = testarray.groupby(['rejected_barcode_id', 'Numpy_bin_position_start'], as_index=False).agg(
-            {'Numpy_bin_change': np.sum})
-
-        idx = pd.Index(testarray["Numpy_bin_position_start"].unique())
-        testarray = pd.concat(
-            [
-                g.set_index("Numpy_bin_position_start")
-                    .reindex(idx)
-                    .sort_index()
-                    .reset_index()
-                    .fillna({"rejected_barcode_id": n, "Numpy_bin_change": 0})
-                for n, g in testarray.groupby("rejected_barcode_id")
-            ]
-        ).rename(columns={"index": "Numpy_bin_position_start"})
-        testarray['rejected_barcode_id'] = testarray['rejected_barcode_id'].astype('int')
-        #The above chunk is faster than the line below.
-        #testarray = testarray.set_index(['Numpy_bin_position_start','rejected_barcode_id']).unstack().fillna(0).stack().reset_index()
-        ## If we want to manipulate the positions we are looking at we must do it now.
-        #testarray = testarray[testarray["Numpy_bin_position_start"].gt(2000000)]
-        testarray['cumsum'] = testarray.groupby(['rejected_barcode_id'])['Numpy_bin_change'].transform(np.cumsum)
-        testarray = testarray.drop(columns=['Numpy_bin_change'])
-        #testarray = testarray[(testarray['Numpy_bin_position_start']>=10000000) & (testarray['Numpy_bin_position_start']<=20000000)].set_index(['Numpy_bin_position_start', 'rejected_barcode_id']).unstack().ffill().stack().reset_index()
-        #testarray = testarray.set_index(['Numpy_bin_position_start', 'rejected_barcode_id']).unstack().ffill().stack().reset_index()
-        testarray = testarray.set_index('rejected_barcode_id')
-        testarray = testarray.rename(columns={'Numpy_bin_position_start': 'bin_position_start', 'cumsum': 'bin_coverage'})
-
-        results_dict = dict()
-        #variable to specify array length to return
-        array_length = 10000
-        for name, group in testarray.groupby(['rejected_barcode_id']):
-            mybarcode = Barcode.objects.get(pk=name)
-            #Check if we have more data than we want to send we downsample it.
-            if len(group.values)>=array_length:
-                results_dict[mybarcode.name] = sampler(group.values.astype(int),array_length=array_length)
-            else:
-                results_dict[mybarcode.name] = group.values.astype(int)
-
-        #queryset = testarray2[['bin_position_start', 'bin_coverage']].values
-        new_data = results_dict
-        sum_to_check=test.count()
-
-
-        # TODO limits to just one reference here when fetching length, could be an issue
-        #  in the future displaying multiple references on a plot
-        length = (
-            PafSummaryCov.objects.filter(job_master_id=task_id, chromosome_pk=chromosome_id)
-            .first()
-            .reference_line_length
-        )
-        return Response(
-            {"newChartData": new_data, "refLength": length, "sumToCheck": sum_to_check},
-            status=status.HTTP_200_OK,
-        )
-    else:
-        return Response(
-            {"newChartData": None, "refLength": None, "sumToCheck": None},
-            status=status.HTTP_200_OK,
-        )
+    new_data = {"sequenced": coords, "unblocked": list(zip(x_coords, np.zeros(len(coords))))}
+    sum_to_check = mem_map.sum()
+    print(sum_to_check)
+    return Response(
+        {"newChartData": new_data, "refLength": length, "sumToCheck": sum_to_check},
+        status=status.HTTP_200_OK,
+    )
     #return Response(
     #    {"newChartData": queryset, "chartData": queryset, "refLength": length, "sumToCheck": sum_to_check},
     #    status=status.HTTP_200_OK,
