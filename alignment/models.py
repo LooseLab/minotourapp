@@ -31,33 +31,27 @@ class PafRoughCov(models.Model):
         Barcode, related_name="prc_barcode", null=True, on_delete=models.SET_NULL,
     )
     reference = models.ForeignKey(
-        ReferenceInfo, related_name="paf_reference", on_delete=models.SET_NULL, null=True
+        ReferenceInfo,
+        related_name="paf_reference",
+        on_delete=models.SET_NULL,
+        null=True,
     )
     chromosome = models.ForeignKey(
-        ReferenceLine, related_name="paf_chromosome", on_delete=models.SET_NULL, null=True
+        ReferenceLine,
+        related_name="paf_chromosome",
+        on_delete=models.SET_NULL,
+        null=True,
     )
     bin_position_start = models.IntegerField(default=0)  # position
     bin_position_end = models.IntegerField(default=0)
     bin_coverage = models.IntegerField(default=0)
     # TODO I don't like this solution
     # TODO we could(should?) have this as a third table
-    reference_pk = models.IntegerField(
-        default=0
-    )
-    reference_name = models.CharField(
-        max_length=256,
-        null=True
-    )
-    chromosome_length = models.IntegerField(
-        default=0
-    )
-    chromosome_pk = models.IntegerField(
-        default=0
-    )
-    chromosome_name = models.CharField(
-        max_length=256,
-        null=True
-    )
+    reference_pk = models.IntegerField(default=0)
+    reference_name = models.CharField(max_length=256, null=True)
+    chromosome_length = models.IntegerField(default=0)
+    chromosome_pk = models.IntegerField(default=0)
+    chromosome_name = models.CharField(max_length=256, null=True)
 
     def __str__(self):
         return f"{self.flowcell} {self.bin_position_start} - {self.bin_position_end}, Coverage: {self.bin_coverage}"
@@ -70,13 +64,18 @@ class PafRoughCovIntermediate(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['bin_position_start'], name='bin_position_index'),
+            models.Index(fields=["bin_position_start"], name="bin_position_index"),
         ]
+
     job_master = models.ForeignKey(
         JobMaster, on_delete=models.CASCADE, related_name="paf_rough_cov_intermediates"
     )
     run = models.ForeignKey(
-        Run, on_delete=models.CASCADE, related_name="run_paf_rough_cov_intermediates", null=True, blank=True
+        Run,
+        on_delete=models.CASCADE,
+        related_name="run_paf_rough_cov_intermediates",
+        null=True,
+        blank=True,
     )
     flowcell = models.ForeignKey(
         Flowcell,
@@ -86,11 +85,17 @@ class PafRoughCovIntermediate(models.Model):
         blank=True,
     )
     read_type = models.ForeignKey(
-        FastqReadType, related_name="paf_rough_cov_intermediates", on_delete=models.SET_NULL, null=True
+        FastqReadType,
+        related_name="paf_rough_cov_intermediates",
+        on_delete=models.SET_NULL,
+        null=True,
     )
     is_pass = models.BooleanField()  # pass = true, fail = false
     barcode = models.ForeignKey(
-        Barcode, related_name="paf_rough_cov_intermediates", null=True, on_delete=models.SET_NULL,
+        Barcode,
+        related_name="paf_rough_cov_intermediates",
+        null=True,
+        on_delete=models.SET_NULL,
     )
     rejected_barcode = models.ForeignKey(
         Barcode,
@@ -100,40 +105,32 @@ class PafRoughCovIntermediate(models.Model):
         blank=True,
     )
     reference = models.ForeignKey(
-        ReferenceInfo, related_name="paf_rough_cov_intermediates", on_delete=models.SET_NULL, null=True
+        ReferenceInfo,
+        related_name="paf_rough_cov_intermediates",
+        on_delete=models.SET_NULL,
+        null=True,
     )
     chromosome = models.ForeignKey(
-        ReferenceLine, related_name="paf_rough_cov_intermediates", on_delete=models.SET_NULL, null=True
+        ReferenceLine,
+        related_name="paf_rough_cov_intermediates",
+        on_delete=models.SET_NULL,
+        null=True,
     )
     bin_position_start = models.IntegerField(default=0)  # position
     bin_position_end = models.IntegerField(default=0)
     bin_change = models.IntegerField(default=0)
     # TODO I don't like this solution
     # TODO we could(should?) have this as a third table
-    reference_pk = models.IntegerField(
-        default=0
-    )
-    reference_name = models.CharField(
-        max_length=256,
-        null=True
-    )
-    chromosome_length = models.IntegerField(
-        default=0
-    )
-    chromosome_pk = models.IntegerField(
-        default=0
-    )
-    chromosome_name = models.CharField(
-        max_length=256,
-        null=True
-    )
+    reference_pk = models.IntegerField(default=0)
+    reference_name = models.CharField(max_length=256, null=True)
+    chromosome_length = models.IntegerField(default=0)
+    chromosome_pk = models.IntegerField(default=0)
+    chromosome_name = models.CharField(max_length=256, null=True)
     # Is the bin from a start of a mapping or an end
-    is_start = models.BooleanField(
-        default=False
-    )
+    is_start = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.flowcell} {self.bin_position_start} - {self.bin_position_end}, Change: {self.bin_change}"
-
 
 
 class MattsAmazingAlignmentSum(models.Model):
@@ -148,11 +145,16 @@ class MattsAmazingAlignmentSum(models.Model):
        'reference_name', 'reference_id', 'bin_position_start', 'bin_change',
        'is_start']
     """
+
     job_master = models.ForeignKey(
         JobMaster, on_delete=models.CASCADE, related_name="matt_paf_rough_cov_list"
     )
     run = models.ForeignKey(
-        Run, on_delete=models.CASCADE, related_name="matt_prc_run", null=True, blank=True
+        Run,
+        on_delete=models.CASCADE,
+        related_name="matt_prc_run",
+        null=True,
+        blank=True,
     )
     flowcell = models.ForeignKey(
         Flowcell,
@@ -162,43 +164,43 @@ class MattsAmazingAlignmentSum(models.Model):
         blank=True,
     )
     read_type = models.ForeignKey(
-        FastqReadType, related_name="matt_prc_type", on_delete=models.SET_NULL, null=True
+        FastqReadType,
+        related_name="matt_prc_type",
+        on_delete=models.SET_NULL,
+        null=True,
     )
     is_pass = models.BooleanField()  # pass = true, fail = false
     barcode = models.ForeignKey(
         Barcode, related_name="matt_prc_barcode", null=True, on_delete=models.SET_NULL,
     )
     rejected_barcode = models.ForeignKey(
-        Barcode, related_name="matt_prc_rejected_barcode", null=True, on_delete=models.SET_NULL,
+        Barcode,
+        related_name="matt_prc_rejected_barcode",
+        null=True,
+        on_delete=models.SET_NULL,
     )
     reference = models.ForeignKey(
-        ReferenceInfo, related_name="matt_paf_reference", on_delete=models.SET_NULL, null=True
+        ReferenceInfo,
+        related_name="matt_paf_reference",
+        on_delete=models.SET_NULL,
+        null=True,
     )
     chromosome = models.ForeignKey(
-        ReferenceLine, related_name="matt_paf_chromosome", on_delete=models.SET_NULL, null=True
+        ReferenceLine,
+        related_name="matt_paf_chromosome",
+        on_delete=models.SET_NULL,
+        null=True,
     )
     bin_position_start_str = models.TextField()  # position
     bin_coverage_str = models.TextField()
     bin_window = models.IntegerField(default=0)
     # TODO I don't like this solution
     # TODO we could(should?) have this as a third table
-    reference_pk = models.IntegerField(
-        default=0
-    )
-    reference_name = models.CharField(
-        max_length=256,
-        null=True
-    )
-    chromosome_length = models.IntegerField(
-        default=0
-    )
-    chromosome_pk = models.IntegerField(
-        default=0
-    )
-    chromosome_name = models.CharField(
-        max_length=256,
-        null=True
-    )
+    reference_pk = models.IntegerField(default=0)
+    reference_name = models.CharField(max_length=256, null=True)
+    chromosome_length = models.IntegerField(default=0)
+    chromosome_pk = models.IntegerField(default=0)
+    chromosome_name = models.CharField(max_length=256, null=True)
 
     def __str__(self):
         return f"{self.flowcell} {self.bin_window} - {self.chromosome}"
@@ -206,7 +208,7 @@ class MattsAmazingAlignmentSum(models.Model):
 
 class PafSummaryCov(models.Model):
     """
-    Store the aggregated results of the PafStore
+    Store the results of an alignment run for each barcode/contig combination
     """
 
     job_master = models.ForeignKey(
@@ -216,7 +218,7 @@ class PafSummaryCov(models.Model):
         Barcode,
         on_delete=models.CASCADE,
         related_name="barcode_paf_summaries",
-        null=True
+        null=True,
     )
     barcode_name = models.CharField(max_length=32)
     chromosome = models.ForeignKey(
@@ -229,37 +231,29 @@ class PafSummaryCov(models.Model):
     reference_line_length = models.IntegerField()
     read_count = models.BigIntegerField(default=0)
     total_yield = models.BigIntegerField(default=0)
+    # rejected_yield = models.BigIntegerField(default=0)
+    # sequenced_yield = models.BigIntegerField(default=0)
     read_type = models.ForeignKey(
         FastqReadType,
         related_name="paf_summary_read_type",
         on_delete=models.SET_NULL,
         null=True,
     )
-    coverage = models.FloatField(
-        default=0
-    )
-    average_read_length = models.IntegerField(
-        default=0
-    )
-    chromosome_pk = models.IntegerField(
-        default=0
-    )
-    chromosome_name = models.CharField(
-        max_length=256,
-        null=True
-    )
-    reference_pk = models.IntegerField(
-        default=0
-    )
-    reference_name = models.CharField(
-        max_length=256,
-        null=True
-    )
+    coverage = models.FloatField(default=0)
+    average_read_length = models.IntegerField(default=0)
+    chromosome_pk = models.IntegerField(default=0)
+    chromosome_name = models.CharField(max_length=256, null=True)
+    reference_pk = models.IntegerField(default=0)
+    reference_name = models.CharField(max_length=256, null=True)
 
     def __str__(self):
         if self.barcode:
-            return f"Id: {self.id}, FlowcellId: {self.job_master.flowcell.id}, Barcode: {self.barcode.name}," \
-                   f" Chromosome: {self.chromosome.line_name}"
+            return (
+                f"Id: {self.id}, FlowcellId: {self.job_master.flowcell.id}, Barcode: {self.barcode.name},"
+                f" Chromosome: {self.chromosome.line_name}"
+            )
         else:
-            return f"Id: {self.id}, FlowcellId: {self.job_master.flowcell.id},"\
-                   f" Chromosome: {self.chromosome.line_name}"
+            return (
+                f"Id: {self.id}, FlowcellId: {self.job_master.flowcell.id},"
+                f" Chromosome: {self.chromosome.line_name}"
+            )
