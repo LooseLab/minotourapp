@@ -12,7 +12,7 @@ import pytz
 import redis
 from celery.utils.log import get_task_logger
 
-from alignment.tasks_alignment import run_minimap2_alignment
+from alignment.task_alignment_2 import run_minimap2_alignment
 from artic.task_artic_alignment import run_artic_pipeline
 from metagenomics.new_centrifuge import run_centrifuge_pipeline
 from minknow_data.models import Run, Flowcell
