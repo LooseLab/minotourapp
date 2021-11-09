@@ -156,7 +156,7 @@ class Command(BaseCommand):
                 ## get fastq or fasta
                 handle = (
                     pyfastx.Fastq
-                    if set(ref_file.suffixes).intersection({".qz", ".gzip"})
+                    if set(ref_file.suffixes).intersection({".fq", ".fastq"})
                     else pyfastx.Fasta
                 )
                 # Check that the minimap2 index location folder exists
