@@ -1,3 +1,4 @@
+"""Mapping class, holds mappy aligner objects open for use around minotour in a threaded class"""
 import time
 
 import mappy as mp
@@ -36,7 +37,8 @@ class MappingServer:
         """
         logger.info("checking references")
         logger.info(self.references)
-        for reference in self.mapping_objects:
+        loop_me_baby = dict(self.mapping_objects)
+        for reference in loop_me_baby:
             logger.info(reference)
             if (
                     self.mapping_objects[reference]["last_used"]
