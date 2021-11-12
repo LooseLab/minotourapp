@@ -1,5 +1,3 @@
-from pathlib import Path
-import re
 import re
 from pathlib import Path
 from typing import Union
@@ -71,7 +69,14 @@ def get_alignment_result_dir(run_id: str, create: bool) -> Path:
     return alignment_results_path
 
 
-def get_or_create_array(folder_dir: Path, contig_name: str, contig_length: int = None, barcode_name: Union[bool, str] = False) -> Path:
+def get_or_create_array(
+    folder_dir: Path,
+    contig_name: str,
+    contig_length: int = None,
+    barcode_name: Union[bool, str] = False,
+    bin_width: int = 10,
+    create: bool = False
+) -> Path:
     """
     Get the path to the numpy array containing the binned alignment
      counts, create it if it doesn't exist. Created as an array of numpy uint16,
@@ -86,16 +91,19 @@ def get_or_create_array(folder_dir: Path, contig_name: str, contig_length: int =
         The length of the contig, used if creating the array
     barcode_name: bool or str, default False
         The name of the barcode if barcoded run, else False
-
+    bin_width: int
+        The width of the bins to use
+    create: bool
+        Create the array if it doens't exists
     Returns
     -------
     Path
     """
-    barcode_dir = "No_barcode" if not barcode_name else barcode_name
+    barcode_dir = "no_barcode" if not barcode_name else barcode_name
     array_path = Path(f"{folder_dir/barcode_dir/contig_name}/{contig_name}_bins.npy")
-    if not array_path.parent.exists():
+    if not array_path.parent.exists() and create:
         array_path.parent.mkdir(parents=True)
-        array = np.zeros(np.ceil(contig_length / 10).astype(int), dtype=np.uint16)
+        array = np.zeros((2, np.ceil(contig_length / bin_width).astype(int)), dtype=np.uint16)
         np.save(array_path, arr=array)
     return array_path
 
@@ -129,5 +137,5 @@ def create_paf_summary_cov(job_master, read_dict: dict, reference, contig):
         chromosome_pk=contig.id,
         chromosome_name=contig.line_name,
         reference_pk=reference.id,
-        reference_name=reference.name
+        reference_name=reference.name,
     )[0]
