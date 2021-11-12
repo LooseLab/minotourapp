@@ -122,6 +122,7 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
     last_read_pk: int
         The ID of the last read that we dealt with.
     """
+    bin_width = 10
     # The JobMaster object
     job_master = JobMaster.objects.get(pk=job_master_id)
     # Unpack metadata about this job
@@ -135,9 +136,7 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
     chromosomes = reference_info.reference_lines.all()
     # A dictionary with all the results for each chromosome
     # For each Chromosome in the chromosomes, set the name of the chromosome as key, and the object as the value
-    chromosome_dict = {
-        chromosome.line_name: chromosome for chromosome in chromosomes
-    }
+    chromosome_dict = {chromosome.line_name: chromosome for chromosome in chromosomes}
     # add reference if it isn't already in there WARNING fails silently
     if not super_function.valid(reference_info.name):
         super_function.add_reference(
@@ -155,6 +154,13 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
         raise FileNotFoundError("No mapping results.")
     run_id = Run.objects.get(pk=fasta_list[0]["run"]).runid
     folder_dir = get_alignment_result_dir(run_id, create=True)
+    # Rejected barcode primary key unblocked or sequenced bool, True is unblocked
+    get_rejected = {
+        barcode.id: barcode.name == "Unblocked"
+        for barcode in Barcode.objects.filter(
+            run_id=fasta_list[0]["run"], name__in={"Sequenced", "Unblocked"}
+        )
+    }
 
     # dictionary of barcode -> contig
     class Contig(NamedTuple):
@@ -186,17 +192,21 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                     contig,
                     contig_length=int(contig_length),
                     barcode_name=barcode_orm.name,
+                    bin_width=bin_width,
+                    create=True
                 ),
                 name=contig,
             )
         path_2_array = barcode_2_contig_array[barcode][contig].path
-        mem_map = np.memmap(path_2_array, dtype=np.uint16)
+        mem_map = np.load(path_2_array, mmap_mode="r+")
         for mapping in group:
+            read_id = mapping[0]
+            is_rejected = get_rejected[read_id_2_read_info[read_id]["rejected_barcode"]]
             # create a summary for this barcode/contig/read_type
             if (
-                    barcode,
-                    contig,
-                    read_id_2_read_info[mapping[0]]["type"],
+                barcode,
+                contig,
+                read_id_2_read_info[read_id]["type"],
             ) not in barcode_contig_2_summary_orm:
                 paf_summary = create_paf_summary_cov(
                     job_master,
@@ -204,28 +214,27 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                     reference_info,
                     chromosome_dict[contig],
                 )
-                barcode_contig_2_summary_orm[(
-                    barcode,
-                    contig,
-                    read_id_2_read_info[mapping[0]]["type"],
-                )] = paf_summary
+                barcode_contig_2_summary_orm[
+                    (barcode, contig, read_id_2_read_info[read_id]["type"],)
+                ] = paf_summary
             else:
-                paf_summary = barcode_contig_2_summary_orm[(
-                    barcode,
-                    contig,
-                    read_id_2_read_info[mapping[0]]["type"],
-                )]
-            is_rejected = read_id_2_read_info[mapping[0]]["rejected_barcode"]
+                paf_summary = barcode_contig_2_summary_orm[
+                    (barcode, contig, read_id_2_read_info[read_id]["type"],)
+                ]
             # now to slice and add 1
             mapping_start, mapping_end = (
-                int(mapping[7]) // 10,
-                np.ceil(int(mapping[8]) / 10).astype(int),
+                int(mapping[7]) // bin_width,
+                np.ceil(int(mapping[8]) / bin_width).astype(int),
             )
-            mem_map[,:1][mapping_start: mapping_end + 1] += 1
+            mem_map[int(is_rejected), mapping_start: mapping_end + 1] += 1
             paf_summary.total_yield += len(mapping[1])
             # multiple mappings can shaft this
             paf_summary.read_count += 1
-        paf_summary.average_read_length = round(paf_summary.total_yield / paf_summary.read_count)
-        paf_summary.coverage = round(paf_summary.total_yield / chromosome_dict[contig].chromosome_length)
+        paf_summary.average_read_length = round(
+            paf_summary.total_yield / paf_summary.read_count
+        )
+        paf_summary.coverage = round(
+            paf_summary.total_yield / chromosome_dict[contig].chromosome_length
+        )
         paf_summary.save()
         mem_map.flush()
