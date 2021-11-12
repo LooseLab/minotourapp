@@ -65,7 +65,7 @@ def coverage_detail(
     array_path = get_or_create_array(folder_dir, contig_name=contig.line_name, barcode_name=barcode.name)
     if not array_path.exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
-    mem_map = np.memmap(array_path, dtype=np.uint16)
+    mem_map = np.load(array_path, mmap_mode="r")
     # TODO limits to just one reference here when fetching length, could be an issue
     #  in the future displaying multiple references on a plot
     length = contig.chromosome_length
@@ -77,13 +77,12 @@ def coverage_detail(
     factor = int((end - start) / 1800)
     factor = 1 if factor < 1 else factor
     x_coords = x_coords[::factor]
-    print("!!!!!!!!!!!!\n")
-    print(factor)
-    print(start, end)
-    new_data = mem_map[start:end:factor]
-    coords = list(zip(x_coords, new_data))
-    sum_to_check = new_data.sum()
-    new_data = {"sequenced": coords, "unblocked": np.zeros(len(coords)).tolist()}
+    rejected_new_data = mem_map[1,start:end:factor]
+    sequenced_new_data = mem_map[0,start:end:factor]
+    seq_coords = list(zip(x_coords, sequenced_new_data))
+    rej_coords = list(zip(x_coords, rejected_new_data))
+    sum_to_check = mem_map.sum()
+    new_data = {"sequenced": seq_coords, "unblocked": rej_coords}
 
     return Response(
         {"newChartData": new_data, "refLength": length, "sumToCheck": sum_to_check},
@@ -126,17 +125,19 @@ def coverage_master(
     array_path = get_or_create_array(folder_dir, contig_name=contig.line_name, barcode_name=barcode.name)
     if not array_path.exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
-    mem_map = np.memmap(array_path, dtype=np.uint16)
+    mem_map = np.load(array_path, mmap_mode="r")
     # TODO limits to just one reference here when fetching length, could be an issue
     #  in the future displaying multiple references on a plot
     length = contig.chromosome_length
     step = int((length / 10) / pixels)
     step = 1 if step < 1 else step
     data = mem_map[::step]
+    rejected_new_data = mem_map[1, ::step]
+    sequenced_new_data = mem_map[0, ::step]
     x_coords = np.arange(0, length + 10, 10)[::step]
-    coords = list(zip(x_coords, data))
-
-    new_data = {"sequenced": coords, "unblocked": list(zip(x_coords, np.zeros(len(coords))))}
+    seq_coords = list(zip(x_coords, sequenced_new_data))
+    rej_coords = list(zip(x_coords, rejected_new_data))
+    new_data = {"sequenced": seq_coords, "unblocked": rej_coords}
     sum_to_check = mem_map.sum()
     print(sum_to_check)
     return Response(
