@@ -594,7 +594,6 @@ class JobMaster(models.Model):
         PrimerScheme,
         on_delete=models.SET_NULL,
         related_name="jobs_primer_scheme",
-        default=4,
         blank=True,
         null=True,
     )
