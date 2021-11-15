@@ -84,7 +84,7 @@ ENV MT_ARTIC_RESULTS_DIR='/var/lib/minotour/apps/data'
 ENV MT_ARTIC_MAX_PIPELINES="1"
  # Number of hours until clearing artic files
 ENV MT_ARTIC_TIME_UNTIL_CLEARING="12"
-ENV MT_ALIGNMENT_DATA_DIR="/home/rory/Projects/data/"
+ENV MT_ALIGNMENT_DATA_DIR="/var/lib/minotour/apps/data"
 
 ENV TZ=Europe/London
 

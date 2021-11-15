@@ -66,7 +66,7 @@ services:
             MT_COVERAGE_PER_AMPLICON: "20"
             # the bin which aln2type is under
             MT_ALN2TYPE_BIN: "/root/miniconda3/bin/"
-            MT_ALIGNMENT_DATA_DIR: "/home/rory/Projects/data/"
+            MT_ALIGNMENT_DATA_DIR: "/var/lib/minotour/apps/data"
 
 
         ports:
