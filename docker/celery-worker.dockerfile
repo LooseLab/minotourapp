@@ -54,6 +54,7 @@ ENV MT_CONDA_PREFIX="/root/miniconda3/etc/profile.d/conda.sh"
 ENV MT_MINIMAP2_INDEX_DIR="0"
 
 
+
 ##### Artic Task Environment Variables
 ## These variables are divided into those required for analysis and primer set configuration and those required for general configuration of the artic pipelines
 # Read the Artic scheme directories, found where the Artic NCOV pipeline github repo was cloned. Example  /home/rory/Projects/artic-ncov2019/primer_schemes
@@ -83,6 +84,8 @@ ENV MT_ARTIC_RESULTS_DIR='/var/lib/minotour/apps/data'
 ENV MT_ARTIC_MAX_PIPELINES="1"
  # Number of hours until clearing artic files
 ENV MT_ARTIC_TIME_UNTIL_CLEARING="12"
+ENV MT_ALIGNMENT_DATA_DIR="/home/rory/Projects/data/"
+
 ENV TZ=Europe/London
 
 ENV CONDA_DIR="/root/miniconda3"
