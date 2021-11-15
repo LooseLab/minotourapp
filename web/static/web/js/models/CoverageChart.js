@@ -238,21 +238,18 @@ class CoverageChart {
         const data = response.data.newChartData
         const sumToCheck = response.data.sumToCheck
         self._refLength = response.data.refLength
-        if (sumToCheck !== this._oldSumToCheck) {
-          // self._coverageChart.masterChart.xAxis[0].setExtremes(0, response.data.refLength)
-          // self._coverageChart.masterChart.series[0].setData(data.Sequenced, false, false, false)
-          // self._coverageChart.masterChart.series[1].setData(data.Unblocked, false, false, false)
-          self._detailChart.series[0].setData(data.sequenced, false, false, false)
-          self._detailChart.series[1].setData(data.unblocked, false, false, false)
-          self._masterChart.xAxis[0].removePlotBand(`mask-before`)
-          self._detailChart.hideLoading()
-          // self._coverageChart.masterChart.hideLoading()
-          self._detailChart.redraw()
-          // self._coverageChart.masterChart.redraw()
-        } else {
-          self._detailChart.hideLoading()
-          // self._coverageChart.masterChart.hideLoading()
-        }
+
+        // self._coverageChart.masterChart.xAxis[0].setExtremes(0, response.data.refLength)
+        // self._coverageChart.masterChart.series[0].setData(data.Sequenced, false, false, false)
+        // self._coverageChart.masterChart.series[1].setData(data.Unblocked, false, false, false)
+        self._detailChart.series[0].setData(data.sequenced, false, false, false)
+        self._detailChart.series[1].setData(data.unblocked, false, false, false)
+        self._masterChart.xAxis[0].removePlotBand(`mask-before`)
+        self._detailChart.hideLoading()
+        // self._coverageChart.masterChart.hideLoading()
+        self._detailChart.redraw()
+        // self._coverageChart.masterChart.redraw()
+
         this._oldSumToCheck = sumToCheck
       }).catch(
       error => {

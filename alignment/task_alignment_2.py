@@ -87,7 +87,6 @@ def run_minimap2_alignment(job_master_id, streamed_reads=None):
     logger.info(
         f"Flowcell id: {flowcell.id} - Running minimap2 on flowcell {flowcell.name}"
     )
-    logger.info(f"Flowcell id: {flowcell.id} - job_master_id {job_master.id}")
     logger.debug(f"Flowcell id: {flowcell.id} - reference {job_master.reference.name}")
     logger.debug(f"Flowcell id: {flowcell.id} - last_read {job_master.last_read}")
     logger.debug(f"Flowcell id: {flowcell.id} - read_count {job_master.read_count}")

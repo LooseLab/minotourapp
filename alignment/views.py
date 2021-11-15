@@ -81,11 +81,11 @@ def coverage_detail(
     sequenced_new_data = mem_map[0,start:end:factor]
     seq_coords = list(zip(x_coords, sequenced_new_data))
     rej_coords = list(zip(x_coords, rejected_new_data))
-    sum_to_check = mem_map.sum()
+    # sum_to_check = mem_map.sum()
     new_data = {"sequenced": seq_coords, "unblocked": rej_coords}
 
     return Response(
-        {"newChartData": new_data, "refLength": length, "sumToCheck": sum_to_check},
+        {"newChartData": new_data, "refLength": length, "sumToCheck": 0},
         status=status.HTTP_200_OK,
     )
 
