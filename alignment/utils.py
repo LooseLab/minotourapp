@@ -75,7 +75,8 @@ def get_or_create_array(
     contig_length: int = None,
     barcode_name: Union[bool, str] = False,
     bin_width: int = 10,
-    create: bool = False
+    create: bool = False,
+    is_cnv: bool = False
 ) -> Path:
     """
     Get the path to the numpy array containing the binned alignment
@@ -95,15 +96,21 @@ def get_or_create_array(
         The width of the bins to use
     create: bool
         Create the array if it doens't exists
+    is_cnv: bool
+        Return the coverage pile up bins
     Returns
     -------
     Path
     """
+    # only need 1 dimension if is
+    shape_me = 1 if is_cnv else 2
     barcode_dir = "no_barcode" if not barcode_name else barcode_name
-    array_path = Path(f"{folder_dir/barcode_dir/contig_name}/{contig_name}_bins.npy")
-    if not array_path.parent.exists() and create:
-        array_path.parent.mkdir(parents=True)
-        array = np.zeros((2, np.ceil(contig_length / bin_width).astype(int)), dtype=np.uint16)
+    suffice = "cnv_bins" if is_cnv else "bins"
+    array_path = Path(f"{folder_dir/barcode_dir/contig_name}/{contig_name}_{suffice}.npy")
+    if not array_path.exists() and create:
+        dtype_me_baby = np.uint16 if contig_length < 100_000_000 else np.uint8
+        array_path.parent.mkdir(parents=True, exist_ok=True)
+        array = np.zeros((shape_me, np.ceil(contig_length / bin_width).astype(int)), dtype=np.uint16)
         np.save(array_path, arr=array)
     return array_path
 
