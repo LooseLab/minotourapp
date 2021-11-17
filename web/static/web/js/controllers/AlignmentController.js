@@ -7,6 +7,7 @@ class AlignmentController {
   constructor (flowcellId) {
     this._flowcellId = flowcellId
     this.coverageChartController = new CoverageChartController(`coverage_div`, ``)
+    this.cnvChartController = new CnvChartController(`cnv-me`)
     this._axiosInstance = axios.create({
       headers: { 'X-CSRFToken': getCookie(`csrftoken`) }
     })
