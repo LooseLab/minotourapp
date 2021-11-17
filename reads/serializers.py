@@ -351,7 +351,7 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         """
         Check that reference exists if type is Minimap2
         """
-        if data['job_type'].id in [4, 16] and data['reference'] is None:
+        if data['job_type'].id in [4, 5, 16] and data['reference'] is None:
             raise serializers.ValidationError("Reference is mandatory for this task.")
 
         # If the job type is minimap check we can find the minimap2 executable
@@ -368,7 +368,7 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         #         flowcell=data["flowcell"]).filter(job_type__name="Metagenomics").count() > 0:
         #     raise serializers.ValidationError("A metagenomics task is already running for this flowcell.")
         # If the job isn't EB or minimap2 or artic
-        if data["job_type"].id not in [4, 15, 16]:
+        if data["job_type"].id not in [4, 5, 15, 16]:
             data["reference"] = None
 
         # If the job is to calculate a sankey diagram

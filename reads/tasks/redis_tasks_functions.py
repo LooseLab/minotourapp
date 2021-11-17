@@ -334,7 +334,7 @@ def check_if_flowcell_has_streamable_tasks(flowcell_pk):
         List of streamable job_masters IDs
     """
 
-    streamable_tasks_pks = [16, 4, 10]
+    streamable_tasks_pks = {16, 5, 4, 10}
     tasks = (
         JobMaster.objects.filter(
             flowcell_id=flowcell_pk, job_type__id__in=streamable_tasks_pks
@@ -365,7 +365,7 @@ def sort_reads_by_flowcell_fire_tasks(reads):
         for task in task_lookups:
             if task["job_type_id"] == 16 and not task["from_database"]:
                 run_artic_pipeline.delay(task["id"], flowcell_reads)
-            elif task["job_type_id"] == 4 and not task["from_database"]:
+            elif task["job_type_id"] in {4, 5} and not task["from_database"]:
                 redis_instance.incr("minimaptasks")
                 run_minimap2_alignment.apply_async(
                     args=(task["id"], flowcell_reads), queue="minimap"

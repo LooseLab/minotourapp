@@ -107,7 +107,19 @@
     "fields": {
       "name": "Minimap2",
       "description": "Reference Mapping",
-      "long_description": "Minimap2 can be used to map reads against a reference genome. Several genomes are already installed in minoTour. Others (less than 100 Mb in size) can be uploaded for your own use under 'admin'.",
+      "long_description": "Minimap2 can be used to map reads against a reference genome. ",
+      "reference": true,
+      "transcriptome": false,
+      "readcount": true,
+      "private": false
+    }
+  },  {
+    "model": "reads.jobtype",
+    "pk": 5,
+    "fields": {
+      "name": "Minimap2 + CNV",
+      "description": "Reference Mapping + CNV",
+      "long_description": "Minimap2 can be used to map reads against a reference genome. Mapping starts are binned to calculate CNV",
       "reference": true,
       "transcriptome": false,
       "readcount": true,

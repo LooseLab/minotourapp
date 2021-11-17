@@ -20,7 +20,6 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from alignment.mapper import MAP
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
 from metagenomics.models import CentrifugeOutput, MappingTarget
@@ -1466,7 +1465,7 @@ def job_master_list(request):
         # This is for starting a job from the client
 
         # If the job isn't EB or minimap2 or artic
-        if int(request.data["job_type"]) not in [4, 15, 16]:
+        if int(request.data["job_type"]) not in [4, 5, 15, 16]:
             request.data["reference"] = None
 
         if (
@@ -1493,10 +1492,10 @@ def job_master_list(request):
                     status=500
                 )
 
-            if request.data["job_type"] == 4:
-                MAP.add_reference(
-                    reference.name, reference.minimap2_index_file_location
-                )
+            # if request.data["job_type"] == 4:
+            #     MAP.add_reference(
+            #         reference.name, reference.minimap2_index_file_location
+            #     )
         # the int value for cli target sets is the index, so we have to get the actual target set name
         if "target_set" in request.data and request.data.get("cli", False) and request.data["target_set"]:
             api_key = request.data.get("api_key", "")
@@ -1534,9 +1533,9 @@ def task_types_list(request):
     # If it's a request from the client
     if request.GET.get("cli", False):
         # These are the available tasks
-        tasks = ["Metagenomics", "Minimap2", "Track Artic Coverage"]
+        tasks = [10, 4, 16, 5]
         # Get the tasks
-        result = JobType.objects.filter(name__in=tasks).values(
+        result = JobType.objects.filter(pk__in=tasks).values(
             "id", "name", "description"
         )
 
