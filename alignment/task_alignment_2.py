@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-from collections import defaultdict
+from collections import defaultdict, Counter
 from itertools import groupby
 from pathlib import Path
 from typing import List, NamedTuple
@@ -178,26 +178,45 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
         for a_s in PafSummaryCov.objects.filter(job_master=job_master)
     }
     barcode_2_contig_array = defaultdict(lambda: defaultdict(Contig))
+    do_cnv = job_master.job_type_id == 5
+    barcode_2_contig_array_cnv = defaultdict(lambda: defaultdict(Contig))
+    # track read ids seen for the multi mappings
+    read_ids_seen = defaultdict(int)
+    # loop this to create Arrays
+    bins_to_do = {"alignment": (True, barcode_2_contig_array),
+                  "cnv": (do_cnv, barcode_2_contig_array_cnv)}
+    # filter non primary mappings
+    results = list(filter(lambda x: x[12] == "tp:A:P" and int(x[11]) == 60, results))
+    # read_id to occurrence count
+    multi_mappings = Counter((mapping[0] for mapping in results))
     # sort results on barcode, contig so we can group by them, and minimise the number of opening and closing arrays
-    results.sort(key=lambda x: (x[-1], x[5]))
-
+    results.sort(key=lambda x: (x[-1], x[5], x[4], x[7]))
+    # groupby barcode, contig and contig length (to include it in the key)
     for key, group in groupby(results, lambda x: (x[-1], x[5], x[6])):
         barcode, contig, contig_length = key
         barcode_orm = Barcode.objects.get(pk=barcode)
+        # If the contig isn't in our barcode values for that dictionary
         if contig not in barcode_2_contig_array[barcode]:
-            barcode_2_contig_array[barcode][contig] = Contig(
-                path=get_or_create_array(
-                    folder_dir,
-                    contig,
-                    contig_length=int(contig_length),
-                    barcode_name=barcode_orm.name,
-                    bin_width=bin_width,
-                    create=True
-                ),
-                name=contig,
-            )
+            for key_arr, (do_this_task, task_lookup_dict) in bins_to_do.items():
+                task_lookup_dict[barcode][contig] = Contig(
+                    path=get_or_create_array(
+                        folder_dir,
+                        contig,
+                        contig_length=int(contig_length),
+                        barcode_name=barcode_orm.name,
+                        bin_width=bin_width,
+                        create=True,
+                        is_cnv= key_arr == "cnv"
+                    ),
+                    name=contig,
+                )
+
         path_2_array = barcode_2_contig_array[barcode][contig].path
         mem_map = np.load(path_2_array, mmap_mode="r+")
+
+        if do_cnv:
+            path_2_cnv_array = barcode_2_contig_array_cnv[barcode][contig].path
+            mem_map_cnv = np.load(path_2_cnv_array, mmap_mode="r+")
         for mapping in group:
             read_id = mapping[0]
             is_rejected = get_rejected[read_id_2_read_info[read_id]["rejected_barcode"]]
@@ -229,6 +248,22 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
             paf_summary.total_yield += len(mapping[1])
             # multiple mappings can shaft this
             paf_summary.read_count += 1
+
+            # Time for some tacked on CNV mapping banter
+            if do_cnv:
+                fwd_strand = mapping[4] == "+"
+                mapping_start = None
+                if multi_mappings[mapping[0]] > 1:
+                    read_ids_seen[mapping[0]] += 1
+                    if fwd_strand and read_ids_seen[mapping[0]] == 1:
+                        mapping_start = int(mapping[7]) // bin_width
+                    if not fwd_strand and read_ids_seen[mapping[0]] == multi_mappings[mapping[0]]:
+                        mapping_start = np.ceil(int(mapping[8]) / bin_width)
+                else:
+                    mapping_start = int(mapping[7]) // bin_width if fwd_strand else np.ceil(int(mapping[8]) / bin_width)
+                if mapping_start:
+                    mem_map_cnv[0, int(mapping_start)] += 1
+
         paf_summary.average_read_length = round(
             paf_summary.total_yield / paf_summary.read_count
         )
