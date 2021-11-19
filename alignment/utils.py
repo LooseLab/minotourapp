@@ -45,7 +45,7 @@ def read_fastq_to_dict(file_path):
     return result_list
 
 
-def get_alignment_result_dir(run_id: str, create: bool) -> Path:
+def get_alignment_result_dir(run_id: str, create: bool = False) -> Path:
     """
     Get the alignment folder for this run
     Parameters
@@ -53,7 +53,7 @@ def get_alignment_result_dir(run_id: str, create: bool) -> Path:
     run_id: str
         The run id of the data
     create: bool
-        Create the directory if it doesn't exist
+        Create the directory if it doesn't exist default False
     Returns
     -------
     Path
