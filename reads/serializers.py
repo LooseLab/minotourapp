@@ -324,7 +324,8 @@ class JobMasterSerializer(serializers.ModelSerializer):
             "complete",
             "paused",
             "server_initiated",
-            "from_database"
+            "from_database",
+            "run"
         )
 
 
@@ -344,7 +345,8 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
             "reference",
             "target_set",
             "from_database",
-            "primer_scheme"
+            "primer_scheme",
+            "run"
         )
 
     def validate(self, data):
