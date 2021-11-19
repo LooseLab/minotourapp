@@ -120,9 +120,7 @@ class CoverageChart {
         reflow: true,
         marginLeft: 50,
         marginRight: 20,
-        style: {
-          position: `absolute`
-        },
+
         boost: {
           useGPUTranslations: true,
           usePreAllocated: true
