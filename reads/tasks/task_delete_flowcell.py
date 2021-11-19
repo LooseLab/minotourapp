@@ -8,15 +8,23 @@ from shutil import rmtree
 from celery.utils.log import get_task_logger
 from django.db import connection
 
-from alignment.models import PafRoughCov
+from alignment.models import PafSummaryCov
 from minknow_data.models import Flowcell
 from minotourapp.celery import app, MyTask
 from minotourapp.utils import get_env_variable
-from reads.models import JobMaster, FastqRead, FastqFile, FlowcellChannelSummary, FlowcellHistogramSummary, \
-    FlowcellSummaryBarcode, FlowcellStatisticBarcode
+from reads.models import (
+    JobMaster,
+    FastqRead,
+    FastqFile,
+    FlowcellChannelSummary,
+    FlowcellHistogramSummary,
+    FlowcellSummaryBarcode,
+    FlowcellStatisticBarcode,
+)
 from web.delete_tasks import delete_alignment_task
 
 logger = get_task_logger(__name__)
+
 
 def on_delete_error(function, path, excinfo):
     """
@@ -78,7 +86,9 @@ def delete_flowcell(flowcell_id):
     """
     # Get the flowcell jobMaster entry
     start_time = time.time()
-    flowcell_job = JobMaster.objects.filter(flowcell_id=flowcell_id, job_type_id=11).last()
+    flowcell_job = JobMaster.objects.filter(
+        flowcell_id=flowcell_id, job_type_id=11
+    ).last()
     # Get the flowcell
     flowcell = flowcell_job.flowcell
     delete_chunk_size = 5000
@@ -87,7 +97,9 @@ def delete_flowcell(flowcell_id):
     )
     JobMaster.objects.filter(flowcell=flowcell).update(complete=True)
     # Clear Artic data away
-    for job in JobMaster.objects.filter(job_type__name="Track Artic Coverage", flowcell=flowcell):
+    for job in JobMaster.objects.filter(
+        job_type__name="Track Artic Coverage", flowcell=flowcell
+    ):
         clear_artic_data(job)
     # Get the last FastQRead object, wayyy faster than count
     last_fastq_read = FastqRead.objects.filter(flowcell=flowcell).last()
@@ -111,12 +123,11 @@ def delete_flowcell(flowcell_id):
         # TODO could this be rewritten into celery chunks?
         delete_flowcell.apply_async(args=(flowcell_id,))
     else:
-        if PafRoughCov.objects.filter(flowcell=flowcell).count() > 50000:
-            fj = flowcell.flowcell_jobs.filter(job_type_id=4)
-            delete_alignment_task.delay(fj[0].id)
-        else:
-            affected = flowcell.delete()
-            logger.info(f"Flowcell id: {flowcell.id} - Deleted {affected} flowcell.")
+        if PafSummaryCov.objects.filter(flowcell=flowcell).count():
+            for fj in flowcell.flowcell_jobs.filter(job_type_id__in={4, 5}):
+                delete_alignment_task(fj.id)
+        affected = flowcell.delete()
+        logger.info(f"Flowcell id: {flowcell.id} - Deleted {affected} flowcell.")
 
 
 @app.task(base=MyTask)
