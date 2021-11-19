@@ -33,5 +33,15 @@ urlpatterns = [
         r'^api/v1/alignment/(?P<flowcell_pk>[0-9]+)/genome-coverage-summary',
         views.per_genome_coverage_summary,
         name="genome-coverage-summary"
+    ),
+    url(
+        r'^api/v1/alignment/(?P<pk>[0-9]+)/cnv-chart/(?P<barcode_pk>[0-9]+)/(?P<expected_ploidy>[0-9])',
+        views.cnv_chart,
+        name="cnv-chart"
+    ),
+    url(
+        r'^api/v1/alignment/(?P<pk>[0-9]+)/cnv-barcode',
+        views.get_cnv_barcodes,
+        name="cnv-barcodes"
     )
 ]
