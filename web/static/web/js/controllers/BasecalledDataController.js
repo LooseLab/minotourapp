@@ -413,7 +413,6 @@ class BasecalledDataController {
       let key, value
       // TODO add in the run start lines.
       const runData = response.data.runs
-      console.log(runData)
       const chartData = response.data.data
       let newChartDataArray
       let newChartData
