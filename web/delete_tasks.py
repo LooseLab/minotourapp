@@ -2,13 +2,13 @@
 Functionality to delete a previously run task with a celery task
 """
 import datetime
-import time
 from pathlib import Path
+from shutil import rmtree
 
 from celery.utils.log import get_task_logger
-from django.db import connection
 
-from alignment.models import PafRoughCov, PafSummaryCov
+from alignment.models import PafSummaryCov
+from alignment.utils import get_alignment_result_dir
 from minotourapp.celery import app
 from reads.models import JobMaster
 
@@ -75,52 +75,28 @@ def delete_alignment_task(flowcell_job_id, restart=False):
     # Get the flowcell
     flowcell = flowcell_job.flowcell
     delete = True
-    delete_chunk_size = 25000
-    paf_rough_cov_remaining = True
-    while delete:
-        if (
-            flowcell_job.job_type.name == "Minimap2"
-            or flowcell_job.job_type.id == 19
-        ):
-            # If it's minimap2, we have tonnnes of alignment data, so delete it in batches of 1000
-            # ######## Paf Rough cov ####### #
-            if paf_rough_cov_remaining:
-                # get the first entry in the database for this job master
-                first_paf_rough_cov_row = PafRoughCov.objects.filter(
-                    job_master=flowcell_job
-                )
-                # if there isn't one we've deleted all the pafroughcov entries
-                if not first_paf_rough_cov_row:
-                    paf_rough_cov_remaining = False
-                    logger.info(
-                        f"Deleted all Paf Rough Cov data. Job ID {flowcell_job.id}"
-                    )
-                else:
-                    with connection.cursor() as cursor:
-                        cursor.execute(
-                            "DELETE FROM alignment_pafroughcov where flowcell_id=%s limit %s",
-                            [flowcell.id, delete_chunk_size],
-                        )
-            if not paf_rough_cov_remaining:
-                # Delete Paf Summary Cov
-                PafSummaryCov.objects.filter(job_master=flowcell_job).delete()
-                # if we are restarting the task, reset all the jobmaster fields to 0 and save them
-                if restart:
-                    flowcell_job.last_read = 0
-                    flowcell_job.read_count = 0
-                    flowcell_job.complete = False
-                    flowcell_job.running = False
-                    flowcell_job.save()
-                    # We're restarting so set a new activity data so flowcell becomes active
-                    flowcell.last_activity_date = datetime.datetime.now(
-                        datetime.timezone.utc
-                    )
-                    flowcell.save()
-                else:
-                    finished = flowcell_job.delete()
-                    logger.debug(f"Finished! {finished}")
+    run_id = flowcell_job.run.runid
+    result_folder_dir = get_alignment_result_dir(run_id)
+    # Delete Paf Summary Cov
+    rmtree(result_folder_dir, ignore_errors=False)
+    PafSummaryCov.objects.filter(job_master=flowcell_job).delete()
+    # if we are restarting the task, reset all the jobmaster fields to 0 and save them
+    if restart:
+        flowcell_job.last_read = 0
+        flowcell_job.read_count = 0
+        flowcell_job.complete = False
+        flowcell_job.running = False
+        flowcell_job.save()
+        # We're restarting so set a new activity data so flowcell becomes active
+        flowcell.last_activity_date = datetime.datetime.now(
+            datetime.timezone.utc
+        )
+        flowcell.save()
+    else:
+        finished = flowcell_job.delete()
+        logger.debug(f"Finished! {finished}")
 
-                delete = False
+        delete = False
 
 
 @app.task
@@ -205,93 +181,3 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
                     )
                     flowcell.save()
                 delete = False
-
-
-@app.task
-def delete_expected_benefit_task(flowcell_job_id, restart=False):
-    """
-    Delete an expected benefit task along with the binary files it writes out
-    :param flowcell_job_id: The Id of the JobMaster object to be deleted
-    :param restart: Whether to begin the task again after deletion
-    :return:
-    """
-
-    task = JobMaster.objects.get(pk=flowcell_job_id)
-
-    if task is None:
-        logger.error("Did not find JobMaster. Perhaps it has already been deleted?")
-        return
-    # Set to complete so no new data is produced
-    running = task.running
-
-    seconds_counter = 0
-
-    while running:
-
-        running = task.running
-        time.sleep(1)
-        seconds_counter += 1
-        if seconds_counter == 140:
-            task.running = False
-            task.save()
-
-    # task.save()
-    # Get the flowcell
-    flowcell = task.flowcell
-
-    chromosomes = task.expectedBenefitTask.all()
-
-    base_result_dir_path = get_or_create_results_directory(flowcell.id, task.id)
-
-    for chromosome in chromosomes:
-        chrom_key = chromosome.chromosome.line_name
-        Path(
-            f"{base_result_dir_path}/coverage_{chrom_key}_{flowcell.id}_{task.id}.dat"
-        ).unlink()
-        Path(
-            f"{base_result_dir_path}/counts_{chrom_key}_{flowcell.id}_{task.id}.dat"
-        ).unlink()
-        Path(
-            f"{base_result_dir_path}/mask_forward_{chrom_key}_{flowcell.id}_{task.id}.dat"
-        ).unlink()
-        Path(
-            f"{base_result_dir_path}/mask_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat"
-        ).unlink()
-        Path(
-            f"{base_result_dir_path}/scores_forward_{chrom_key}_{flowcell.id}_{task.id}.dat"
-        ).unlink()
-        Path(
-            f"{base_result_dir_path}/scores_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat"
-        ).unlink()
-        Path(
-            f"{base_result_dir_path}/cost_forward_{chrom_key}_{flowcell.id}_{task.id}.dat"
-        ).unlink()
-        Path(
-            f"{base_result_dir_path}/cost_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat"
-        ).unlink()
-        Path(
-            f"{base_result_dir_path}/benefits_{chrom_key}_{flowcell.id}_{task.id}.dat"
-        ).unlink()
-        Path(
-            f"{base_result_dir_path}/fixed_benefits_forward{chrom_key}"
-            f"_{flowcell.id}_{task.id}.dat"
-        ).unlink()
-        Path(
-            f"{base_result_dir_path}/fixed_benefits_reverse{chrom_key}"
-            f"_{flowcell.id}_{task.id}.dat"
-        ).unlink()
-
-    finished = task.delete()
-
-    logger.info(f"Finished deleting Task data for expected benefit - {finished}")
-
-    if restart:
-        task.running = False
-        task.complete = False
-        task.last_read = 0
-        task.read_count = 0
-        task.iteration_count = 0
-
-        task.save()
-        flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
-        flowcell.save()
