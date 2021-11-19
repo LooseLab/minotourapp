@@ -7,10 +7,10 @@ class AlignmentController {
   constructor (flowcellId) {
     this._flowcellId = flowcellId
     this.coverageChartController = new CoverageChartController(`coverage_div`, ``)
-    this.cnvChartController = new CnvChartController(`cnv-me`)
     this._axiosInstance = axios.create({
       headers: { 'X-CSRFToken': getCookie(`csrftoken`) }
     })
+    this.cnvChartController = new CnvChartController(`cnv-me`, flowcellId)
     this._selectData = []
     this._readTypeSelect = $(`#readTypeSelect`)
     this._referenceSelect = $(`#referenceSelect`)
@@ -20,7 +20,7 @@ class AlignmentController {
       referenceSelect: [this._readTypeSelect, this._chromosomeSelect, this._barcodeSelect],
       readTypeSelect: [this._chromosomeSelect, this._barcodeSelect],
       chromosomeSelect: [this._barcodeSelect],
-      barcodeSelect: [],
+      barcodeSelect: []
     }
     this._sumToCheck = 0
     this._selects = [this._readTypeSelect, this._referenceSelect, this._chromosomeSelect, this._barcodeSelect]
@@ -30,6 +30,7 @@ class AlignmentController {
     this._createColumnCharts()
     this._fetchChromosomeInGenomeCoverageData(flowcellId)
     this._addListenerToResetButton()
+    this._populateCNVDropDown(this._flowcellId)
     this._interval = setInterval(this._reloadPageData, 45000, flowcellId, this)
     $(window).on(`unload`, function () {
       console.log(`clearing Alignment interval`)
@@ -58,6 +59,24 @@ class AlignmentController {
       that._fetchChromosomeInGenomeCoverageData(flowcellId)
     }
   }
+
+  /**
+   * Populate the barcodes in the CNV drop down
+   * @param flowcellId {number} flowcell primary key
+   * @private
+   */
+  _populateCNVDropDown (flowcellId) {
+    this.cnvChartController._populateCnvBarcodeSelect(`/api/v1/alignment/${flowcellId}/cnv-barcode`, this._axiosInstance)
+  }
+
+  // /**
+  //  * Draw the CNV chart
+  //  * @param flowcellId {number} Flowcell there's
+  //  * @private
+  //  */
+  // _drawCnvChart (flowcellId) {
+  //   this.cnvChartController._loadChartData(`/api/v1/alignment/${flowcellId}/cnv-chart/2`, this._axiosInstance)
+  // }
 
   /**
    * Update the drop downs, setting values for uniqueness then adding them to class

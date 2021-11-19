@@ -3,17 +3,19 @@ import json
 import numpy as np
 import pandas as pd
 from django.db.models import F, Sum, Avg
+from natsort import natsorted
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from alignment.models import PafSummaryCov
 from alignment.utils import _human_key, get_alignment_result_dir, get_or_create_array
+from minknow_data.models import Flowcell
 from reads.models import Barcode, JobMaster
 from reference.models import ReferenceLine
 
 
-def sampler(array,array_length=5000):
+def sampler(array, array_length=5000):
     """
     If the array is too large > 50000 points, take a sample using steps until we have 50000 or less points
     :param array: A list of tuple values for expected benefit steps
@@ -25,6 +27,39 @@ def sampler(array,array_length=5000):
     # Slice is step size
     sampled_array = array[0::step_size]
     return sampled_array
+
+
+@api_view(["GET"])
+def get_cnv_barcodes(request, pk):
+    """
+    Get the CNV barcodes
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The rest framework request object
+    pk: int
+        The primary key of the flowcell
+
+    Returns
+    -------
+    None
+    """
+    flowcell = Flowcell.objects.get(pk=pk, owner_id=request.user.id)
+    runs = flowcell.runs.all().values_list("id", flat=True)
+    jobs = JobMaster.objects.filter(run_id__in=runs)
+    barcode_results = set()
+    for job in jobs:
+        barcodes = set(
+            PafSummaryCov.objects.filter(job_master=job).values_list(
+                "barcode_name", "barcode_id"
+            )
+        )
+        barcode_results.update(barcodes)
+
+    return Response(
+        natsorted(barcode_results, key=lambda x: x[0]), status=status.HTTP_200_OK
+    )
+
 
 @api_view(["GET"])
 def coverage_detail(
@@ -55,14 +90,15 @@ def coverage_detail(
     """
 
     # Get the barcode name so we can recover all the results for this run.
-
     barcode = Barcode.objects.get(pk=barcode_id)
     job_master = JobMaster.objects.get(pk=task_id)
     # todo i guess this should be different (add a run to the drop downs)
     run = job_master.flowcell.runs.last()
     contig = ReferenceLine.objects.get(pk=chromosome_id)
     folder_dir = get_alignment_result_dir(run.runid, create=False)
-    array_path = get_or_create_array(folder_dir, contig_name=contig.line_name, barcode_name=barcode.name)
+    array_path = get_or_create_array(
+        folder_dir, contig_name=contig.line_name, barcode_name=barcode.name
+    )
     if not array_path.exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
     mem_map = np.load(array_path, mmap_mode="r")
@@ -77,8 +113,8 @@ def coverage_detail(
     factor = int((end - start) / 1800)
     factor = 1 if factor < 1 else factor
     x_coords = x_coords[::factor]
-    rejected_new_data = mem_map[1,start:end:factor]
-    sequenced_new_data = mem_map[0,start:end:factor]
+    rejected_new_data = mem_map[1, start:end:factor]
+    sequenced_new_data = mem_map[0, start:end:factor]
     seq_coords = list(zip(x_coords, sequenced_new_data))
     rej_coords = list(zip(x_coords, rejected_new_data))
     # sum_to_check = mem_map.sum()
@@ -90,11 +126,8 @@ def coverage_detail(
     )
 
 
-
 @api_view(["GET"])
-def coverage_master(
-    request, task_id, barcode_id, read_type_id, chromosome_id
-):
+def coverage_master(request, task_id, barcode_id, read_type_id, chromosome_id):
     """
     Fetch data for coverage master charts
     Parameters
@@ -114,7 +147,7 @@ def coverage_master(
     -------
 
     """
-    #Get the barcode name so we can recover all the results for this run.
+    # Get the barcode name so we can recover all the results for this run.
     pixels = 3600
     barcode = Barcode.objects.get(pk=barcode_id)
     job_master = JobMaster.objects.get(pk=task_id)
@@ -122,7 +155,9 @@ def coverage_master(
     run = job_master.flowcell.runs.last()
     contig = ReferenceLine.objects.get(pk=chromosome_id)
     folder_dir = get_alignment_result_dir(run.runid, create=False)
-    array_path = get_or_create_array(folder_dir, contig_name=contig.line_name, barcode_name=barcode.name)
+    array_path = get_or_create_array(
+        folder_dir, contig_name=contig.line_name, barcode_name=barcode.name
+    )
     if not array_path.exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
     mem_map = np.load(array_path, mmap_mode="r")
@@ -144,10 +179,115 @@ def coverage_master(
         {"newChartData": new_data, "refLength": length, "sumToCheck": sum_to_check},
         status=status.HTTP_200_OK,
     )
-    #return Response(
-    #    {"newChartData": queryset, "chartData": queryset, "refLength": length, "sumToCheck": sum_to_check},
-    #    status=status.HTTP_200_OK,
-    #)
+
+
+@api_view(["GET"])
+def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
+    """
+    get the xy scatter coordinates of the CNV ploidy chart
+    Parameters
+    ----------
+    request: rest_framework.Request.request
+        Django rest framework object
+    pk: int
+        The primary key of the flowcell
+    barcode_pk: int
+        Primary key of the barcode to look at
+    expected_ploidy: int
+        The expected ploidy, should be 2
+
+    Returns
+    -------
+    dict of lists
+        Sum to check, to redraw
+        new chart data in list of tuple (xy coordinates)
+    """
+    expected_ploidy = int(expected_ploidy)
+    flowcell = Flowcell.objects.get(pk=pk)
+    barcode = Barcode.objects.get(pk=barcode_pk).name
+    runs = flowcell.runs.all().values_list("id", flat=True)
+    jobs = JobMaster.objects.filter(run_id__in=runs)
+    array_path_me_baby = {}
+    result_me_baby = {}
+    # reads_per_bin = 10
+    for job in jobs:
+        genome_length = job.reference.length
+        result_dir = get_alignment_result_dir(job.run.runid, create=False)
+        # bin size
+        cumsum_chromosome_lengths = np.cumsum(
+            [0]
+            + list(
+                map(
+                    int,
+                    job.reference.reference_lines.values_list(
+                        "chromosome_length", flat=True
+                    ),
+                )
+            )
+        )
+        # we need this below in order to move the contig coordinates the correct amount along the graph
+        chromo_name_to_length = dict(
+            zip(
+                job.reference.reference_lines.values_list("line_name", flat=True),
+                cumsum_chromosome_lengths,
+            )
+        )
+        total_map_starts = 0
+        array_path_me_baby[barcode] = natsorted(
+            list(result_dir.rglob(f"{barcode}/*/*cnv_bins.npy")),
+            key=lambda x: x.parts[-2],
+        )
+        # get the total mapping starts per barcode
+        for contig_array_path in array_path_me_baby[barcode]:
+            if contig_array_path.parts[-2] == "chrM":
+                continue
+            contig_array_mmap = np.load(contig_array_path, mmap_mode="r")
+            total_map_starts += contig_array_mmap[0].sum()
+        bin_size = 50000
+        for contig_array_path in array_path_me_baby[barcode]:
+            contig_name = contig_array_path.parts[-2]
+            if contig_name == "chrM":
+                continue
+            bin_slice = np.ceil(bin_size / 10).astype(int)
+            contig_array = np.load(contig_array_path)
+            new_bin_values = np.fromiter(
+                (
+                    contig_array[0][start : start + bin_slice].sum()
+                    for start in range(0, contig_array[0].size + 1, bin_slice)
+                ),
+                dtype=np.float64,
+            )
+            median_bin_value = np.median(new_bin_values)
+            x_coords = range(
+                0 + chromo_name_to_length[contig_name],
+                (contig_array[0].size + 1) * 10
+                + chromo_name_to_length[contig_name],
+                bin_slice * 10,
+            )
+            binned_ploidys = np.nan_to_num(
+                new_bin_values / median_bin_value * expected_ploidy,
+                nan=0,
+                posinf=0,
+            ).round(decimals=5)
+            
+            result_me_baby[contig_name] = np.array(
+                list(zip(
+                    x_coords, binned_ploidys
+                ))
+            )[binned_ploidys!=0]
+            # algo_c = rpt.KernelCPD(kernel="linear", min_size=10).fit(
+            #     binned_ploidys
+            # )
+            # # guesstimated parameter for how big a shift needs to be.
+            # penalty_value = 3
+            #
+            # # The value of my_bkps is the coordinate in the sample data where a break occurs.
+            # # This therefore needs to be converted back to the BIN value where this occured.
+            # # thus for each point in the my_bkps we need to grab the row from the data table.
+            #
+            # my_bkps = algo_c.predict(pen=penalty_value)
+        result_me_baby["plotting_data"] = chromo_name_to_length
+        return Response(result_me_baby)
 
 
 @api_view(["GET"])
@@ -184,17 +324,25 @@ def paf_summary_table_json(request, pk):
             "average_read_length",
         )
     )
-    df = pd.DataFrame.from_records(
-                queryset
+    df = pd.DataFrame.from_records(queryset)
+    df2 = (
+        df.groupby(
+            by=[
+                "barcode_name",
+                "chromosome_name",
+                "job_master_id",
+                "reference_line_length",
+                "reference_name",
+            ]
+        )
+        .sum()
+        .reset_index()
     )
-    df2 = df.groupby(
-        by=['barcode_name', 'chromosome_name', 'job_master_id', 'reference_line_length','reference_name']).sum().reset_index()
     # df2['average_read_length'] = (df2['total_yield'] / df2['read_count']).astype(int)
     # df2['coverage'] = (df2['total_yield'] / df2['reference_line_length']).astype(float)
 
-
     result = {
-        #"data": queryset,
+        # "data": queryset,
         "data": df2.to_dict(orient="records"),
     }
     return Response(result, status=200)
@@ -307,7 +455,7 @@ def mapped_references_by_flowcell_list(request, flowcell_id):
             "No flowcell ID slug provided", status=status.HTTP_400_BAD_REQUEST
         )
 
-    #ToDo: This is returning multiple barcodes when really we want to return just one.
+    # ToDo: This is returning multiple barcodes when really we want to return just one.
     references = (
         PafSummaryCov.objects.filter(job_master__flowcell__id=flowcell_id)
         .exclude(job_master__job_type_id=16)
@@ -350,22 +498,38 @@ def per_genome_coverage_summary(request, flowcell_pk):
     categories = list(query.values_list("chromosome_name", flat=True).distinct())
     categories.sort(key=_human_key)
     queryset = list(
-        query
-        .values("chromosome_name", "barcode_name", "reference_line_length")
-        .annotate(
-            Sum("total_yield"),
-            Avg("average_read_length"),
+        query.values(
+            "chromosome_name", "barcode_name", "reference_line_length"
+        ).annotate(
+            Sum("total_yield"), Avg("average_read_length"),
         )
     )
-    a = {f"{q['chromosome_name']}--{q['barcode_name']}": q["total_yield__sum"]/q["reference_line_length"] for q in queryset}
-    cov_series = [{"name": barcode_name, "data": [a.get(f"{cat}--{barcode_name}", 0) for cat in categories]} for
-              barcode_name in query.values_list("barcode_name", flat=True).distinct()]
-    a = {f"{q['chromosome_name']}--{q['barcode_name']}": q["average_read_length__avg"] for q in queryset}
-    read_len_series = [{"name": barcode_name, "data": [a.get(f"{cat}--{barcode_name}", 0) for cat in categories]} for
-                  barcode_name in query.values_list("barcode_name", flat=True).distinct()]
+    a = {
+        f"{q['chromosome_name']}--{q['barcode_name']}": q["total_yield__sum"]
+        / q["reference_line_length"]
+        for q in queryset
+    }
+    cov_series = [
+        {
+            "name": barcode_name,
+            "data": [a.get(f"{cat}--{barcode_name}", 0) for cat in categories],
+        }
+        for barcode_name in query.values_list("barcode_name", flat=True).distinct()
+    ]
+    a = {
+        f"{q['chromosome_name']}--{q['barcode_name']}": q["average_read_length__avg"]
+        for q in queryset
+    }
+    read_len_series = [
+        {
+            "name": barcode_name,
+            "data": [a.get(f"{cat}--{barcode_name}", 0) for cat in categories],
+        }
+        for barcode_name in query.values_list("barcode_name", flat=True).distinct()
+    ]
     results = {
         "coverageData": cov_series,
         "avgRLData": read_len_series,
-        "categories": categories
+        "categories": categories,
     }
     return Response(results, status=status.HTTP_200_OK)
