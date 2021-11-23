@@ -242,14 +242,15 @@ def cnv_detail_chart(
         binned_ploidys = np.nan_to_num(
             new_bin_values / median_bin_value * expected_ploidy, nan=0, posinf=0,
         ).round(decimals=5)
+
         if "points" not in results:
-            results["points"] = np.array(list(zip(x_coords, binned_ploidys)))[
-                binned_ploidys != 0
-            ]
+            results["points"] = np.array(list(zip(x_coords, binned_ploidys)))#[
+                #binned_ploidys != 0
+            #]
         else:
-            results["points"] += np.array(list(zip(x_coords, binned_ploidys)))[
-                binned_ploidys != 0
-            ]
+            results["points"] += np.array(list(zip(x_coords, binned_ploidys)))#[
+                #binned_ploidys != 0
+            #]
 
     algo_c = rpt.KernelCPD(kernel="linear", min_size=int(min_diff)).fit(
         results["points"][:, 1]
@@ -264,7 +265,6 @@ def cnv_detail_chart(
         band_x_coords = []
         for x in my_bkps:
             print(x)
-
             band_x_coords.append(results["points"][x-1][0])
         my_bkps = [0] + band_x_coords + [contig_length]
     results["plot_bands"] = my_bkps
@@ -305,17 +305,10 @@ def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
         genome_length = job.reference.length
         result_dir = get_alignment_result_dir(job.run.runid, create=False)
         # bin size
-        cumsum_chromosome_lengths = np.cumsum(
-            [0]
-            + list(
-                map(
-                    int,
-                    job.reference.reference_lines.values_list(
-                        "chromosome_length", flat=True
-                    ),
-                )
-            )
-        )
+
+        length_list = np.array(natsorted(job.reference.reference_lines.values_list("line_name", "chromosome_length"), key=lambda x: x[0]))
+        cumsum_chromosome_lengths = [0]+np.cumsum(length_list[:, 1].astype(int)).tolist()
+
         # we need this below in order to move the contig coordinates the correct amount along the graph
         chromo_name_to_length = dict(
             zip(
@@ -363,12 +356,14 @@ def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
                 new_bin_values / median_bin_value * expected_ploidy, nan=0, posinf=0,
             ).round(decimals=5)
 
-            result_me_baby[contig_name] = np.array(list(zip(x_coords, binned_ploidys)))[
-                binned_ploidys != 0
-            ]
+            result_me_baby[contig_name] = np.array(list(zip(x_coords, binned_ploidys)))#[
+            #    binned_ploidys != 0
+            #]
             points = result_me_baby[contig_name].shape[0]
             desired_points = 25000
             step = np.ceil(points / desired_points).astype(int)
+            print (f"points is {points}, step is {step}")
+            step = 1 if step < 1 else step
             result_me_baby[contig_name] = result_me_baby[contig_name][::step]
 
         result_me_baby["plotting_data"] = chromo_name_to_length
