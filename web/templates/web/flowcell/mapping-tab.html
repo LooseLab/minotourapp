@@ -45,6 +45,26 @@
                 Hello world
             </div>
         </div>
+        <div class="row">
+            Look below for some tasty per contig in-depth detail. Select penalty values and min difference for ruptures.
+        </div>
+        <div class="row">
+            <form class="form-horizontal">
+                <div class="form-group">
+                    <label for="contigCNVDetail" style="display: inline">Contig:</label>
+                    <select id="contigCNVDetail" class="custom-select ms">
+                        <option id="cnv-deet-placeholder">Please choose...</option>
+                    </select>
+                    <label for="penalty-value" style="display: inline">Ruptures penalty: </label>
+                    <input type="number" id="penalty-value" value="3">
+                    <label for="min-size-value" style="display: inline">Ruptures min size value: </label>
+                    <input type="number" id="min-size-value" value="5">
+                </div>
+            </form>
+            <div class="col-md-12 highcharts" id="detail-cnv-me">
+                H
+            </div>
+        </div>
     </div>
 </div>
 <div class="card card-primary card-outline">

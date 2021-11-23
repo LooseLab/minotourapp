@@ -10,7 +10,7 @@ class AlignmentController {
     this._axiosInstance = axios.create({
       headers: { 'X-CSRFToken': getCookie(`csrftoken`) }
     })
-    this.cnvChartController = new CnvChartController(`cnv-me`, flowcellId)
+    this.cnvChartController = new CnvChartController(`cnv-me`, flowcellId, `detail-cnv-me`)
     this._selectData = []
     this._readTypeSelect = $(`#readTypeSelect`)
     this._referenceSelect = $(`#referenceSelect`)
@@ -102,7 +102,7 @@ class AlignmentController {
   }
 
   /**
-   * Add the zoom reset to the rest button
+   * Add the zoom reset to the reset button
    * @private
    */
   _addListenerToResetButton () {

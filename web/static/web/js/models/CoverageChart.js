@@ -198,7 +198,6 @@ class CoverageChart {
       },
       tooltip: {
         pointFormatter: function () {
-          console.log(this)
           return `<span style="color:{this.color}">●</span> The coverage for bin ${this.x} - ${this.x + 10}: <b>${this.y}</b><br/>`
         }
       }

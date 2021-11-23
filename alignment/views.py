@@ -1,7 +1,9 @@
 import json
+from typing import Tuple, List
 
 import numpy as np
 import pandas as pd
+import ruptures as rpt
 from django.db.models import F, Sum, Avg
 from natsort import natsorted
 from rest_framework import status
@@ -182,6 +184,95 @@ def coverage_master(request, task_id, barcode_id, read_type_id, chromosome_id):
 
 
 @api_view(["GET"])
+def cnv_detail_chart(
+    request, pk: int, barcode_pk: int, contig_name: str, pen_value: int, min_diff: int
+):
+    """
+    Cnv Detail chart - get the starts from one barcode
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+    pk: int
+        Flowcell primary key
+    barcode_pk: int:
+        Barcode Primary key
+    contig_name: str
+        Name of the contig
+    pen_value: int
+        Penalty value
+    min_diff: int
+        The minimum difference
+
+    Returns
+    -------
+    dict of list
+        Points: List[Tuple[int, int]]
+        plot_band: List[int]
+    """
+    flowcell = Flowcell.objects.get(pk=pk)
+    barcode = Barcode.objects.get(pk=barcode_pk).name
+    runs = flowcell.runs.all().values_list("id", flat=True)
+    jobs = JobMaster.objects.filter(run_id__in=runs)
+    expected_ploidy = 2
+    if not jobs:
+        return Response([], status=status.HTTP_204_NO_CONTENT)
+    results = {}
+    for job in jobs:
+        result_dir = get_alignment_result_dir(job.run.runid, create=False)
+        array_path = result_dir / f"{barcode}/{contig_name}/{contig_name}_cnv_bins.npy"
+        if not array_path.exists():
+            print("no array")
+            continue
+        contig_array = np.load(array_path)
+        total_starts = contig_array[0].sum()
+        contig_length = contig_array[0].shape[0] * 10
+        reads_per_bin = 100
+        bin_slice = np.ceil(contig_length / (total_starts / reads_per_bin)).astype(int) / 10
+        bin_slice = int(bin_slice)
+        print("bin slice", bin_slice)
+        new_bin_values = np.fromiter(
+            (
+                contig_array[0][start : start + bin_slice].sum()
+                for start in range(0, contig_array[0].size + 1, bin_slice)
+            ),
+            dtype=np.float64,
+        )
+        median_bin_value = np.median(new_bin_values[new_bin_values != 0])
+        x_coords = range(0, (contig_array[0].size + 1) * 10, bin_slice * 10,)
+        binned_ploidys = np.nan_to_num(
+            new_bin_values / median_bin_value * expected_ploidy, nan=0, posinf=0,
+        ).round(decimals=5)
+        if "points" not in results:
+            results["points"] = np.array(list(zip(x_coords, binned_ploidys)))[
+                binned_ploidys != 0
+            ]
+        else:
+            results["points"] += np.array(list(zip(x_coords, binned_ploidys)))[
+                binned_ploidys != 0
+            ]
+
+    algo_c = rpt.KernelCPD(kernel="linear", min_size=int(min_diff)).fit(
+        results["points"][:, 1]
+    )
+    # guesstimated parameter for how big a shift needs to be.
+    # The value of my_bkps is the coordinate in the sample data where a break occurs.
+    # This therefore needs to be converted back to the BIN value where this occured.
+    # thus for each point in the my_bkps we need to grab the row from the data table.
+    my_bkps = algo_c.predict(pen=int(pen_value))
+    print(my_bkps)
+    if my_bkps:
+        band_x_coords = []
+        for x in my_bkps:
+            print(x)
+
+            band_x_coords.append(results["points"][x-1][0])
+        my_bkps = [0] + band_x_coords + [contig_length]
+    results["plot_bands"] = my_bkps
+    results["contig"] = contig_name
+    return Response(results, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
 def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
     """
     get the xy scatter coordinates of the CNV ploidy chart
@@ -209,7 +300,7 @@ def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
     jobs = JobMaster.objects.filter(run_id__in=runs)
     array_path_me_baby = {}
     result_me_baby = {}
-    # reads_per_bin = 10
+    reads_per_bin = 250
     for job in jobs:
         genome_length = job.reference.length
         result_dir = get_alignment_result_dir(job.run.runid, create=False)
@@ -228,7 +319,9 @@ def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
         # we need this below in order to move the contig coordinates the correct amount along the graph
         chromo_name_to_length = dict(
             zip(
-                job.reference.reference_lines.values_list("line_name", flat=True),
+                natsorted(
+                    job.reference.reference_lines.values_list("line_name", flat=True)
+                ),
                 cumsum_chromosome_lengths,
             )
         )
@@ -243,12 +336,15 @@ def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
                 continue
             contig_array_mmap = np.load(contig_array_path, mmap_mode="r")
             total_map_starts += contig_array_mmap[0].sum()
-        bin_size = 50000
+        # in bases not 10 bases
+        bin_size = int(genome_length / (total_map_starts / reads_per_bin))
         for contig_array_path in array_path_me_baby[barcode]:
             contig_name = contig_array_path.parts[-2]
             if contig_name == "chrM":
                 continue
             bin_slice = np.ceil(bin_size / 10).astype(int)
+            print(f"bin slice {contig_name}", bin_slice)
+
             contig_array = np.load(contig_array_path)
             new_bin_values = np.fromiter(
                 (
@@ -260,32 +356,21 @@ def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
             median_bin_value = np.median(new_bin_values)
             x_coords = range(
                 0 + chromo_name_to_length[contig_name],
-                (contig_array[0].size + 1) * 10
-                + chromo_name_to_length[contig_name],
+                (contig_array[0].size + 1) * 10 + chromo_name_to_length[contig_name],
                 bin_slice * 10,
             )
             binned_ploidys = np.nan_to_num(
-                new_bin_values / median_bin_value * expected_ploidy,
-                nan=0,
-                posinf=0,
+                new_bin_values / median_bin_value * expected_ploidy, nan=0, posinf=0,
             ).round(decimals=5)
-            
-            result_me_baby[contig_name] = np.array(
-                list(zip(
-                    x_coords, binned_ploidys
-                ))
-            )[binned_ploidys!=0]
-            # algo_c = rpt.KernelCPD(kernel="linear", min_size=10).fit(
-            #     binned_ploidys
-            # )
-            # # guesstimated parameter for how big a shift needs to be.
-            # penalty_value = 3
-            #
-            # # The value of my_bkps is the coordinate in the sample data where a break occurs.
-            # # This therefore needs to be converted back to the BIN value where this occured.
-            # # thus for each point in the my_bkps we need to grab the row from the data table.
-            #
-            # my_bkps = algo_c.predict(pen=penalty_value)
+
+            result_me_baby[contig_name] = np.array(list(zip(x_coords, binned_ploidys)))[
+                binned_ploidys != 0
+            ]
+            points = result_me_baby[contig_name].shape[0]
+            desired_points = 25000
+            step = np.ceil(points / desired_points).astype(int)
+            result_me_baby[contig_name] = result_me_baby[contig_name][::step]
+
         result_me_baby["plotting_data"] = chromo_name_to_length
         return Response(result_me_baby)
 
