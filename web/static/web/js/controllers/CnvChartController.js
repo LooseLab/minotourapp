@@ -3,25 +3,28 @@ class CnvChartController {
     this.cnvChart = new CnvChart(divId)
     this._cnvDetailChart = new CnvChart(detailDivId)
     this._barcodeCnvSelect = $(`#barcodeCNVSelect`)
+    this._expectedPloidySelect = $(`#ploidy-value`)
     this._barcodesLoaded = new Set()
+    this._flowcellId = flowcellId
+    this._selectedDetailContig = ``
     this._axiosInstance = axios.create({
       headers: { 'X-CSRFToken': getCookie(`csrftoken`) }
     })
+    this._cnvDetailContigSelect = $(`#contigCNVDetail`)
     this._barcodeCnvSelect.on(
       `change`, (event) => {
         const barcodePk = this._barcodeCnvSelect.find(`:selected`).attr(`data-pk`)
-        const url = `/api/v1/alignment/${flowcellId}/cnv-chart/${barcodePk}/2`
+        const expectedPloidy = this._expectedPloidySelect.val()
+        const url = `/api/v1/alignment/${flowcellId}/cnv-chart/${barcodePk}/${expectedPloidy}`
         this._cnvSelectChange(event, url, this._axiosInstance)
+        if (this._cnvDetailContigSelect.find(`:selected`).attr(`id`) !== `cnv-deet-placeholder`) {
+          this._selectedDetailContig = this._cnvDetailContigSelect.find(`:selected`).val()
+          this._contigSelectChange(event, this._axiosInstance)
+        }
       })
-    this._cnvDetailContigSelect = $(`#contigCNVDetail`)
     this._cnvDetailContigSelect.on(
       `change`, event => {
-        const contigName = this._cnvDetailContigSelect.find(`:selected`).val()
-        const barcodePk = this._barcodeCnvSelect.find(`:selected`).attr(`data-pk`)
-        const minDiff = $(`#penalty-value`).val()
-        const penValue = $(`#min-size-value`).val()
-        const url = `/api/v1/alignment/${flowcellId}/cnv-chart-detail/${barcodePk}/${contigName}/${penValue}/${minDiff}/${this._bin_slice}/${this._median_bin_value}`
-        this._contigSelectChange(event, url, this._axiosInstance)
+        this._contigSelectChange(event, this._axiosInstance)
       }
     )
   }
@@ -30,7 +33,13 @@ class CnvChartController {
     return this._cnvDetailChart
   }
 
-  _contigSelectChange (event, url, axiosInstance) {
+  _contigSelectChange (event, axiosInstance) {
+    const contigName = this._cnvDetailContigSelect.find(`:selected`).val()
+    const expectedPloidy = this._expectedPloidySelect.val()
+    const barcodePk = this._barcodeCnvSelect.find(`:selected`).attr(`data-pk`)
+    const minDiff = $(`#penalty-value`).val()
+    const penValue = $(`#min-size-value`).val()
+    const url = `/api/v1/alignment/${this._flowcellId}/cnv-chart-detail/${barcodePk}/${contigName}/${expectedPloidy}/${penValue}/${minDiff}/${this._bin_slice}/${this._median_bin_value}`
     this._cnvDetailContigSelect.find(`#cnv-deet-placeholder`).remove()
     this._loadDetailChartData(url, axiosInstance)
   }
@@ -61,7 +70,7 @@ class CnvChartController {
       this._cnvDetailChart.cnvChart.series[0].remove(false, false)
     }
     const colors = [`#f7c9c9`, `#B8e2f2`]
-
+    this._cnvDetailChart.cnvChart.yAxis[0].removePlotLine(`exp-ploidy`)
     axiosInstance.get(url).then(
       response => {
         console.log(response.data)
@@ -79,14 +88,11 @@ class CnvChartController {
         this._cnvDetailChart.cnvChart.yAxis[0].addPlotLine({
           color: `black`,
           width: 2,
-          value: 2,
-          zIndex: 3
+          value: this._expectedPloidySelect.val(),
+          zIndex: 3,
+          id: `exp-ploidy`
         })
         plotBands.forEach((band, ind) => {
-          // console.log(band)
-          // console.log(ind)
-          // console.log(plotBands.length)
-          // console.log(ind !== plotBands.length-1)
           if (ind !== plotBands.length - 1) {
             this._cnvDetailChart.cnvChart.xAxis[0].addPlotBand(
               {
@@ -113,6 +119,7 @@ class CnvChartController {
     while (this.cnvChart.cnvChart.series.length > 0) {
       this.cnvChart.cnvChart.series[0].remove(false, false)
     }
+    this.cnvChart.cnvChart.yAxis[0].removePlotLine(`exp-ploidy`)
 
     axiosInstance.get(url).then(
       response => {
@@ -121,8 +128,12 @@ class CnvChartController {
         const cnvContigDropDowns = [`<option id="cnv-deet-placeholder">Please choose...</option>`]
         Object.entries(response.data).forEach(
           ([key, value]) => {
-            if (!['plotting_data','bin_slice','median_bin_value'].includes(key)) {
-              cnvContigDropDowns.push(`<option value="${key}">${key}</option>`)
+            if (key === `bin_slice`){
+              $(`#bin-width-value`).html(value * 10)
+            }
+            if (![`plotting_data`, `bin_slice`, `median_bin_value`].includes(key)) {
+              const selected = key === this._selectedDetailContig ? `selected` : ``
+              cnvContigDropDowns.push(`<option value="${key}" ${selected}>${key}</option>`)
               this.cnvChart.cnvChart.addSeries({
                 name: key,
                 data: value,
@@ -136,8 +147,9 @@ class CnvChartController {
         this.cnvChart.cnvChart.yAxis[0].addPlotLine({
           color: `black`,
           width: 2,
-          value: 2,
-          zIndex: 3
+          value: this._expectedPloidySelect.val(),
+          zIndex: 3,
+          id: `exp-ploidy`
         })
         this.cnvChart.cnvChart.hideLoading()
         this.cnvChart.cnvChart.redraw()
