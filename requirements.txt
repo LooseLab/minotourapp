@@ -26,3 +26,4 @@ matplotlib
 scipy
 readpaf
 toytree
+ruptures
