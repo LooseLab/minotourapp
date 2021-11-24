@@ -45,7 +45,7 @@ urlpatterns = [
         name="cnv-barcodes"
     ),
     url(
-        r'^api/v1/alignment/(?P<pk>[0-9]+)/cnv-chart-detail/(?P<barcode_pk>[0-9]+)/(?P<contig_name>[a-zA-Z0-9 ]+)/(?P<pen_value>[0-9]+)/(?P<min_diff>[0-9]+)/(?P<bin_slice>[0-9]+)/(?P<median_bin_value>[0-9]+)$',
+        r'^api/v1/alignment/(?P<pk>[0-9]+)/cnv-chart-detail/(?P<barcode_pk>[0-9]+)/(?P<contig_name>[a-zA-Z0-9 ]+)/(?P<exp_ploidy>[0-9]+)/(?P<pen_value>[0-9]+)/(?P<min_diff>[0-9]+)/(?P<bin_slice>[0-9]+)/(?P<median_bin_value>[0-9]+)$',
         views.cnv_detail_chart,
         name="cnv-detail-chart"
     )

@@ -45,13 +45,15 @@ def read_fastq_to_dict(file_path):
     return result_list
 
 
-def get_alignment_result_dir(run_id: str, create: bool = False) -> Path:
+def get_alignment_result_dir(run_id: str, username: str, create: bool = False) -> Path:
     """
     Get the alignment folder for this run
     Parameters
     ----------
     run_id: str
         The run id of the data
+    username: str
+        The username of the user creating the task
     create: bool
         Create the directory if it doesn't exist default False
     Returns
@@ -60,7 +62,7 @@ def get_alignment_result_dir(run_id: str, create: bool = False) -> Path:
         Path to the Artic results dir
     """
     alignment_results_path = (
-        Path(get_env_variable("MT_ALIGNMENT_DATA_DIR")) / "alignment" / run_id
+        Path(get_env_variable("MT_ALIGNMENT_DATA_DIR")) / "alignment" / f"{run_id}_{username}"
     )
     if create:
         alignment_results_path.mkdir(exist_ok=True, parents=True)

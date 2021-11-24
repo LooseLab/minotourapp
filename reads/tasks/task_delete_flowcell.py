@@ -123,7 +123,7 @@ def delete_flowcell(flowcell_id):
         # TODO could this be rewritten into celery chunks?
         delete_flowcell.apply_async(args=(flowcell_id,))
     else:
-        if PafSummaryCov.objects.filter(flowcell=flowcell).count():
+        if PafSummaryCov.objects.filter(job_master__in=flowcell.flowcell_jobs.all()).count():
             for fj in flowcell.flowcell_jobs.filter(job_type_id__in={4, 5}):
                 delete_alignment_task(fj.id)
         affected = flowcell.delete()

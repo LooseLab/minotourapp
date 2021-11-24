@@ -97,7 +97,7 @@ def coverage_detail(
     # todo i guess this should be different (add a run to the drop downs)
     run = job_master.flowcell.runs.last()
     contig = ReferenceLine.objects.get(pk=chromosome_id)
-    folder_dir = get_alignment_result_dir(run.runid, create=False)
+    folder_dir = get_alignment_result_dir(run.runid, run.owner.username, create=False)
     array_path = get_or_create_array(
         folder_dir, contig_name=contig.line_name, barcode_name=barcode.name
     )
@@ -156,7 +156,7 @@ def coverage_master(request, task_id, barcode_id, read_type_id, chromosome_id):
     # todo i guess this should be different (add a run to the drop downs)
     run = job_master.flowcell.runs.last()
     contig = ReferenceLine.objects.get(pk=chromosome_id)
-    folder_dir = get_alignment_result_dir(run.runid, create=False)
+    folder_dir = get_alignment_result_dir(run.runid, run.owner.username, create=False)
     array_path = get_or_create_array(
         folder_dir, contig_name=contig.line_name, barcode_name=barcode.name
     )
@@ -185,7 +185,7 @@ def coverage_master(request, task_id, barcode_id, read_type_id, chromosome_id):
 
 @api_view(["GET"])
 def cnv_detail_chart(
-    request, pk: int, barcode_pk: int, contig_name: str, pen_value: int, min_diff: int, bin_slice: int, median_bin_value: int
+    request, pk: int, barcode_pk: int, contig_name: str, exp_ploidy: int, pen_value: int, min_diff: int, bin_slice: int, median_bin_value: int
 ):
     """
     Cnv Detail chart - get the starts from one barcode
@@ -198,6 +198,8 @@ def cnv_detail_chart(
         Barcode Primary key
     contig_name: str
         Name of the contig
+    exp_ploidy: int
+        The expected ploidy of the genome, set in the UI
     pen_value: int
         Penalty value
     min_diff: int
@@ -213,13 +215,12 @@ def cnv_detail_chart(
     barcode = Barcode.objects.get(pk=barcode_pk).name
     runs = flowcell.runs.all().values_list("id", flat=True)
     jobs = JobMaster.objects.filter(run_id__in=runs)
-    expected_ploidy = 2
+    expected_ploidy = int(exp_ploidy)
     if not jobs:
         return Response([], status=status.HTTP_204_NO_CONTENT)
     results = {}
     for job in jobs:
-        result_dir = get_alignment_result_dir(job.run.runid, create=False)
-
+        result_dir = get_alignment_result_dir(job.run.runid, job.run.owner.username, create=False)
         array_path = result_dir / f"{barcode}/{contig_name}/{contig_name}_cnv_bins.npy"
         if not array_path.exists():
             print("no array")
@@ -265,7 +266,6 @@ def cnv_detail_chart(
     if my_bkps:
         band_x_coords = []
         for x in my_bkps:
-            print(x)
             band_x_coords.append(results["points"][x-1][0])
         my_bkps = [0] + band_x_coords + [contig_length]
     results["plot_bands"] = my_bkps
@@ -304,7 +304,7 @@ def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
     reads_per_bin = 250
     for job in jobs:
         genome_length = job.reference.length
-        result_dir = get_alignment_result_dir(job.run.runid, create=False)
+        result_dir = get_alignment_result_dir(job.run.runid, job.run.owner.username, create=False)
         # bin size
 
         length_list = np.array(natsorted(job.reference.reference_lines.values_list("line_name", "chromosome_length"), key=lambda x: x[0]))

@@ -152,7 +152,7 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
     if not results:
         raise FileNotFoundError("No mapping results.")
     run_id = Run.objects.get(pk=fasta_list[0]["run"]).runid
-    folder_dir = get_alignment_result_dir(run_id, create=True)
+    folder_dir = get_alignment_result_dir(run_id, job_master.run.owner.username, create=True)
     # Rejected barcode primary key unblocked or sequenced bool, True is unblocked
     get_rejected = {
         barcode.id: barcode.name == "Unblocked"
