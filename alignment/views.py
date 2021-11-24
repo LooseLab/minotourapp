@@ -183,6 +183,16 @@ def coverage_master(request, task_id, barcode_id, read_type_id, chromosome_id):
     )
 
 
+def same_dist_elems(arr):
+    if len(arr)>1:
+        diff = arr[1] - arr[0]
+        for x in range(1, len(arr) - 1):
+            if arr[x + 1] - arr[x] != diff:
+                return False
+        return True
+    else:
+        return False
+
 @api_view(["GET"])
 def cnv_detail_chart(
     request, pk: int, barcode_pk: int, contig_name: str, exp_ploidy: int, pen_value: int, min_diff: int, bin_slice: int, median_bin_value: int
@@ -254,14 +264,35 @@ def cnv_detail_chart(
                 #binned_ploidys != 0
             #]
 
-    algo_c = rpt.KernelCPD(kernel="rbf", min_size=int(min_diff)).fit(
+    algo_c = rpt.KernelCPD(kernel="linear", min_size=int(min_diff)).fit(
         results["points"][:, 1]
     )
     # guesstimated parameter for how big a shift needs to be.
     # The value of my_bkps is the coordinate in the sample data where a break occurs.
     # This therefore needs to be converted back to the BIN value where this occured.
     # thus for each point in the my_bkps we need to grab the row from the data table.
-    my_bkps = algo_c.predict(pen=int(pen_value))
+
+    # This block of code catches an error where the breakpoints are all precisely spread
+    # We presume this isn't true and so recalculate the breakpoints.
+    # This can end up being in an infinite loop.
+    # To prevent that we set a crazy max iterations (25)
+    my_bkps = None
+    counter = 0
+    while not my_bkps:
+        counter+=1
+        test1 = algo_c.predict(pen=int(pen_value))
+    #    print ("test1:",test1)
+    #    print (type(test1))
+    #    print (same_dist_elems(test1))
+        if len(test1) > 2 and same_dist_elems(test1):
+            print ("Houston we have a problem.")
+        else:
+            my_bkps = test1
+        if counter >= 25:
+            mk_bkps = None
+            break
+
+    #my_bkps = algo_c.predict(pen=int(pen_value))
     print(my_bkps)
     if my_bkps:
         band_x_coords = []
