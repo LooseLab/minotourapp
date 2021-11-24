@@ -36,11 +36,19 @@ class CnvChart {
         usePreAllocated: true
       },
       plotOptions: {
-
+        //series: {
+        //    color: '#FF0000'
+        //}
       },
       title: {
-        text: `CNV ME`
+        text: `Copy Number Variation`
       },
+      yAxis: {
+        max: 8
+      },
+      tooltip: {
+        enabled: true
+    },
       legend: {
         symbolHeight: 12,
         symbolWidth: 12,

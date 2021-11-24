@@ -185,7 +185,7 @@ def coverage_master(request, task_id, barcode_id, read_type_id, chromosome_id):
 
 @api_view(["GET"])
 def cnv_detail_chart(
-    request, pk: int, barcode_pk: int, contig_name: str, pen_value: int, min_diff: int
+    request, pk: int, barcode_pk: int, contig_name: str, pen_value: int, min_diff: int, bin_slice: int, median_bin_value: int
 ):
     """
     Cnv Detail chart - get the starts from one barcode
@@ -219,15 +219,16 @@ def cnv_detail_chart(
     results = {}
     for job in jobs:
         result_dir = get_alignment_result_dir(job.run.runid, create=False)
+
         array_path = result_dir / f"{barcode}/{contig_name}/{contig_name}_cnv_bins.npy"
         if not array_path.exists():
             print("no array")
             continue
         contig_array = np.load(array_path)
-        total_starts = contig_array[0].sum()
+        #total_starts = contig_array[0].sum()
         contig_length = contig_array[0].shape[0] * 10
-        reads_per_bin = 100
-        bin_slice = np.ceil(contig_length / (total_starts / reads_per_bin)).astype(int) / 10
+        #reads_per_bin = 100
+        #bin_slice = np.ceil(contig_length / (total_starts / reads_per_bin)).astype(int) / 10
         bin_slice = int(bin_slice)
         print("bin slice", bin_slice)
         new_bin_values = np.fromiter(
@@ -237,10 +238,10 @@ def cnv_detail_chart(
             ),
             dtype=np.float64,
         )
-        median_bin_value = np.median(new_bin_values[new_bin_values != 0])
+        #median_bin_value = np.median(new_bin_values[new_bin_values != 0])
         x_coords = range(0, (contig_array[0].size + 1) * 10, bin_slice * 10,)
         binned_ploidys = np.nan_to_num(
-            new_bin_values / median_bin_value * expected_ploidy, nan=0, posinf=0,
+            new_bin_values / int(median_bin_value) * expected_ploidy, nan=0, posinf=0,
         ).round(decimals=5)
 
         if "points" not in results:
@@ -252,7 +253,7 @@ def cnv_detail_chart(
                 #binned_ploidys != 0
             #]
 
-    algo_c = rpt.KernelCPD(kernel="linear", min_size=int(min_diff)).fit(
+    algo_c = rpt.KernelCPD(kernel="rbf", min_size=int(min_diff)).fit(
         results["points"][:, 1]
     )
     # guesstimated parameter for how big a shift needs to be.
@@ -331,6 +332,7 @@ def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
             total_map_starts += contig_array_mmap[0].sum()
         # in bases not 10 bases
         bin_size = int(genome_length / (total_map_starts / reads_per_bin))
+        temp_holder_new_bin_values = list()
         for contig_array_path in array_path_me_baby[barcode]:
             contig_name = contig_array_path.parts[-2]
             if contig_name == "chrM":
@@ -346,7 +348,24 @@ def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
                 ),
                 dtype=np.float64,
             )
-            median_bin_value = np.median(new_bin_values)
+            temp_holder_new_bin_values.extend(new_bin_values.tolist())
+        median_bin_value = np.median(temp_holder_new_bin_values)
+        for contig_array_path in array_path_me_baby[barcode]:
+            contig_name = contig_array_path.parts[-2]
+            if contig_name == "chrM":
+                continue
+            bin_slice = np.ceil(bin_size / 10).astype(int)
+            print(f"bin slice {contig_name}", bin_slice)
+
+            contig_array = np.load(contig_array_path)
+            new_bin_values = np.fromiter(
+                (
+                    contig_array[0][start: start + bin_slice].sum()
+                    for start in range(0, contig_array[0].size + 1, bin_slice)
+                ),
+                dtype=np.float64,
+            )
+
             x_coords = range(
                 0 + chromo_name_to_length[contig_name],
                 (contig_array[0].size + 1) * 10 + chromo_name_to_length[contig_name],
@@ -367,6 +386,8 @@ def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
             result_me_baby[contig_name] = result_me_baby[contig_name][::step]
 
         result_me_baby["plotting_data"] = chromo_name_to_length
+        result_me_baby["bin_slice"]=bin_slice
+        result_me_baby["median_bin_value"]=median_bin_value
         return Response(result_me_baby)
 
 

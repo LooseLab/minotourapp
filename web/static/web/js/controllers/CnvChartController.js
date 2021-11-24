@@ -20,7 +20,7 @@ class CnvChartController {
         const barcodePk = this._barcodeCnvSelect.find(`:selected`).attr(`data-pk`)
         const minDiff = $(`#penalty-value`).val()
         const penValue = $(`#min-size-value`).val()
-        const url = `/api/v1/alignment/${flowcellId}/cnv-chart-detail/${barcodePk}/${contigName}/${penValue}/${minDiff}`
+        const url = `/api/v1/alignment/${flowcellId}/cnv-chart-detail/${barcodePk}/${contigName}/${penValue}/${minDiff}/${this._bin_slice}/${this._median_bin_value}`
         this._contigSelectChange(event, url, this._axiosInstance)
       }
     )
@@ -110,16 +110,18 @@ class CnvChartController {
     this.cnvChart.cnvChart.showLoading(`<div class="spinner-border text-success" role="status">
                         <span class = "sr-only"> Loading...</span></div>`)
     this._cnvDetailContigSelect.prop(`disabled`, true)
-    while (this.cnvChart.cnvChart.length > 0) {
+    while (this.cnvChart.cnvChart.series.length > 0) {
       this.cnvChart.cnvChart.series[0].remove(false, false)
     }
 
     axiosInstance.get(url).then(
       response => {
+        this._median_bin_value = response.data.median_bin_value
+        this._bin_slice = response.data.bin_slice
         const cnvContigDropDowns = [`<option id="cnv-deet-placeholder">Please choose...</option>`]
         Object.entries(response.data).forEach(
           ([key, value]) => {
-            if (key !== `plotting_data`) {
+            if (!['plotting_data','bin_slice','median_bin_value'].includes(key)) {
               cnvContigDropDowns.push(`<option value="${key}">${key}</option>`)
               this.cnvChart.cnvChart.addSeries({
                 name: key,
