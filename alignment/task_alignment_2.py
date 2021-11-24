@@ -260,7 +260,7 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                     if not fwd_strand and read_ids_seen[mapping[0]] == multi_mappings[mapping[0]]:
                         mapping_start = int(mapping[8]) // bin_width
                 else:
-                    mapping_start = int(mapping[7]) // bin_width if fwd_strand else np.ceil(int(mapping[8]) / bin_width)
+                    mapping_start = int(mapping[7]) // bin_width if fwd_strand else int(mapping[8]) // bin_width
                 if mapping_start:
                     mem_map_cnv[0, int(mapping_start)] += 1
 
