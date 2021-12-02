@@ -1,4 +1,5 @@
 import re
+import subprocess
 from pathlib import Path
 from typing import Union
 
@@ -45,7 +46,7 @@ def read_fastq_to_dict(file_path):
     return result_list
 
 
-def get_alignment_result_dir(run_id: str, username: str, create: bool = False) -> Path:
+def get_alignment_result_dir(run_id: str, username: str, flowcell_name: str, job_id: int, create: bool = False) -> Path:
     """
     Get the alignment folder for this run
     Parameters
@@ -54,6 +55,10 @@ def get_alignment_result_dir(run_id: str, username: str, create: bool = False) -
         The run id of the data
     username: str
         The username of the user creating the task
+    flowcell_name: str
+        The name of the flowcell (the flowcell id according to nanopore and the sample name combined)
+    job_id: int
+        The id of the job
     create: bool
         Create the directory if it doesn't exist default False
     Returns
@@ -62,8 +67,10 @@ def get_alignment_result_dir(run_id: str, username: str, create: bool = False) -
         Path to the Artic results dir
     """
     alignment_results_path = (
-        Path(get_env_variable("MT_ALIGNMENT_DATA_DIR")) / "alignment" / f"{run_id}_{username}"
+        Path(get_env_variable("MT_ALIGNMENT_DATA_DIR")) / "alignment" / flowcell_name / str(job_id)
     )
+    if run_id:
+        alignment_results_path = alignment_results_path / f"{run_id}_{username}"
     if create:
         alignment_results_path.mkdir(exist_ok=True, parents=True)
     if not alignment_results_path.exists():
@@ -114,6 +121,8 @@ def get_or_create_array(
         array_path.parent.mkdir(parents=True, exist_ok=True)
         array = np.zeros((shape_me, np.ceil(contig_length / bin_width).astype(int)), dtype=np.uint16)
         np.save(array_path, arr=array)
+        subprocess.Popen(["gzip", "-9", "-f", str(array_path)]).communicate()
+    array_path = array_path.parent / (array_path.name + ".gz")
     return array_path
 
 

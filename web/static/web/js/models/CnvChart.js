@@ -1,4 +1,3 @@
-
 class CnvChart {
   constructor (divId) {
     this._divId = divId
@@ -48,12 +47,22 @@ class CnvChart {
       },
       tooltip: {
         enabled: true
-    },
+      },
       legend: {
         symbolHeight: 12,
         symbolWidth: 12,
         symbolRadius: 6
-      }
+      },
+      exporting: {
+        chartOptions: { // specific options for the exported image
+          plotOptions: {
+            series: {
+
+            }
+          }
+        },
+        fallbackToExportServer: false
+      },
     })
   }
 }

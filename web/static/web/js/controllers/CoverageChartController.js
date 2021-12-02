@@ -61,8 +61,7 @@ class CoverageChartController {
    */
   resetDetailChartZoom () {
     this._coverageChart.detailChart.xAxis[0].setExtremes(0, self._refLength)
-    this._coverageChart.detailChart.series[0].remove(false, false)
-    this._coverageChart.detailChart.series[0].remove(false, false)
+    this._coverageChart.detailChart.series[0].setData(0, false, false, false)
     this._coverageChart.masterChart.xAxis[0].removePlotBand(`mask-before`)
   }
 }

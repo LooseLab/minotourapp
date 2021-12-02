@@ -1,10 +1,14 @@
+import gzip
 import json
+import time
+from itertools import groupby
 from typing import Tuple, List
 
 import numpy as np
 import pandas as pd
 import ruptures as rpt
 from django.db.models import F, Sum, Avg
+from django.shortcuts import get_object_or_404
 from natsort import natsorted
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -48,14 +52,14 @@ def get_cnv_barcodes(request, pk):
     """
     flowcell = Flowcell.objects.get(pk=pk, owner_id=request.user.id)
     runs = flowcell.runs.all().values_list("id", flat=True)
-    jobs = JobMaster.objects.filter(run_id__in=runs)
+    jobs = JobMaster.objects.filter(flowcell=flowcell, job_type_id=5)
+    if not jobs:
+        return Response("No CNV jobs on this flowcell", status=status.HTTP_204_NO_CONTENT)
     barcode_results = set()
     for job in jobs:
-        barcodes = set(
-            PafSummaryCov.objects.filter(job_master=job).values_list(
-                "barcode_name", "barcode_id"
-            )
-        )
+        barcodes = {*PafSummaryCov.objects.filter(job_master=job).values_list(
+            "barcode_name", "barcode_id", "reference_name", "job_master_id"
+        )}
         barcode_results.update(barcodes)
 
     return Response(
@@ -97,15 +101,6 @@ def coverage_detail(
     # todo i guess this should be different (add a run to the drop downs)
     run = job_master.flowcell.runs.last()
     contig = ReferenceLine.objects.get(pk=chromosome_id)
-    folder_dir = get_alignment_result_dir(run.runid, run.owner.username, create=False)
-    array_path = get_or_create_array(
-        folder_dir, contig_name=contig.line_name, barcode_name=barcode.name
-    )
-    if not array_path.exists():
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    mem_map = np.load(array_path, mmap_mode="r")
-    # TODO limits to just one reference here when fetching length, could be an issue
-    #  in the future displaying multiple references on a plot
     length = contig.chromosome_length
     x_coords = np.arange(int(start), int(end) + 10, 10, dtype=int)
     if not x_coords[0]:
@@ -115,13 +110,37 @@ def coverage_detail(
     factor = int((end - start) / 1800)
     factor = 1 if factor < 1 else factor
     x_coords = x_coords[::factor]
-    rejected_new_data = mem_map[1, start:end:factor]
-    sequenced_new_data = mem_map[0, start:end:factor]
-    seq_coords = list(zip(x_coords, sequenced_new_data))
-    rej_coords = list(zip(x_coords, rejected_new_data))
-    # sum_to_check = mem_map.sum()
-    new_data = {"sequenced": seq_coords, "unblocked": rej_coords}
+    folder_dir = get_alignment_result_dir(
+        "", run.owner.username, job_master.flowcell.name, task_id, create=False
+    )
+    sum_to_check = 0
+    new_data = {}
+    for folder in folder_dir.iterdir():
+        array_path = get_or_create_array(
+            folder, contig_name=contig.line_name, barcode_name=barcode.name
+        )
+        count_check = 0
+        while not array_path.exists():
+            time.sleep(1)
+            if count_check == 2:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+            count_check += 1
+        mem_map = np.load(gzip.open(array_path))
+        # TODO limits to just one reference here when fetching length, could be an issue
+        #  in the future displaying multiple references on a plot
 
+        rejected_new_data = mem_map[1, start:end:factor]
+        sequenced_new_data = mem_map[0, start:end:factor]
+        if not new_data:
+            new_data = {"sequenced": sequenced_new_data, "unblocked": rejected_new_data}
+        else:
+            new_data["sequenced"] += sequenced_new_data
+            new_data["unblocked"] += rejected_new_data
+        sum_to_check += mem_map.sum()
+    # sum_to_check = mem_map.sum()
+    seq_coords = list(zip(x_coords, new_data["sequenced"]))
+    rej_coords = list(zip(x_coords, new_data["unblocked"]))
+    new_data = {"sequenced": seq_coords, "unblocked": rej_coords}
     return Response(
         {"newChartData": new_data, "refLength": length, "sumToCheck": 0},
         status=status.HTTP_200_OK,
@@ -156,27 +175,41 @@ def coverage_master(request, task_id, barcode_id, read_type_id, chromosome_id):
     # todo i guess this should be different (add a run to the drop downs)
     run = job_master.flowcell.runs.last()
     contig = ReferenceLine.objects.get(pk=chromosome_id)
-    folder_dir = get_alignment_result_dir(run.runid, run.owner.username, create=False)
-    array_path = get_or_create_array(
-        folder_dir, contig_name=contig.line_name, barcode_name=barcode.name
-    )
-    if not array_path.exists():
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    mem_map = np.load(array_path, mmap_mode="r")
-    # TODO limits to just one reference here when fetching length, could be an issue
-    #  in the future displaying multiple references on a plot
     length = contig.chromosome_length
     step = int((length / 10) / pixels)
-    step = 1 if step < 1 else step
-    data = mem_map[::step]
-    rejected_new_data = mem_map[1, ::step]
-    sequenced_new_data = mem_map[0, ::step]
     x_coords = np.arange(0, length + 10, 10)[::step]
-    seq_coords = list(zip(x_coords, sequenced_new_data))
-    rej_coords = list(zip(x_coords, rejected_new_data))
+    folder_dir = get_alignment_result_dir(
+        "", run.owner.username, job_master.flowcell.name, task_id, create=False
+    )
+    sum_to_check = 0
+    new_data = {}
+    for folder in folder_dir.iterdir():
+        array_path = get_or_create_array(
+            folder, contig_name=contig.line_name, barcode_name=barcode.name
+        )
+        count_check = 0
+        while not array_path.exists():
+            time.sleep(1)
+            if count_check == 2:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+            count_check += 1
+        mem_map = np.load(gzip.open(array_path))
+        # TODO limits to just one reference here when fetching length, could be an issue
+        #  in the future displaying multiple references on a plot
+        step = 1 if step < 1 else step
+        data = mem_map[::step]
+        rejected_new_data = mem_map[1, ::step]
+        sequenced_new_data = mem_map[0, ::step]
+
+        if not new_data:
+            new_data = {"sequenced": sequenced_new_data, "unblocked": rejected_new_data}
+        else:
+            new_data["sequenced"] += sequenced_new_data
+            new_data["unblocked"] += rejected_new_data
+        sum_to_check += mem_map.sum()
+    seq_coords = list(zip(x_coords, new_data["sequenced"]))
+    rej_coords = list(zip(x_coords, new_data["unblocked"]))
     new_data = {"sequenced": seq_coords, "unblocked": rej_coords}
-    sum_to_check = mem_map.sum()
-    print(sum_to_check)
     return Response(
         {"newChartData": new_data, "refLength": length, "sumToCheck": sum_to_check},
         status=status.HTTP_200_OK,
@@ -185,7 +218,16 @@ def coverage_master(request, task_id, barcode_id, read_type_id, chromosome_id):
 
 @api_view(["GET"])
 def cnv_detail_chart(
-    request, pk: int, barcode_pk: int, contig_name: str, exp_ploidy: int, pen_value: int, min_diff: int, bin_slice: int, median_bin_value: int
+    request,
+    pk: int,
+    barcode_pk: int,
+    job_pk: int,
+    contig_name: str,
+    exp_ploidy: int,
+    pen_value: int,
+    min_diff: int,
+    bin_slice: int,
+    median_bin_value: int,
 ):
     """
     Cnv Detail chart - get the starts from one barcode
@@ -196,6 +238,8 @@ def cnv_detail_chart(
         Flowcell primary key
     barcode_pk: int:
         Barcode Primary key
+    job_pk: int
+        The best job primary key
     contig_name: str
         Name of the contig
     exp_ploidy: int
@@ -214,45 +258,48 @@ def cnv_detail_chart(
     flowcell = Flowcell.objects.get(pk=pk)
     barcode = Barcode.objects.get(pk=barcode_pk).name
     runs = flowcell.runs.all().values_list("id", flat=True)
-    jobs = JobMaster.objects.filter(run_id__in=runs)
+    job = get_object_or_404(JobMaster, job_type_id=5, pk=job_pk)
     expected_ploidy = int(exp_ploidy)
-    if not jobs:
-        return Response([], status=status.HTTP_204_NO_CONTENT)
     results = {}
-    for job in jobs:
-        result_dir = get_alignment_result_dir(job.run.runid, job.run.owner.username, create=False)
-        array_path = result_dir / f"{barcode}/{contig_name}/{contig_name}_cnv_bins.npy"
-        if not array_path.exists():
-            print("no array")
-            continue
-        contig_array = np.load(array_path)
-        #total_starts = contig_array[0].sum()
-        contig_length = contig_array[0].shape[0] * 10
-        #reads_per_bin = 100
-        #bin_slice = np.ceil(contig_length / (total_starts / reads_per_bin)).astype(int) / 10
-        bin_slice = int(bin_slice)
-        print("bin slice", bin_slice)
-        new_bin_values = np.fromiter(
-            (
-                contig_array[0][start : start + bin_slice].sum()
-                for start in range(0, contig_array[0].size + 1, bin_slice)
-            ),
-            dtype=np.float64,
-        )
-        #median_bin_value = np.median(new_bin_values[new_bin_values != 0])
-        x_coords = range(0, (contig_array[0].size + 1) * 10, bin_slice * 10,)
-        binned_ploidys = np.nan_to_num(
-            new_bin_values / int(median_bin_value) * expected_ploidy, nan=0, posinf=0,
-        ).round(decimals=5)
-
-        if "points" not in results:
-            results["points"] = np.array(list(zip(x_coords, binned_ploidys)))#[
-                #binned_ploidys != 0
-            #]
+    result_dir = get_alignment_result_dir(
+        "", job.flowcell.owner.username, flowcell.name, job.id, create=False
+    )
+    array_paths = list(result_dir.rglob(f"*/{contig_name}_cnv_bins.npy.gz"))
+    if not array_paths:
+        return Response("Non arrays found for this flowcell", status=status.HTTP_404_NOT_FOUND)
+    contig_array = None
+    for contig_array_path in array_paths:
+        if not contig_array:
+            contig_array = np.load(gzip.open(contig_array_path))
         else:
-            results["points"] += np.array(list(zip(x_coords, binned_ploidys)))#[
-                #binned_ploidys != 0
-            #]
+            contig_array += np.load(gzip.open(contig_array_path))
+    # total_starts = contig_array[0].sum()
+    contig_length = contig_array[0].shape[0] * 10
+    # reads_per_bin = 100
+    # bin_slice = np.ceil(contig_length / (total_starts / reads_per_bin)).astype(int) / 10
+    bin_slice = int(bin_slice)
+    print("bin slice", bin_slice)
+    new_bin_values = np.fromiter(
+        (
+            contig_array[0][start : start + bin_slice].sum()
+            for start in range(0, contig_array[0].size + 1, bin_slice)
+        ),
+        dtype=np.float64,
+    )
+    # median_bin_value = np.median(new_bin_values[new_bin_values != 0])
+    x_coords = range(0, (contig_array[0].size + 1) * 10, bin_slice * 10,)
+    binned_ploidys = np.nan_to_num(
+        new_bin_values / int(median_bin_value) * expected_ploidy, nan=0, posinf=0,
+    ).round(decimals=5)
+
+    if "points" not in results:
+        results["points"] = np.array(list(zip(x_coords, binned_ploidys)))  # [
+        # binned_ploidys != 0
+        # ]
+    else:
+        results["points"] += np.array(list(zip(x_coords, binned_ploidys)))  # [
+        # binned_ploidys != 0
+        # ]
 
     algo_c = rpt.KernelCPD(kernel="rbf", min_size=int(min_diff)).fit(
         results["points"][:, 1]
@@ -266,7 +313,7 @@ def cnv_detail_chart(
     if my_bkps:
         band_x_coords = []
         for x in my_bkps:
-            band_x_coords.append(results["points"][x-1][0])
+            band_x_coords.append(results["points"][x - 1][0])
         my_bkps = [0] + band_x_coords + [contig_length]
     results["plot_bands"] = my_bkps
     results["contig"] = contig_name
@@ -274,7 +321,7 @@ def cnv_detail_chart(
 
 
 @api_view(["GET"])
-def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
+def cnv_chart(request, pk: int, barcode_pk: int, job_pk: int, expected_ploidy: int):
     """
     get the xy scatter coordinates of the CNV ploidy chart
     Parameters
@@ -285,6 +332,8 @@ def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
         The primary key of the flowcell
     barcode_pk: int
         Primary key of the barcode to look at
+    job_pk: int
+        The primary key of the job_master
     expected_ploidy: int
         The expected ploidy, should be 2
 
@@ -298,97 +347,116 @@ def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
     flowcell = Flowcell.objects.get(pk=pk)
     barcode = Barcode.objects.get(pk=barcode_pk).name
     runs = flowcell.runs.all().values_list("id", flat=True)
-    jobs = JobMaster.objects.filter(run_id__in=runs)
+    job = JobMaster.objects.get(pk=job_pk, job_type_id=5)
     array_path_me_baby = {}
     result_me_baby = {}
-    reads_per_bin = 250
-    for job in jobs:
-        genome_length = job.reference.length
-        result_dir = get_alignment_result_dir(job.run.runid, job.run.owner.username, create=False)
-        # bin size
-
-        length_list = np.array(natsorted(job.reference.reference_lines.values_list("line_name", "chromosome_length"), key=lambda x: x[0]))
-        cumsum_chromosome_lengths = [0]+np.cumsum(length_list[:, 1].astype(int)).tolist()
-
-        # we need this below in order to move the contig coordinates the correct amount along the graph
-        chromo_name_to_length = dict(
-            zip(
-                natsorted(
-                    job.reference.reference_lines.values_list("line_name", flat=True)
-                ),
-                cumsum_chromosome_lengths,
-            )
+    reads_per_bin = 100
+    genome_length = job.reference.length
+    result_dir = get_alignment_result_dir(
+        "", job.flowcell.owner.username, flowcell.name, job.id, create=False
+    )
+    # bin size
+    length_list = np.array(
+        natsorted(
+            job.reference.reference_lines.values_list(
+                "line_name", "chromosome_length"
+            ),
+            key=lambda x: x[0],
         )
-        total_map_starts = 0
-        array_path_me_baby[barcode] = natsorted(
-            list(result_dir.rglob(f"{barcode}/*/*cnv_bins.npy")),
-            key=lambda x: x.parts[-2],
+    )
+    cumsum_chromosome_lengths = [0] + np.cumsum(
+        length_list[:, 1].astype(int)
+    ).tolist()
+
+    # we need this below in order to move the contig coordinates the correct amount along the graph
+    chromo_name_to_length = dict(
+        zip(
+            natsorted(
+                job.reference.reference_lines.values_list("line_name", flat=True)
+            ),
+            cumsum_chromosome_lengths,
         )
-        # get the total mapping starts per barcode
-        for contig_array_path in array_path_me_baby[barcode]:
-            if contig_array_path.parts[-2] == "chrM":
-                continue
-            contig_array_mmap = np.load(contig_array_path, mmap_mode="r")
+    )
+    total_map_starts = 0
+    arrays = sorted(list(result_dir.rglob("*cnv_bins.npy.gz")), key = lambda x: x.parts[-2])
+    g = groupby(arrays, key=lambda x: x.parts[-2])
+    array_path_me_baby[barcode] = dict(natsorted({key: list(value) for key, value in g}.items(), key=lambda x: x[0]))
+        # array_path_me_baby[barcode] = natsorted(
+        #     list(result_dir.rglob(f"{barcode}/*/*cnv_bins.npy")),
+        #     key=lambda x: x.parts[-2],
+        # )
+    # get the total mapping starts per barcode
+    for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
+        if contig_name == "chrM":
+            continue
+        for contig_array_path in contig_array_paths:
+            contig_array_mmap = np.load(gzip.open(contig_array_path))
             total_map_starts += contig_array_mmap[0].sum()
         # in bases not 10 bases
-        bin_size = int(genome_length / (total_map_starts / reads_per_bin))
-        temp_holder_new_bin_values = list()
-        for contig_array_path in array_path_me_baby[barcode]:
-            contig_name = contig_array_path.parts[-2]
-            if contig_name == "chrM":
-                continue
-            bin_slice = np.ceil(bin_size / 10).astype(int)
-            print(f"bin slice {contig_name}", bin_slice)
+    bin_size = int(genome_length / (total_map_starts / reads_per_bin))
+    bin_size = np.ceil(bin_size / 10).astype(int)
+    # Get the median bin values across the whole genome in order to calculate contig ploidy against the other contigs
+    temp_holder_new_bin_values = []
+    for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
+        if contig_name == "chrM":
+            continue
+        contig_array = None
+        for contig_array_path in contig_array_paths:
+            if not contig_array:
+                contig_array = np.load(gzip.open(contig_array_path))
+            else:
+                contig_array += np.load(gzip.open(contig_array_path))
+        new_bin_values = np.fromiter(
+            (
+                contig_array[0][start: start + bin_size].sum()
+                for start in range(0, contig_array[0].size + 1, bin_size)
+            ),
+            dtype=np.float64,
+        )
+        temp_holder_new_bin_values.extend(new_bin_values.tolist())
+    median_bin_value = np.median(temp_holder_new_bin_values)
+    for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
+        if contig_name == "chrM":
+            continue
+        contig_array = None
+        for contig_array_path in contig_array_paths:
+            if not contig_array:
+                contig_array = np.load(gzip.open(contig_array_path))
+            else:
+                contig_array += np.load(gzip.open(contig_array_path))
+        new_bin_values = np.fromiter(
+            (
+                contig_array[0][start : start + bin_size].sum()
+                for start in range(0, contig_array[0].size + 1, bin_size)
+            ),
+            dtype=np.float64,
+        )
 
-            contig_array = np.load(contig_array_path)
-            new_bin_values = np.fromiter(
-                (
-                    contig_array[0][start : start + bin_slice].sum()
-                    for start in range(0, contig_array[0].size + 1, bin_slice)
-                ),
-                dtype=np.float64,
-            )
-            temp_holder_new_bin_values.extend(new_bin_values.tolist())
-        median_bin_value = np.median(temp_holder_new_bin_values)
-        for contig_array_path in array_path_me_baby[barcode]:
-            contig_name = contig_array_path.parts[-2]
-            if contig_name == "chrM":
-                continue
-            bin_slice = np.ceil(bin_size / 10).astype(int)
-            print(f"bin slice {contig_name}", bin_slice)
+        x_coords = range(
+            0 + chromo_name_to_length[contig_name],
+            (contig_array[0].size + 1) * 10 + chromo_name_to_length[contig_name],
+            bin_size * 10,
+        )
+        binned_ploidys = np.nan_to_num(
+            new_bin_values / median_bin_value * expected_ploidy, nan=0, posinf=0,
+        ).round(decimals=5)
 
-            contig_array = np.load(contig_array_path)
-            new_bin_values = np.fromiter(
-                (
-                    contig_array[0][start: start + bin_slice].sum()
-                    for start in range(0, contig_array[0].size + 1, bin_slice)
-                ),
-                dtype=np.float64,
-            )
+        result_me_baby[contig_name] = np.array(
+            list(zip(x_coords, binned_ploidys))
+        )  # [
+        #    binned_ploidys != 0
+        # ]
+        points = result_me_baby[contig_name].shape[0]
+        desired_points = 25000
+        step = np.ceil(points / desired_points).astype(int)
+        print(f"points is {points}, step is {step}")
+        step = 1 if step < 1 else step
+        result_me_baby[contig_name] = result_me_baby[contig_name][::step]
 
-            x_coords = range(
-                0 + chromo_name_to_length[contig_name],
-                (contig_array[0].size + 1) * 10 + chromo_name_to_length[contig_name],
-                bin_slice * 10,
-            )
-            binned_ploidys = np.nan_to_num(
-                new_bin_values / median_bin_value * expected_ploidy, nan=0, posinf=0,
-            ).round(decimals=5)
-
-            result_me_baby[contig_name] = np.array(list(zip(x_coords, binned_ploidys)))#[
-            #    binned_ploidys != 0
-            #]
-            points = result_me_baby[contig_name].shape[0]
-            desired_points = 25000
-            step = np.ceil(points / desired_points).astype(int)
-            print (f"points is {points}, step is {step}")
-            step = 1 if step < 1 else step
-            result_me_baby[contig_name] = result_me_baby[contig_name][::step]
-
-        result_me_baby["plotting_data"] = chromo_name_to_length
-        result_me_baby["bin_slice"]=bin_slice
-        result_me_baby["median_bin_value"]=median_bin_value
-        return Response(result_me_baby)
+    result_me_baby["plotting_data"] = chromo_name_to_length
+    result_me_baby["bin_slice"] = bin_size
+    result_me_baby["median_bin_value"] = median_bin_value
+    return Response(result_me_baby)
 
 
 @api_view(["GET"])
