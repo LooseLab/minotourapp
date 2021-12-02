@@ -160,7 +160,7 @@ class AlignmentController {
       if (!appropriateOptionExists) {
         options.add(`<option value="-1" id="${base}Placeholder" selected>Please Choose</option>`)
       }
-      select.html([...options].reverse())
+      select.html([...options].sort())
       // if no selection has been made, we have no task id
     })
     // if we have children in every select and the selected option isn't a please choose
