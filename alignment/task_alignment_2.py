@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+import subprocess
 from collections import defaultdict, Counter
 from itertools import groupby
 from pathlib import Path
@@ -127,6 +128,8 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
     bin_width = 10
     # The JobMaster object
     job_master = JobMaster.objects.get(pk=job_master_id)
+    print(job_master)
+    flowcell_name = job_master.flowcell.name
     # Unpack metadata about this job
     last_read_pk = int(job_master.last_read)
     reference_pk = int(job_master.reference.id)
@@ -155,7 +158,13 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
     if not results:
         raise FileNotFoundError("No mapping results.")
     run_id = Run.objects.get(pk=fasta_list[0]["run"]).runid
-    folder_dir = get_alignment_result_dir(run_id, job_master.run.owner.username, create=True)
+    folder_dir = get_alignment_result_dir(
+        run_id,
+        job_master.flowcell.owner.username,
+        flowcell_name=flowcell_name,
+        job_id=job_master_id,
+        create=True,
+    )
     # Rejected barcode primary key unblocked or sequenced bool, True is unblocked
     get_rejected = {
         barcode.id: barcode.name == "Unblocked"
@@ -186,8 +195,11 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
     # track read ids seen for the multi mappings
     read_ids_seen = defaultdict(int)
     # loop this to create Arrays
-    bins_to_do = {"alignment": (True, barcode_2_contig_array),
-                  "cnv": (do_cnv, barcode_2_contig_array_cnv)}
+
+    bins_to_do = {
+        "alignment": (True, barcode_2_contig_array),
+        "cnv": (do_cnv, barcode_2_contig_array_cnv),
+    }
 
     sv_hunt(results,folder_dir)
 
@@ -212,17 +224,19 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                         barcode_name=barcode_orm.name,
                         bin_width=bin_width,
                         create=True,
-                        is_cnv= key_arr == "cnv"
+                        is_cnv=key_arr == "cnv",
                     ),
                     name=contig,
                 )
 
         path_2_array = barcode_2_contig_array[barcode][contig].path
-        mem_map = np.load(path_2_array, mmap_mode="r+")
+        subprocess.Popen(f"gzip -d {path_2_array}".split()).communicate()
+        mem_map = np.load(path_2_array.with_suffix(""), mmap_mode="r+")
 
         if do_cnv:
             path_2_cnv_array = barcode_2_contig_array_cnv[barcode][contig].path
-            mem_map_cnv = np.load(path_2_cnv_array, mmap_mode="r+")
+            subprocess.Popen(f"gzip -d {path_2_cnv_array}".split()).communicate()
+            mem_map_cnv = np.load(path_2_cnv_array.with_suffix(""), mmap_mode="r+")
         for mapping in group:
             read_id = mapping[0]
             is_rejected = get_rejected[read_id_2_read_info[read_id]["rejected_barcode"]]
@@ -250,7 +264,7 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                 int(mapping[7]) // bin_width,
                 np.ceil(int(mapping[8]) / bin_width).astype(int),
             )
-            mem_map[int(is_rejected), mapping_start: mapping_end + 1] += 1
+            mem_map[int(is_rejected), mapping_start : mapping_end + 1] += 1
             paf_summary.total_yield += len(mapping[1])
             # multiple mappings can shaft this
             paf_summary.read_count += 1
@@ -263,13 +277,21 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                     read_ids_seen[mapping[0]] += 1
                     if fwd_strand and read_ids_seen[mapping[0]] == 1:
                         mapping_start = int(mapping[7]) // bin_width
-                    if not fwd_strand and read_ids_seen[mapping[0]] == multi_mappings[mapping[0]]:
+                    if (
+                        not fwd_strand
+                        and read_ids_seen[mapping[0]] == multi_mappings[mapping[0]]
+                    ):
                         mapping_start = int(mapping[8]) // bin_width
                 else:
-                    mapping_start = int(mapping[7]) // bin_width if fwd_strand else int(mapping[8]) // bin_width
+                    mapping_start = (
+                        int(mapping[7]) // bin_width
+                        if fwd_strand
+                        else int(mapping[8]) // bin_width
+                    )
                 if mapping_start:
                     mem_map_cnv[0, int(mapping_start)] += 1
-
+        subprocess.Popen(f"gzip -9 {path_2_array.with_suffix('')}".split()).communicate()
+        subprocess.Popen(f"gzip -9 {path_2_cnv_array.with_suffix('')}".split()).communicate()
         paf_summary.average_read_length = round(
             paf_summary.total_yield / paf_summary.read_count
         )
@@ -335,4 +357,14 @@ def sv_hunt(data_set,folder_dir):
     summed_data.to_pickle(file_path)
 
     return summed_data
+
+
+@app.task
+def remove_old_references():
+    """
+    Remove old references from the mapping task, if they haven't been used for the pre specified time
+    Returns
+    -------
+    """
+    MAP.reference_monitor()
 

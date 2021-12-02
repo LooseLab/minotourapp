@@ -75,8 +75,7 @@ def delete_alignment_task(flowcell_job_id, restart=False):
     # Get the flowcell
     flowcell = flowcell_job.flowcell
     delete = True
-    run_id = flowcell_job.run.runid
-    result_folder_dir = get_alignment_result_dir(run_id, flowcell.owner.username)
+    result_folder_dir = get_alignment_result_dir("", flowcell.owner.username, flowcell.name, flowcell_job_id)
     # Delete Paf Summary Cov
     rmtree(result_folder_dir, ignore_errors=False)
     PafSummaryCov.objects.filter(job_master=flowcell_job).delete()

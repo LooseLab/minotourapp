@@ -14,8 +14,9 @@ class CnvChartController {
     this._barcodeCnvSelect.on(
       `change`, (event) => {
         const barcodePk = this._barcodeCnvSelect.find(`:selected`).attr(`data-pk`)
+        const jobPk = this._barcodeCnvSelect.find(`:selected`).attr(`data-job-pk`)
         const expectedPloidy = this._expectedPloidySelect.val()
-        const url = `/api/v1/alignment/${flowcellId}/cnv-chart/${barcodePk}/${expectedPloidy}`
+        const url = `/api/v1/alignment/${flowcellId}/cnv-chart/${barcodePk}/${jobPk}/${expectedPloidy}`
         this._cnvSelectChange(event, url, this._axiosInstance)
         if (this._cnvDetailContigSelect.find(`:selected`).attr(`id`) !== `cnv-deet-placeholder`) {
           this._selectedDetailContig = this._cnvDetailContigSelect.find(`:selected`).val()
@@ -37,9 +38,10 @@ class CnvChartController {
     const contigName = this._cnvDetailContigSelect.find(`:selected`).val()
     const expectedPloidy = this._expectedPloidySelect.val()
     const barcodePk = this._barcodeCnvSelect.find(`:selected`).attr(`data-pk`)
+    const jobPk = this._barcodeCnvSelect.find(`:selected`).attr(`data-job-pk`)
     const minDiff = $(`#penalty-value`).val()
     const penValue = $(`#min-size-value`).val()
-    const url = `/api/v1/alignment/${this._flowcellId}/cnv-chart-detail/${barcodePk}/${contigName}/${expectedPloidy}/${penValue}/${minDiff}/${this._bin_slice}/${this._median_bin_value}`
+    const url = `/api/v1/alignment/${this._flowcellId}/cnv-chart-detail/${barcodePk}/${jobPk}/${contigName}/${expectedPloidy}/${penValue}/${minDiff}/${this._bin_slice}/${this._median_bin_value}`
     this._cnvDetailContigSelect.find(`#cnv-deet-placeholder`).remove()
     this._loadDetailChartData(url, axiosInstance)
   }
@@ -52,10 +54,13 @@ class CnvChartController {
   _populateCnvBarcodeSelect (url, axiosInstance) {
     axiosInstance.get(url).then(
       response => {
+        if (response.status !== 204) {
+          $(`#cnv`).css(`display`, `block`)
+        } else { return }
         const barcodeHtml = []
-        response.data.forEach(([barcode, barcodePk]) => {
+        response.data.forEach(([barcode, barcodePk, refName, jobPk]) => {
           if (!this._barcodesLoaded.has(barcode)) {
-            barcodeHtml.push(`<option data-pk="${barcodePk}">${barcode}</option>`)
+            barcodeHtml.push(`<option data-pk="${barcodePk}" data-job-pk="${jobPk}">${barcode} - ${refName}</option>`)
           }
         })
         this._barcodeCnvSelect.append(barcodeHtml)
@@ -120,7 +125,6 @@ class CnvChartController {
       this.cnvChart.cnvChart.series[0].remove(false, false)
     }
     this.cnvChart.cnvChart.yAxis[0].removePlotLine(`exp-ploidy`)
-
     axiosInstance.get(url).then(
       response => {
         this._median_bin_value = response.data.median_bin_value
@@ -128,7 +132,7 @@ class CnvChartController {
         const cnvContigDropDowns = [`<option id="cnv-deet-placeholder">Please choose...</option>`]
         Object.entries(response.data).forEach(
           ([key, value]) => {
-            if (key === `bin_slice`){
+            if (key === `bin_slice`) {
               $(`#bin-width-value`).html(value * 10)
             }
             if (![`plotting_data`, `bin_slice`, `median_bin_value`].includes(key)) {
@@ -139,7 +143,7 @@ class CnvChartController {
                 data: value,
                 marker: {
                   symbol: `circle`,
-                  radius: 2
+                  radius: 1
                 }
               }, false, false)
             }

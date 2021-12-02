@@ -10,7 +10,7 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from ete3 import NCBITaxa
 
-from alignment.tasks_alignment import run_minimap2_alignment
+from alignment.task_alignment_2 import run_minimap2_alignment
 from metagenomics.models import (
     MappingTarget,
     MappingResult,
