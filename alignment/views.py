@@ -289,7 +289,7 @@ def cnv_detail_chart(
         else:
             my_bkps = test1
         if counter >= 25:
-            mk_bkps = None
+            my_bkps = None
             break
 
     #my_bkps = algo_c.predict(pen=int(pen_value))
@@ -332,7 +332,7 @@ def cnv_chart(request, pk: int, barcode_pk: int, expected_ploidy: int):
     jobs = JobMaster.objects.filter(run_id__in=runs)
     array_path_me_baby = {}
     result_me_baby = {}
-    reads_per_bin = 250
+    reads_per_bin = 100
     for job in jobs:
         genome_length = job.reference.length
         result_dir = get_alignment_result_dir(job.run.runid, job.run.owner.username, create=False)
