@@ -1,9 +1,11 @@
+import gzip
 import re
 import subprocess
 from pathlib import Path
 from typing import Union
 
 import numpy as np
+import numpy.typing as npt
 from pyfastx import Fastx
 
 from alignment.models import PafSummaryCov
@@ -16,6 +18,24 @@ def _human_key(key):
     return tuple(
         (e.swapcase() if i % 2 == 0 else float(e)) for i, e in enumerate(parts)
     )
+
+
+def open_and_load_array(array_path: Path) -> npt.ArrayLike:
+    """
+    Open the numpy bins array, decompress it if necessary and return the array
+    Parameters
+    ----------
+    array_path: Path
+        Path to binned coverage or CNV mapping starts array
+
+    Returns
+    -------
+
+    """
+    if set(array_path.suffixes).intersection({".gz"}):
+        with gzip.open(array_path) as fh:
+            return np.load(fh)
+    return np.load(array_path)
 
 
 def read_fastq_to_dict(file_path):
@@ -85,7 +105,8 @@ def get_or_create_array(
     barcode_name: Union[bool, str] = False,
     bin_width: int = 10,
     create: bool = False,
-    is_cnv: bool = False
+    is_cnv: bool = False,
+    compress: bool = False
 ) -> Path:
     """
     Get the path to the numpy array containing the binned alignment
@@ -107,6 +128,8 @@ def get_or_create_array(
         Create the array if it doens't exists
     is_cnv: bool
         Return the coverage pile up bins
+    compress: bool
+        Compress the array on creation. Intended to compress arrays that are not accessed very often.
     Returns
     -------
     Path
@@ -121,8 +144,13 @@ def get_or_create_array(
         array_path.parent.mkdir(parents=True, exist_ok=True)
         array = np.zeros((shape_me, np.ceil(contig_length / bin_width).astype(int)), dtype=np.uint16)
         np.save(array_path, arr=array)
-        subprocess.Popen(["gzip", "-9", "-f", str(array_path)]).communicate()
-    array_path = array_path.parent / (array_path.name + ".gz")
+        if compress:
+            subprocess.Popen(["gzip", "-9", "-f", str(array_path)]).communicate()
+            array_path = array_path.parent / (array_path.name + ".gz")
+    elif not array_path.exists():
+        array_path = array_path.parent / (array_path.name + ".gz")
+        if not array_path.exists():
+            raise FileNotFoundError(f"{array_path} does not exist, compressed or otherwise.")
     return array_path
 
 

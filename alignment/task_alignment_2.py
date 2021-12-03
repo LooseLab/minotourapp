@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+import datetime
 import subprocess
 from collections import defaultdict, Counter
 from itertools import groupby
@@ -20,6 +21,7 @@ from alignment.utils import (
 from minknow_data.models import Run
 from minotourapp.celery import app
 from minotourapp.redis import redis_instance
+from minotourapp.utils import get_env_variable
 from reads.models import FastqRead, JobMaster, Barcode
 from reference.models import ReferenceInfo
 
@@ -157,7 +159,8 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
         )
     if not results:
         raise FileNotFoundError("No mapping results.")
-    run_id = Run.objects.get(pk=fasta_list[0]["run"]).runid
+    run = Run.objects.get(pk=fasta_list[0]["run"])
+    run_id = run.runid
     folder_dir = get_alignment_result_dir(
         run_id,
         job_master.flowcell.owner.username,
@@ -210,6 +213,7 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
     # sort results on barcode, contig so we can group by them, and minimise the number of opening and closing arrays
     results.sort(key=lambda x: (x[-1], x[5], x[4], x[7]))
     # groupby barcode, contig and contig length (to include it in the key)
+    cur_time = datetime.datetime.now()
     for key, group in groupby(results, lambda x: (x[-1], x[5], x[6])):
         barcode, contig, contig_length = key
         barcode_orm = Barcode.objects.get(pk=barcode)
@@ -225,26 +229,32 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                         bin_width=bin_width,
                         create=True,
                         is_cnv=key_arr == "cnv",
+                        compress=False
                     ),
                     name=contig,
                 )
 
         path_2_array = barcode_2_contig_array[barcode][contig].path
-        #subprocess.Popen(f"gzip -d {path_2_array}".split()).communicate()
-        mem_map = np.load(path_2_array.with_suffix(""), mmap_mode="r+")
-
+        array_m_time = datetime.datetime.fromtimestamp(int(path_2_array.stat().st_mtime))
+        if set(path_2_array.suffixes).intersection(".gz"):
+            subprocess.Popen(f"gzip -d {path_2_array}".split()).communicate()
+            path_2_array = path_2_array.with_suffix("")
+        mem_map = np.load(path_2_array, mmap_mode="r+")
         if do_cnv:
             path_2_cnv_array = barcode_2_contig_array_cnv[barcode][contig].path
-            #subprocess.Popen(f"gzip -d {path_2_cnv_array}".split()).communicate()
-            mem_map_cnv = np.load(path_2_cnv_array.with_suffix(""), mmap_mode="r+")
+            array_cnv_m_time = array_m_time = datetime.datetime.fromtimestamp(int(path_2_cnv_array.stat().st_mtime))
+            if set(path_2_cnv_array.suffixes).intersection(".gz"):
+                subprocess.Popen(f"gzip -d {path_2_cnv_array}".split()).communicate()
+                path_2_cnv_array = path_2_cnv_array.with_suffix("")
+            mem_map_cnv = np.load(path_2_cnv_array, mmap_mode="r+")
         for mapping in group:
             read_id = mapping[0]
             is_rejected = get_rejected[read_id_2_read_info[read_id]["rejected_barcode"]]
             # create a summary for this barcode/contig/read_type
             if (
-                barcode,
-                contig,
-                read_id_2_read_info[read_id]["type"],
+                    barcode,
+                    contig,
+                    read_id_2_read_info[read_id]["type"],
             ) not in barcode_contig_2_summary_orm:
                 paf_summary = create_paf_summary_cov(
                     job_master,
@@ -278,8 +288,8 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                     if fwd_strand and read_ids_seen[mapping[0]] == 1:
                         mapping_start = int(mapping[7]) // bin_width
                     if (
-                        not fwd_strand
-                        and read_ids_seen[mapping[0]] == multi_mappings[mapping[0]]
+                            not fwd_strand
+                            and read_ids_seen[mapping[0]] == multi_mappings[mapping[0]]
                     ):
                         mapping_start = int(mapping[8]) // bin_width
                 else:
@@ -290,8 +300,7 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                     )
                 if mapping_start:
                     mem_map_cnv[0, int(mapping_start)] += 1
-        #subprocess.Popen(f"gzip -9 {path_2_array.with_suffix('')}".split()).communicate()
-        #subprocess.Popen(f"gzip -9 {path_2_cnv_array.with_suffix('')}".split()).communicate()
+
         paf_summary.average_read_length = round(
             paf_summary.total_yield / paf_summary.read_count
         )
@@ -300,6 +309,10 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
         )
         paf_summary.save()
         mem_map.flush()
+        if cur_time - array_m_time > datetime.timedelta(minutes=10):
+            subprocess.Popen(f"gzip -9 {path_2_array}".split()).communicate()
+            if do_cnv:
+                subprocess.Popen(f"gzip -9 {path_2_cnv_array}".split()).communicate()
 
 
 
@@ -368,3 +381,21 @@ def remove_old_references():
     """
     MAP.reference_monitor()
 
+
+@app.task
+def gzip_arrays():
+    """
+    Run by celery Beat every 10 minutes to gzip alignment arrays
+    Returns
+    -------
+
+    """
+    alignment_results_path = (
+        Path(get_env_variable("MT_ALIGNMENT_DATA_DIR")) / "alignment"
+    )
+    cur_time = datetime.datetime.now()
+    for array_path in alignment_results_path.rglob("*.npy*"):
+        if not set(array_path.suffixes).intersection(".gz"):
+            array_m_time = datetime.datetime.fromtimestamp(int(array_path.stat().st_mtime))
+            if cur_time - array_m_time > datetime.timedelta(minutes=10):
+                subprocess.Popen(f"gzip -9 {array_path}".split()).communicate()

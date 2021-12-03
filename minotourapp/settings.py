@@ -245,7 +245,7 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': 30,
     },
     'remove_old_references': {
-        'task': 'alignment.tasks_alignment.remove_old_references',
+        'task': 'alignment.task_alignment_2.remove_old_references',
         'schedule': 1800,
         'options': {
             "queue": "minimap"
@@ -265,6 +265,10 @@ CELERY_BEAT_SCHEDULE = {
     'update_vocs': {
         'task': 'artic.task_artic_alignment.update_vocs',
         'schedule': crontab(minute=0, hour=0)
+    },
+    'gzip_alignment_arrays': {
+        'task': 'alignment.task_alignment_2.gzip_arrays',
+        'schedule': 600,
     }
 }
 
