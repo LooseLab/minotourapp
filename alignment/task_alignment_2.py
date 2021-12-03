@@ -230,12 +230,12 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                 )
 
         path_2_array = barcode_2_contig_array[barcode][contig].path
-        subprocess.Popen(f"gzip -d {path_2_array}".split()).communicate()
+        #subprocess.Popen(f"gzip -d {path_2_array}".split()).communicate()
         mem_map = np.load(path_2_array.with_suffix(""), mmap_mode="r+")
 
         if do_cnv:
             path_2_cnv_array = barcode_2_contig_array_cnv[barcode][contig].path
-            subprocess.Popen(f"gzip -d {path_2_cnv_array}".split()).communicate()
+            #subprocess.Popen(f"gzip -d {path_2_cnv_array}".split()).communicate()
             mem_map_cnv = np.load(path_2_cnv_array.with_suffix(""), mmap_mode="r+")
         for mapping in group:
             read_id = mapping[0]
@@ -290,8 +290,8 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                     )
                 if mapping_start:
                     mem_map_cnv[0, int(mapping_start)] += 1
-        subprocess.Popen(f"gzip -9 {path_2_array.with_suffix('')}".split()).communicate()
-        subprocess.Popen(f"gzip -9 {path_2_cnv_array.with_suffix('')}".split()).communicate()
+        #subprocess.Popen(f"gzip -9 {path_2_array.with_suffix('')}".split()).communicate()
+        #subprocess.Popen(f"gzip -9 {path_2_cnv_array.with_suffix('')}".split()).communicate()
         paf_summary.average_read_length = round(
             paf_summary.total_yield / paf_summary.read_count
         )

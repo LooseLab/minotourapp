@@ -125,7 +125,8 @@ def coverage_detail(
             if count_check == 2:
                 return Response(status=status.HTTP_404_NOT_FOUND)
             count_check += 1
-        mem_map = np.load(gzip.open(array_path))
+        #mem_map = np.load(gzip.open(array_path))
+        mem_map = np.load(array_path)
         # TODO limits to just one reference here when fetching length, could be an issue
         #  in the future displaying multiple references on a plot
 
@@ -193,7 +194,8 @@ def coverage_master(request, task_id, barcode_id, read_type_id, chromosome_id):
             if count_check == 2:
                 return Response(status=status.HTTP_404_NOT_FOUND)
             count_check += 1
-        mem_map = np.load(gzip.open(array_path))
+        #mem_map = np.load(gzip.open(array_path))
+        mem_map = np.load(array_path)
         # TODO limits to just one reference here when fetching length, could be an issue
         #  in the future displaying multiple references on a plot
         step = 1 if step < 1 else step
@@ -279,10 +281,12 @@ def cnv_detail_chart(
         return Response("Non arrays found for this flowcell", status=status.HTTP_404_NOT_FOUND)
     contig_array = None
     for contig_array_path in array_paths:
-        if not contig_array:
-            contig_array = np.load(gzip.open(contig_array_path))
+        if contig_array is None:
+            #contig_array = np.load(gzip.open(contig_array_path))
+            contig_array = np.load(contig_array_path)
         else:
-            contig_array += np.load(gzip.open(contig_array_path))
+            #contig_array += np.load(gzip.open(contig_array_path))
+            contig_array += np.load(contig_array_path)
     # total_starts = contig_array[0].sum()
     contig_length = contig_array[0].shape[0] * 10
     # reads_per_bin = 100
@@ -336,11 +340,11 @@ def cnv_detail_chart(
         else:
             my_bkps = test1
         if counter >= 25:
-            my_bkps = None
+            mk_bkps = None
             break
 
     #my_bkps = algo_c.predict(pen=int(pen_value))
-    print(my_bkps)
+    #print(my_bkps)
     if my_bkps:
         band_x_coords = []
         for x in my_bkps:
@@ -382,25 +386,19 @@ def cnv_chart(request, pk: int, barcode_pk: int, job_pk: int, expected_ploidy: i
     array_path_me_baby = {}
     result_me_baby = {}
     reads_per_bin = 100
-
-    for job in jobs:
-        genome_length = job.reference.length
-        result_dir = get_alignment_result_dir(job.run.runid, job.run.owner.username, create=False)
-        # bin size
-
-        length_list = np.array(natsorted(job.reference.reference_lines.values_list("line_name", "chromosome_length"), key=lambda x: x[0]))
-        cumsum_chromosome_lengths = [0]+np.cumsum(length_list[:, 1].astype(int)).tolist()
-
-        # we need this below in order to move the contig coordinates the correct amount along the graph
-        chromo_name_to_length = dict(
-            zip(
-                natsorted(
-                    job.reference.reference_lines.values_list("line_name", flat=True)
-                ),
-                cumsum_chromosome_lengths,
-            )
+    genome_length = job.reference.length
+    result_dir = get_alignment_result_dir(
+        "", job.flowcell.owner.username, flowcell.name, job.id, create=False
+    )
+    # bin size
+    length_list = np.array(
+        natsorted(
+            job.reference.reference_lines.values_list(
+                "line_name", "chromosome_length"
+            ),
+            key=lambda x: x[0],
         )
-
+    )
     cumsum_chromosome_lengths = [0] + np.cumsum(
         length_list[:, 1].astype(int)
     ).tolist()
@@ -427,7 +425,9 @@ def cnv_chart(request, pk: int, barcode_pk: int, job_pk: int, expected_ploidy: i
         if contig_name == "chrM":
             continue
         for contig_array_path in contig_array_paths:
-            contig_array_mmap = np.load(gzip.open(contig_array_path))
+            #contig_array_mmap = np.load(gzip.open(contig_array_path))
+            print (contig_array_path)
+            contig_array_mmap = np.load(contig_array_path)
             total_map_starts += contig_array_mmap[0].sum()
         # in bases not 10 bases
     bin_size = int(genome_length / (total_map_starts / reads_per_bin))
@@ -439,10 +439,13 @@ def cnv_chart(request, pk: int, barcode_pk: int, job_pk: int, expected_ploidy: i
             continue
         contig_array = None
         for contig_array_path in contig_array_paths:
-            if not contig_array:
-                contig_array = np.load(gzip.open(contig_array_path))
+            #print (contig_array)
+            if contig_array is None:
+                #contig_array = np.load(gzip.open(contig_array_path))
+                contig_array = np.load(contig_array_path)
             else:
-                contig_array += np.load(gzip.open(contig_array_path))
+                #contig_array += np.load(gzip.open(contig_array_path))
+                contig_array += np.load(contig_array_path)
         new_bin_values = np.fromiter(
             (
                 contig_array[0][start: start + bin_size].sum()
@@ -457,10 +460,12 @@ def cnv_chart(request, pk: int, barcode_pk: int, job_pk: int, expected_ploidy: i
             continue
         contig_array = None
         for contig_array_path in contig_array_paths:
-            if not contig_array:
-                contig_array = np.load(gzip.open(contig_array_path))
+            if contig_array is None:
+                #contig_array = np.load(gzip.open(contig_array_path))
+                contig_array = np.load(contig_array_path)
             else:
-                contig_array += np.load(gzip.open(contig_array_path))
+                #contig_array += np.load(gzip.open(contig_array_path))
+                contig_array += np.load(contig_array_path)
         new_bin_values = np.fromiter(
             (
                 contig_array[0][start : start + bin_size].sum()
@@ -486,7 +491,7 @@ def cnv_chart(request, pk: int, barcode_pk: int, job_pk: int, expected_ploidy: i
         points = result_me_baby[contig_name].shape[0]
         desired_points = 25000
         step = np.ceil(points / desired_points).astype(int)
-        print(f"points is {points}, step is {step}")
+        #print(f"points is {points}, step is {step}")
         step = 1 if step < 1 else step
         result_me_baby[contig_name] = result_me_baby[contig_name][::step]
 
