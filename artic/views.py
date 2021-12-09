@@ -60,7 +60,6 @@ def export_artic_report(request, pk):
     tar_file_path = f"/tmp/{task.id}_artic_report.tar.gz"
     tar_file_name = f"{task.id}_artic_report.tar.gz"
     with tarfile.open(tar_file_path, "w:gz") as tar:
-
         for abm in ArticBarcodeMetadata.objects.filter(job_master=task):
             data_2 = {}
             selected_barcode = str(abm.barcode.name)
