@@ -266,10 +266,6 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'artic.task_artic_alignment.update_vocs',
         'schedule': crontab(minute=0, hour=0)
     },
-    'gzip_alignment_arrays': {
-        'task': 'alignment.task_alignment_2.gzip_arrays',
-        'schedule': 600,
-    }
 }
 
 # For sending twitter messages
