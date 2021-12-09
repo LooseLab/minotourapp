@@ -249,7 +249,13 @@ def update_flowcell(reads_list):
         dtype="datetime64[m]",
     )
     read_df["start_time_truncate"] = read_df["start_time_round"].apply(
-        lambda dt: datetime(dt.year, dt.month, dt.day, dt.hour, int(np.nan_to_num(10 * (dt.minute // 10))))
+        lambda dt: datetime(
+            dt.year,
+            dt.month,
+            dt.day,
+            dt.hour,
+            int(np.nan_to_num(10 * (dt.minute // 10))),
+        )
     )
     update_run_summaries(read_df)
     read_df_all_reads = read_df.copy()
@@ -483,7 +489,7 @@ def update_run_summaries(fastq_df):
                     first_read_time_str, "%Y-%m-%dT%H:%M:%S%z"
                 )
                 last_read_time_date = datetime.strptime(
-                        last_read_time_str, "%Y-%m-%dT%H:%M:%S%z"
+                    last_read_time_str, "%Y-%m-%dT%H:%M:%S%z"
                 )
             except ValueError as e:
                 first_read_time_date = datetime.strptime(
@@ -493,9 +499,7 @@ def update_run_summaries(fastq_df):
                     last_read_time_str.split("Z")[0], "%Y-%m-%dT%H:%M:%S"
                 ).replace(tzinfo=pytz.UTC)
             if first_read_time_date < run_summary_orm.first_read_start_time:
-                run.start_time = run_summary[
-                    "first_read_start_time"
-                ]
+                run.start_time = run_summary["first_read_start_time"]
                 run.save()
                 run_summary_orm.first_read_start_time = run_summary[
                     "first_read_start_time"
@@ -511,7 +515,7 @@ def update_run_summaries(fastq_df):
             run_summary_orm.total_read_length += int(run_summary["total_read_length"])
             run_summary_orm.read_count += int(run_summary["read_count"])
             run_summary_orm.avg_read_length = (
-                    run_summary_orm.total_read_length / run_summary_orm.read_count
+                run_summary_orm.total_read_length / run_summary_orm.read_count
             )
             run_summary_orm.save()
 
@@ -574,13 +578,23 @@ def save_reads_bulk(reads):
     ### We want to pause to let the number of chunks get below 10?
     count = redis_instance.scard("reads")
     minimap_task_per_flowcell_limit = 10
-    flowcell_minimap_counts = [int(redis_instance.get(f"{f_id}_minimap_tasks")) for f_id in flowcell_dict]
-    minimap2_task_count_exceed = any(t > minimap_task_per_flowcell_limit for t in flowcell_minimap_counts)
+    flowcell_minimap_counts = [
+        int(redis_instance.get(f"{f_id}_minimap_tasks"))
+        for f_id in flowcell_dict
+        if redis_instance.get(f"{f_id}_minimap_tasks")
+    ]
+    minimap2_task_count_exceed = any(
+        t > minimap_task_per_flowcell_limit for t in flowcell_minimap_counts
+    )
     while count > 40 or minimap2_task_count_exceed:
         time.sleep(5)
         count = redis_instance.scard("reads")
-        flowcell_minimap_counts = [int(redis_instance.get(f"{f_id}_minimap_tasks")) for f_id in flowcell_dict]
-        minimap2_task_count_exceed = any(t > minimap_task_per_flowcell_limit for t in flowcell_minimap_counts)
+        flowcell_minimap_counts = [
+            int(redis_instance.get(f"{f_id}_minimap_tasks")) for f_id in flowcell_dict
+        ]
+        minimap2_task_count_exceed = any(
+            t > minimap_task_per_flowcell_limit for t in flowcell_minimap_counts
+        )
     redis_instance.sadd("reads", reads_as_json)
     # Bulk create the entries
     skip_sequence_saving = int(get_env_variable("MT_SKIP_SAVING_SEQUENCE"))
@@ -789,7 +803,6 @@ def get_values_and_delete_redis_key(r, key):
     p.get(key)
     p.delete(key)
     return p.execute()[0]
-
 
 
 def scan_keys(r, pattern):
