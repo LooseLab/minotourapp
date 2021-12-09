@@ -1,13 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
 import datetime
-import subprocess
 from collections import defaultdict, Counter
 from itertools import groupby
 from pathlib import Path
 from typing import List, NamedTuple
 
-import numpy as np
 from celery.utils.log import get_task_logger
 from django.db.models import F
 
@@ -21,7 +19,6 @@ from alignment.utils import (
 from minknow_data.models import Run
 from minotourapp.celery import app
 from minotourapp.redis import redis_instance
-from minotourapp.utils import get_env_variable
 from reads.models import FastqRead, JobMaster, Barcode
 from reference.models import ReferenceInfo
 
@@ -235,17 +232,9 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                 )
 
         path_2_array = barcode_2_contig_array[barcode][contig].path
-        array_m_time = datetime.datetime.fromtimestamp(int(path_2_array.stat().st_mtime))
-        if set(path_2_array.suffixes).intersection(".gz"):
-            subprocess.Popen(f"gzip -d {path_2_array}".split()).communicate()
-            path_2_array = path_2_array.with_suffix("")
         mem_map = np.load(path_2_array, mmap_mode="r+")
         if do_cnv:
             path_2_cnv_array = barcode_2_contig_array_cnv[barcode][contig].path
-            array_cnv_m_time = array_m_time = datetime.datetime.fromtimestamp(int(path_2_cnv_array.stat().st_mtime))
-            if set(path_2_cnv_array.suffixes).intersection(".gz"):
-                subprocess.Popen(f"gzip -d {path_2_cnv_array}".split()).communicate()
-                path_2_cnv_array = path_2_cnv_array.with_suffix("")
             mem_map_cnv = np.load(path_2_cnv_array, mmap_mode="r+")
         for mapping in group:
             read_id = mapping[0]
@@ -274,7 +263,7 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                 int(mapping[7]) // bin_width,
                 np.ceil(int(mapping[8]) / bin_width).astype(int),
             )
-            mem_map[int(is_rejected), mapping_start : mapping_end + 1] += 1
+            mem_map[int(is_rejected), mapping_start: mapping_end + 1] += 1
             paf_summary.total_yield += len(mapping[1])
             # multiple mappings can shaft this
             paf_summary.read_count += 1
@@ -309,10 +298,6 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
         )
         paf_summary.save()
         mem_map.flush()
-        if cur_time - array_m_time > datetime.timedelta(minutes=10):
-            subprocess.Popen(f"gzip -9 {path_2_array}".split()).communicate()
-            if do_cnv:
-                subprocess.Popen(f"gzip -9 {path_2_cnv_array}".split()).communicate()
 
 
 
@@ -382,20 +367,20 @@ def remove_old_references():
     MAP.reference_monitor()
 
 
-@app.task
-def gzip_arrays():
-    """
-    Run by celery Beat every 10 minutes to gzip alignment arrays
-    Returns
-    -------
-
-    """
-    alignment_results_path = (
-        Path(get_env_variable("MT_ALIGNMENT_DATA_DIR")) / "alignment"
-    )
-    cur_time = datetime.datetime.now()
-    for array_path in alignment_results_path.rglob("*.npy*"):
-        if not set(array_path.suffixes).intersection(".gz"):
-            array_m_time = datetime.datetime.fromtimestamp(int(array_path.stat().st_mtime))
-            if cur_time - array_m_time > datetime.timedelta(minutes=10):
-                subprocess.Popen(f"gzip -9 {array_path}".split()).communicate()
+# @app.task
+# def gzip_arrays():
+#     """
+#     Run by celery Beat every 10 minutes to gzip alignment arrays
+#     Returns
+#     -------
+#
+#     """
+#     alignment_results_path = (
+#         Path(get_env_variable("MT_ALIGNMENT_DATA_DIR")) / "alignment"
+#     )
+#     cur_time = datetime.datetime.now()
+#     for array_path in alignment_results_path.rglob("*.npy*"):
+#         if not set(array_path.suffixes).intersection(".gz"):
+#             array_m_time = datetime.datetime.fromtimestamp(int(array_path.stat().st_mtime))
+#             if cur_time - array_m_time > datetime.timedelta(minutes=10):
+#                 subprocess.Popen(f"gzip -9 {array_path}".split()).communicate()
