@@ -73,7 +73,7 @@ def export_artic_report(request, pk):
             try:
                 with open(str(coverage_path), "rb") as fh:
                     arr = np.fromfile(fh, dtype=np.uint16)
-                    fig = Figure(figsize=(16, 2), dpi=250)
+                    fig = Figure(figsize=(8, 2), dpi=250)
                     ax = fig.subplots()
                     ax.plot(arr)
                     fig.suptitle(f"{selected_barcode} Coverage across genome")
