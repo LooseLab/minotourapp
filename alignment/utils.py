@@ -1,6 +1,5 @@
 import gzip
 import re
-import subprocess
 from pathlib import Path
 from typing import Union
 
@@ -139,19 +138,16 @@ def get_or_create_array(
     barcode_dir = "no_barcode" if not barcode_name else barcode_name
     suffice = "cnv_bins" if is_cnv else "bins"
     array_path = Path(f"{folder_dir/barcode_dir/contig_name}/{contig_name}_{suffice}.npy")
-    array_path_gz = array_path.parent / (array_path.name + ".gz")
-    if not (array_path.exists() or array_path_gz.exists()) and create:
+    # array_path_gz = array_path.parent / (array_path.name + ".gz")
+    if not array_path.exists() and create:
         dtype_me_baby = np.uint16 if contig_length < 100_000_000 else np.uint8
         array_path.parent.mkdir(parents=True, exist_ok=True)
         array = np.zeros((shape_me, np.ceil(contig_length / bin_width).astype(int)), dtype=np.uint16)
         np.save(array_path, arr=array)
-        if compress:
-            subprocess.Popen(["gzip", "-9", "-f", str(array_path)]).communicate()
-            array_path = array_path.parent / (array_path.name + ".gz")
-    elif not array_path.exists():
-        array_path = array_path.parent / (array_path.name + ".gz")
-        if not array_path.exists():
-            raise FileNotFoundError(f"{array_path} does not exist, compressed or otherwise.")
+    # elif not array_path.exists():
+    #     array_path = array_path.parent / (array_path.name + ".gz")
+    #     if not array_path.exists():
+    #         raise FileNotFoundError(f"{array_path} does not exist, compressed or otherwise.")
     return array_path
 
 
