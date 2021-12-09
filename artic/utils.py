@@ -184,7 +184,7 @@ def get_artic_run_stats(pk, svg_data, request, task):
     svg_data["treesnstuff"] = False
     if tree_path.exists():
         with open(
-            "/home/rory/Projects/data/Artic/artic/Temp_results/10_103_artic/iqtree_.treefile",
+            tree_path,
             "r",
         ) as fh:
             trey = toytree.tree(fh.read(), tree_format=0)

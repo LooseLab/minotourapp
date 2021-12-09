@@ -590,7 +590,7 @@ def save_reads_bulk(reads):
         time.sleep(5)
         count = redis_instance.scard("reads")
         flowcell_minimap_counts = [
-            int(redis_instance.get(f"{f_id}_minimap_tasks")) for f_id in flowcell_dict
+            int(redis_instance.get(f"{f_id}_minimap_tasks")) for f_id in flowcell_dict if redis_instance.get(f"{f_id}_minimap_tasks")
         ]
         minimap2_task_count_exceed = any(
             t > minimap_task_per_flowcell_limit for t in flowcell_minimap_counts

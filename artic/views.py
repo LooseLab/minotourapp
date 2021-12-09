@@ -73,7 +73,7 @@ def export_artic_report(request, pk):
             try:
                 with open(str(coverage_path), "rb") as fh:
                     arr = np.fromfile(fh, dtype=np.uint16)
-                    fig = Figure(figsize=(8, 2))
+                    fig = Figure(figsize=(16, 2), dpi=250)
                     ax = fig.subplots()
                     ax.plot(arr)
                     fig.suptitle(f"{selected_barcode} Coverage across genome")
@@ -143,6 +143,7 @@ def export_artic_report(request, pk):
             #     "artic_box_plot_path"
             # ] = f"file:///{str(artic_results_path)}/{selected_barcode}/{selected_barcode}-boxplot.png"
             data.update(data_2)
+            print(Path.cwd())
             HTML(
                 string=render(
                     request, "barcode_report.html", context={"data": data}
@@ -178,9 +179,10 @@ def export_artic_report(request, pk):
         except FileNotFoundError as e:
             print("snipit file not found")
     with open(tar_file_path, "rb") as fh:
-        response = HttpResponse(fh.read(), content_type="application/zip")
+        response = HttpResponse(fh.read(), content_type="application/gzip")
         response["Content-Disposition"] = f"attachment; filename={tar_file_name}"
         response["x-file-name"] = tar_file_name
+        print("RPEOSEDNDWA")
     return response
 
 
@@ -554,31 +556,40 @@ def get_artic_summary_table_data(request):
     return Response({"data": queryset})
 
 
-def relabel_tree(tree,artic_results_path):
+def relabel_tree(tree, artic_results_path):
     ### This code finds labels if they exist and uses them to decorate the tree.
-    tree = tree.replace("/ARTIC/medaka","")
-    query = 'barcode??'
-    subbarcodes = fnmatch.filter((tree[i:i + len(query)] for i in range(len(tree) - len(query))), query)
+    tree = tree.replace("/ARTIC/medaka", "")
+    query = "barcode??"
+    subbarcodes = fnmatch.filter(
+        (tree[i : i + len(query)] for i in range(len(tree) - len(query))), query
+    )
     for barcode in subbarcodes:
         try:
             lineage = pd.read_csv(
                 artic_results_path / barcode / "lineage_report.csv.gz"
             )["lineage"][0]
-            tree = tree.replace(barcode,f"{barcode} {lineage}")
+            tree = tree.replace(barcode, f"{barcode} {lineage}")
         except FileNotFoundError:
             pass
         try:
-            with gzip.open(artic_results_path / barcode / "json_files" / f"{barcode}_ARTIC_medaka.json.gz", 'rt', encoding='UTF-8') as zipfile:
+            with gzip.open(
+                artic_results_path
+                / barcode
+                / "json_files"
+                / f"{barcode}_ARTIC_medaka.json.gz",
+                "rt",
+                encoding="UTF-8",
+            ) as zipfile:
                 my_object = json.load(zipfile)
             extra_string = ""
-            for result in my_object['typing']:
-                if result['sample-typing-result']['variant-status'] != None:
-                    if 'phe-label' in result['sample-typing-summary'].keys():
-                        phe_label = result['sample-typing-summary']['phe-label']
+            for result in my_object["typing"]:
+                if result["sample-typing-result"]["variant-status"] != None:
+                    if "phe-label" in result["sample-typing-summary"].keys():
+                        phe_label = result["sample-typing-summary"]["phe-label"]
                     else:
                         phe_label = ""
-                    if 'who-label' in result['sample-typing-summary'].keys():
-                        who_label = result['sample-typing-summary']['who-label']
+                    if "who-label" in result["sample-typing-summary"].keys():
+                        who_label = result["sample-typing-summary"]["who-label"]
                     else:
                         who_label = ""
                     extra_string = f"{extra_string} {phe_label} {who_label}"
@@ -589,56 +600,41 @@ def relabel_tree(tree,artic_results_path):
     return tree
 
 
-
 @api_view(("GET",))
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
 def get_artic_analysis_html(request):
-    data={}
+    data = {}
     flowcell_id = request.GET.get("flowcellId", None)
     if not flowcell_id:
-        return Response(
-            "No flowcell ID provided.", status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response("No flowcell ID provided.", status=status.HTTP_400_BAD_REQUEST)
     ## Now we check to see if a json report exists for this flowcell and barcode.
     flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(
         flowcell_id
     )
-    tree_path = (
-            artic_results_path
-            /
-            "iqtree_.treefile"
-    )
+    tree_path = artic_results_path / "iqtree_.treefile"
 
     if tree_path.exists():
-        with open(tree_path,"r") as tree:
+        with open(tree_path, "r") as tree:
             contents = tree.readlines()
         tree = contents[0].strip()
-        tree = relabel_tree(tree,artic_results_path)
-        data["tree"]=tree
-        data["tree_available"]=True
+        tree = relabel_tree(tree, artic_results_path)
+        data["tree"] = tree
+        data["tree_available"] = True
 
-    svg_path = (
-            artic_results_path
-            /
-            "snp_plot.svg"
-    )
+    svg_path = artic_results_path / "snp_plot.svg"
 
     if svg_path.exists():
-        snipit_svg=""
+        snipit_svg = ""
         with open(svg_path, "r") as f:
             for l in f:
                 l = l.rstrip("\n")
                 snipit_svg += f"{l}\n"
-        #with open(svg_path,"r") as svg:
+        # with open(svg_path,"r") as svg:
         #    contents = svg.readlines()
-        data["svg"]=snipit_svg
-        data["svg_available"]=True
+        data["svg"] = snipit_svg
+        data["svg_available"] = True
 
-
-    return render(
-        request, "artic-analysis.html", context={"artic_analysis": data},
-    )
-
+    return render(request, "artic-analysis.html", context={"artic_analysis": data},)
 
 
 @api_view(("GET",))
@@ -885,8 +881,10 @@ def manually_create_artic_command_job_master(request):
     barcode_pk = request.data.get("barcodePk", None)
     flowcell_id = request.data.get("flowcellId", None)
     job_master_pk = request.data.get("jobPk", None)
-    #ToDo this is hard coded to check against job type 16.
-    primer_scheme = JobMaster.objects.get(flowcell_id=flowcell_id, job_type=16).primer_scheme
+    # ToDo this is hard coded to check against job type 16.
+    primer_scheme = JobMaster.objects.get(
+        flowcell_id=flowcell_id, job_type=16
+    ).primer_scheme
     if not job_type_id or not barcode_pk or not flowcell_id:
         return Response(
             "Flowcell id, barcode id, jobTypeId are required fields.",
@@ -907,7 +905,7 @@ def manually_create_artic_command_job_master(request):
         reference=reference,
         barcode=barcode,
         flowcell_id=flowcell_id,
-        primer_scheme=primer_scheme
+        primer_scheme=primer_scheme,
     )
     if created:
         return Response(
@@ -1191,7 +1189,7 @@ def run_all_incomplete(request, pk):
             reference=jm.reference,
             barcode=barcode.barcode,
             flowcell=jm.flowcell,
-            primer_scheme=jm.primer_scheme
+            primer_scheme=jm.primer_scheme,
         )
     return Response("Marked all incomplete barcodes for rerun.")
 
@@ -1223,7 +1221,7 @@ def mark_all_barcodes_for_pipeline(request, pk):
             reference=jm.reference,
             barcode=barcode.barcode,
             flowcell=jm.flowcell,
-            primer_scheme=jm.primer_scheme
+            primer_scheme=jm.primer_scheme,
         )
         if not created:
             job_master.complete = False
@@ -1243,7 +1241,9 @@ class PrimerSchemeList(APIView):
         qs = [
             {
                 "id": q.id,
-                "deletable": q.owner.id == request.user.id if q.owner is not None else False,
+                "deletable": q.owner.id == request.user.id
+                if q.owner is not None
+                else False,
                 "scheme_version": q.scheme_version,
                 "scheme_species": q.scheme_species,
                 "private": q.private,
@@ -1286,7 +1286,10 @@ class PrimerSchemeList(APIView):
                 else:
                     fasta_sequences = file.read().decode().count("\n>")
                 if fasta_sequences:
-                    return Response("Reference FASTA file must contain only one sequence.", status=status.HTTP_400_BAD_REQUEST)
+                    return Response(
+                        "Reference FASTA file must contain only one sequence.",
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 file_dict["ref_file"] = pathy
             else:
                 return Response(
@@ -1307,9 +1310,11 @@ class PrimerSchemeList(APIView):
             reference_file=file_dict["ref_file"],
             owner=request.user,
         )
-        coords, cols = get_amplicon_band_data(ps.scheme_species, ps.scheme_version, ps.scheme_directory)
-        coords = np.array(coords)[:,:2].astype(int)
-        coords = (coords[:,1:2] - coords[:,:1]) + 150
+        coords, cols = get_amplicon_band_data(
+            ps.scheme_species, ps.scheme_version, ps.scheme_directory
+        )
+        coords = np.array(coords)[:, :2].astype(int)
+        coords = (coords[:, 1:2] - coords[:, :1]) + 150
         mean_length = coords.mean()
         min_length = mean_length - mean_length * 0.3
         max_length = mean_length + mean_length * 0.5
