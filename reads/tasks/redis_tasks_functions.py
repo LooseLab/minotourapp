@@ -321,7 +321,7 @@ def update_flowcell(reads_list):
     )
 
 
-def check_if_flowcell_has_streamable_tasks(flowcell_pk):
+def check_if_flowcell_has_streamable_tasks(flowcell_pk: int) -> dict:
     """
     Check if the flowcell has streamable tasks.
     Parameters
@@ -330,7 +330,7 @@ def check_if_flowcell_has_streamable_tasks(flowcell_pk):
         Primary key of the flowcell to check tasks from.
     Returns
     -------
-    tasks: list of int
+    tasks: list of dict
         List of streamable job_masters IDs
     """
 
@@ -366,10 +366,10 @@ def sort_reads_by_flowcell_fire_tasks(reads):
             if task["job_type_id"] == 16 and not task["from_database"]:
                 run_artic_pipeline.delay(task["id"], flowcell_reads)
             elif task["job_type_id"] in {4, 5} and not task["from_database"]:
-                redis_instance.incr("minimaptasks")
                 run_minimap2_alignment.apply_async(
                     args=(task["id"], flowcell_reads), queue="minimap"
                 )
+                redis_instance.incr("minimap_tasks")
             elif task["job_type_id"] == 10 and not task["from_database"]:
                 run_centrifuge_pipeline.delay(task["id"], flowcell_reads)
 
@@ -573,7 +573,8 @@ def save_reads_bulk(reads):
     reads_as_json = json.dumps(reads)
     ### We want to pause to let the number of chunks get below 10?
     count = redis_instance.scard("reads")
-    while count > 40:
+    minimap2_task_count = int(redis_instance.get("minimap_tasks"))
+    while count > 40 or minimap2_task_count > 10:
         time.sleep(5)
         count = redis_instance.scard("reads")
     redis_instance.sadd("reads", reads_as_json)

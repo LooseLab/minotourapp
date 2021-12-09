@@ -6,6 +6,8 @@ from itertools import groupby
 from pathlib import Path
 from typing import List, NamedTuple
 
+import numpy as np
+import pandas as pd
 from celery.utils.log import get_task_logger
 from django.db.models import F
 
@@ -25,9 +27,6 @@ from reference.models import ReferenceInfo
 # Set up the logger to write to logging file
 logger = get_task_logger(__name__)
 
-
-import pandas as pd
-import numpy as np
 
 @app.task
 def run_minimap2_alignment(job_master_id, streamed_reads=None):
@@ -201,7 +200,7 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
         "cnv": (do_cnv, barcode_2_contig_array_cnv),
     }
 
-    sv_hunt(results,folder_dir)
+    sv_hunt(results, folder_dir)
 
     # filter non primary mappings
     results = list(filter(lambda x: x[12] == "tp:A:P" and int(x[11]) == 60, results))
@@ -226,7 +225,7 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                         bin_width=bin_width,
                         create=True,
                         is_cnv=key_arr == "cnv",
-                        compress=False
+                        compress=False,
                     ),
                     name=contig,
                 )
@@ -241,9 +240,9 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
             is_rejected = get_rejected[read_id_2_read_info[read_id]["rejected_barcode"]]
             # create a summary for this barcode/contig/read_type
             if (
-                    barcode,
-                    contig,
-                    read_id_2_read_info[read_id]["type"],
+                barcode,
+                contig,
+                read_id_2_read_info[read_id]["type"],
             ) not in barcode_contig_2_summary_orm:
                 paf_summary = create_paf_summary_cov(
                     job_master,
@@ -263,7 +262,7 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                 int(mapping[7]) // bin_width,
                 np.ceil(int(mapping[8]) / bin_width).astype(int),
             )
-            mem_map[int(is_rejected), mapping_start: mapping_end + 1] += 1
+            mem_map[int(is_rejected), mapping_start : mapping_end + 1] += 1
             paf_summary.total_yield += len(mapping[1])
             # multiple mappings can shaft this
             paf_summary.read_count += 1
@@ -277,8 +276,8 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
                     if fwd_strand and read_ids_seen[mapping[0]] == 1:
                         mapping_start = int(mapping[7]) // bin_width
                     if (
-                            not fwd_strand
-                            and read_ids_seen[mapping[0]] == multi_mappings[mapping[0]]
+                        not fwd_strand
+                        and read_ids_seen[mapping[0]] == multi_mappings[mapping[0]]
                     ):
                         mapping_start = int(mapping[8]) // bin_width
                 else:
@@ -298,10 +297,10 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
         )
         paf_summary.save()
         mem_map.flush()
+    redis_instance.decr("minimap_tasks")
 
 
-
-def sv_hunt(data_set,folder_dir):
+def sv_hunt(data_set, folder_dir):
     """
     data_set is a set of mapping results to ask things about - its a dictionary
     folder_dir is where we are going to save and add to results
@@ -310,38 +309,94 @@ def sv_hunt(data_set,folder_dir):
     read_df = pd.DataFrame.from_dict(data_set)
     # give it some nice names
     read_df = read_df.rename(
-        columns={0: 'query_name', 2: 'query_start', 3: 'query_end', 4: 'strand', 5: 'target_name', 7: 'target_start',
-                 8: 'target_end', 11: 'mapping_quality', 12: 'tp', 15: 'barcode_id'})
+        columns={
+            0: "query_name",
+            2: "query_start",
+            3: "query_end",
+            4: "strand",
+            5: "target_name",
+            7: "target_start",
+            8: "target_end",
+            11: "mapping_quality",
+            12: "tp",
+            15: "barcode_id",
+        }
+    )
     # convert columns to numbers
-    read_df[['query_start', 'query_end', 6, 'target_start', 'target_end', 9, 10, 'mapping_quality', 'barcode_id']] = \
     read_df[
-        ['query_start', 'query_end', 6, 'target_start', 'target_end', 9, 10, 'mapping_quality', 'barcode_id']].apply(
-        pd.to_numeric)
+        [
+            "query_start",
+            "query_end",
+            6,
+            "target_start",
+            "target_end",
+            9,
+            10,
+            "mapping_quality",
+            "barcode_id",
+        ]
+    ] = read_df[
+        [
+            "query_start",
+            "query_end",
+            6,
+            "target_start",
+            "target_end",
+            9,
+            10,
+            "mapping_quality",
+            "barcode_id",
+        ]
+    ].apply(
+        pd.to_numeric
+    )
     # we are only interested in reads which appear at least twice in our dataframe - so we keep duplicates and only primary mapping reads
-    dups = read_df[read_df.duplicated(subset=['query_name'], keep=False) & read_df['tp'].ne("tp:A:S") & read_df[
-        'mapping_quality'].gt(20)]
+    dups = read_df[
+        read_df.duplicated(subset=["query_name"], keep=False)
+        & read_df["tp"].ne("tp:A:S")
+        & read_df["mapping_quality"].gt(20)
+    ]
     # for some reason we do this again
-    interest = dups[dups.duplicated(subset=['query_name'], keep=False)]
+    interest = dups[dups.duplicated(subset=["query_name"], keep=False)]
     # we sort the results
-    interest2 = interest.sort_values(by=['query_name', 'query_start'])
+    interest2 = interest.sort_values(by=["query_name", "query_start"])
     # we capture
-    interest2['source_chrom'] = interest2['target_name']
-    interest2['source_coord'] = np.where(interest2['strand'].eq('+'), interest2['target_end'],
-                                         interest2['target_start'])
-    interest2['end_coord'] = np.where(interest2['strand'].eq('+'), interest2['target_start'], interest2['target_end'])
-    interest2[['target_chrom', 'target_coord', 'read_test_next']] = interest2.shift(-1)[
-        ['target_name', 'end_coord', 'query_name']]
-    interest2 = interest2.drop(interest2[interest2['query_name'].ne(interest2['read_test_next'])].index)
-    result_table = interest2[['barcode_id', 'source_chrom', 'source_coord', 'target_coord', 'target_chrom']]
+    interest2["source_chrom"] = interest2["target_name"]
+    interest2["source_coord"] = np.where(
+        interest2["strand"].eq("+"), interest2["target_end"], interest2["target_start"]
+    )
+    interest2["end_coord"] = np.where(
+        interest2["strand"].eq("+"), interest2["target_start"], interest2["target_end"]
+    )
+    interest2[["target_chrom", "target_coord", "read_test_next"]] = interest2.shift(-1)[
+        ["target_name", "end_coord", "query_name"]
+    ]
+    interest2 = interest2.drop(
+        interest2[interest2["query_name"].ne(interest2["read_test_next"])].index
+    )
+    result_table = interest2[
+        ["barcode_id", "source_chrom", "source_coord", "target_coord", "target_chrom"]
+    ]
 
     result_table = result_table.sort_values(
-        by=['barcode_id', 'source_chrom', 'source_coord', 'target_chrom', 'target_coord'])
-    #Round to nearest 100 bases
-    result_table['source'] = round(result_table['source_coord'], -2)
-    result_table['target'] = round(result_table['target_coord'], -2)
+        by=[
+            "barcode_id",
+            "source_chrom",
+            "source_coord",
+            "target_chrom",
+            "target_coord",
+        ]
+    )
+    # Round to nearest 100 bases
+    result_table["source"] = round(result_table["source_coord"], -2)
+    result_table["target"] = round(result_table["target_coord"], -2)
 
-    result_table = result_table.astype({"target_coord": int, "target": int}, errors='ignore')
-    final_result = result_table.groupby(['barcode_id', 'source_chrom', 'source', 'target_chrom', 'target']).count()
+    result_table = result_table.astype(
+        {"target_coord": int, "target": int}, errors="ignore"
+    )
+    final_result = result_table.groupby(
+        ["barcode_id", "source_chrom", "source", "target_chrom", "target"]
+    ).count()
     summed_data = pd.DataFrame(final_result.to_records())
 
     file_path = Path(f"{folder_dir}/SV_data.pickle")
@@ -349,8 +404,12 @@ def sv_hunt(data_set,folder_dir):
     if file_path.is_file():
         # file exists
         extradata = pd.read_pickle(file_path)
-        summed_data = pd.concat([summed_data, extradata]).groupby(
-            ['barcode_id','source_chrom', 'source', 'target_chrom', 'target']).sum().reset_index()
+        summed_data = (
+            pd.concat([summed_data, extradata])
+            .groupby(["barcode_id", "source_chrom", "source", "target_chrom", "target"])
+            .sum()
+            .reset_index()
+        )
 
     summed_data.to_pickle(file_path)
 
