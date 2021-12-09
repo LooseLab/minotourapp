@@ -294,31 +294,5 @@
       "readcount": false,
       "private": false
     }
-  },
-  {
-    "model": "reads.primerscheme",
-    "pk": 1,
-    "fields": {
-      "scheme_species": "nCoV-2019",
-      "_scheme_version": "V1",
-      "_scheme_directory": "../extra/primer_schemes",
-      "bed_file": "../extra/primer_schemes/nCoV-2019/V1/nCoV-2019.scheme.bed",
-      "reference_file": "../extra/primer_schemes/nCoV-2019/V1/nCoV-2019.reference.fasta",
-      "private": false,
-      "owner": null
-    }
-  },
-  {
-    "model": "reads.primerscheme",
-    "pk": 4,
-    "fields": {
-      "scheme_species": "SARS-CoV-2",
-      "_scheme_version": "V4",
-      "_scheme_directory": "../extra/primer_schemes",
-      "bed_file": "../extra/primer_schemes/SARS-CoV-2/V4/SARS-CoV-2.scheme.bed",
-      "reference_file": "../extra/primer_schemes/SARS-CoV-2/V4/SARS-CoV-2.reference.fasta",
-      "private": false,
-      "owner": null
-    }
   }
 ]
