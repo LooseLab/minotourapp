@@ -128,6 +128,7 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
     job_master = JobMaster.objects.get(pk=job_master_id)
     print(job_master)
     flowcell_name = job_master.flowcell.name
+    flowcell_id = int(job_master.flowcell.id)
     # Unpack metadata about this job
     last_read_pk = int(job_master.last_read)
     reference_pk = int(job_master.reference.id)
@@ -153,6 +154,7 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
         results.extend(
             super_function.map_sequence(reference_info.name, read_dict, True)
         )
+    logger.info(f"mapping {len(read_id_2_read_info)} reads...")
     if not results:
         raise FileNotFoundError("No mapping results.")
     run = Run.objects.get(pk=fasta_list[0]["run"])
@@ -297,7 +299,7 @@ def align_reads_factory(job_master_id, fasta_list: List, super_function):
         )
         paf_summary.save()
         mem_map.flush()
-    redis_instance.decr("minimap_tasks")
+    redis_instance.decr(f"{flowcell_id}_minimap_tasks")
 
 
 def sv_hunt(data_set, folder_dir):

@@ -369,7 +369,7 @@ def sort_reads_by_flowcell_fire_tasks(reads):
                 run_minimap2_alignment.apply_async(
                     args=(task["id"], flowcell_reads), queue="minimap"
                 )
-                redis_instance.incr("minimap_tasks")
+                redis_instance.incr(f"{flowcell_id}_minimap_tasks")
             elif task["job_type_id"] == 10 and not task["from_database"]:
                 run_centrifuge_pipeline.delay(task["id"], flowcell_reads)
 
@@ -573,10 +573,14 @@ def save_reads_bulk(reads):
     reads_as_json = json.dumps(reads)
     ### We want to pause to let the number of chunks get below 10?
     count = redis_instance.scard("reads")
-    minimap2_task_count = int(redis_instance.get("minimap_tasks"))
-    while count > 40 or minimap2_task_count > 10:
+    minimap_task_per_flowcell_limit = 10
+    flowcell_minimap_counts = [int(redis_instance.get(f"{f_id}_minimap_tasks")) for f_id in flowcell_dict]
+    minimap2_task_count_exceed = any(t > minimap_task_per_flowcell_limit for t in flowcell_minimap_counts)
+    while count > 40 or minimap2_task_count_exceed:
         time.sleep(5)
         count = redis_instance.scard("reads")
+        flowcell_minimap_counts = [int(redis_instance.get(f"{f_id}_minimap_tasks")) for f_id in flowcell_dict]
+        minimap2_task_count_exceed = any(t > minimap_task_per_flowcell_limit for t in flowcell_minimap_counts)
     redis_instance.sadd("reads", reads_as_json)
     # Bulk create the entries
     skip_sequence_saving = int(get_env_variable("MT_SKIP_SAVING_SEQUENCE"))
