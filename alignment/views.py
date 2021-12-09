@@ -276,9 +276,9 @@ def cnv_detail_chart(
     array_paths = list(result_dir.rglob(f"*/{contig_name}_cnv_bins.npy*"))
     if not array_paths:
         return Response("Non arrays found for this flowcell", status=status.HTTP_404_NOT_FOUND)
-    contig_array = None
+    contig_array = np.array([])
     for contig_array_path in array_paths:
-        if not contig_array:
+        if not contig_array.size:
             contig_array = open_and_load_array(contig_array_path)
         else:
             contig_array += open_and_load_array(contig_array_path)
@@ -287,7 +287,7 @@ def cnv_detail_chart(
     # reads_per_bin = 100
     # bin_slice = np.ceil(contig_length / (total_starts / reads_per_bin)).astype(int) / 10
     bin_slice = int(bin_slice)
-    print("bin slice", bin_slice)
+    #print("bin slice", bin_slice)
     new_bin_values = np.fromiter(
         (
             contig_array[0][start : start + bin_slice].sum()
@@ -408,7 +408,9 @@ def cnv_chart(request, pk: int, barcode_pk: int, job_pk: int, expected_ploidy: i
         )
     )
     total_map_starts = 0
-    arrays = sorted(list(result_dir.rglob("*cnv_bins.npy*")), key = lambda x: x.parts[-2])
+    arrays = sorted(list(result_dir.rglob(f"*/{barcode}/*/*cnv_bins.npy*")), key = lambda x: x.parts[-2])
+    print (result_dir)
+    print (arrays)
     g = groupby(arrays, key=lambda x: x.parts[-2])
     array_path_me_baby[barcode] = dict(natsorted({key: list(value) for key, value in g}.items(), key=lambda x: x[0]))
         # array_path_me_baby[barcode] = natsorted(
@@ -416,6 +418,7 @@ def cnv_chart(request, pk: int, barcode_pk: int, job_pk: int, expected_ploidy: i
         #     key=lambda x: x.parts[-2],
         # )
     # get the total mapping starts per barcode
+    print (array_path_me_baby[barcode])
     for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
         if contig_name == "chrM":
             continue
@@ -430,9 +433,9 @@ def cnv_chart(request, pk: int, barcode_pk: int, job_pk: int, expected_ploidy: i
     for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
         if contig_name == "chrM":
             continue
-        contig_array = None
+        contig_array = np.array([])
         for contig_array_path in contig_array_paths:
-            if not contig_array:
+            if not contig_array.size:
                 contig_array = open_and_load_array(contig_array_path)
             else:
                 contig_array += open_and_load_array(contig_array_path)
@@ -448,9 +451,9 @@ def cnv_chart(request, pk: int, barcode_pk: int, job_pk: int, expected_ploidy: i
     for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
         if contig_name == "chrM":
             continue
-        contig_array = None
+        contig_array = np.array([])
         for contig_array_path in contig_array_paths:
-            if not contig_array:
+            if not contig_array.size:
                 contig_array = open_and_load_array(contig_array_path)
             else:
                 contig_array += open_and_load_array(contig_array_path)
@@ -479,7 +482,7 @@ def cnv_chart(request, pk: int, barcode_pk: int, job_pk: int, expected_ploidy: i
         points = result_me_baby[contig_name].shape[0]
         desired_points = 25000
         step = np.ceil(points / desired_points).astype(int)
-        print(f"points is {points}, step is {step}")
+        #print(f"points is {points}, step is {step}")
         step = 1 if step < 1 else step
         result_me_baby[contig_name] = result_me_baby[contig_name][::step]
 
