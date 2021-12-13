@@ -208,7 +208,7 @@ CELERY_QUEUES = (
 )
 CELERY_IMPORTS = ('web.tasks', 'communication.tasks_send_message',
                   'reads.tasks.tasks_archive_flowcell', 'artic.task_secure_artic_runs',
-                  'artic.task_artic_alignment', 'alignment.task_alignment_2')
+                  'artic.task_artic_alignment', 'alignment.task_alignment_2', 'artic.task_build_artic_report')
 CELERY_ROUTES = ({
     'run_minimap2_alignment': {
         'queue': 'minimap',
