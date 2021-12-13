@@ -28,3 +28,4 @@ readpaf
 toytree
 ruptures
 natsort
+toyplot
