@@ -482,7 +482,33 @@ def clear_old_data(artic_results_path, barcode_name):
                 filey.unlink()
 
 
-@app.task(time_limit=1200, soft_time_limit=1200)
+def set_job_master_complete(self, exc, task_id, args, kwargs, einfo):
+    """
+    Set the command jobmaster to complete, so we don't stall out
+    Parameters
+    ----------
+    self
+    exc: Exception raised by the task
+    task_id: Unique Id of the failed task
+    args: original arguments of the faield task
+    kwargs: keyword arguments of the failed task
+    einfo: ExceptionInfo
+        Info about the exception raised
+
+    Returns
+    -------
+    None
+
+    """
+    job_master_id = kwargs["job_master_pk"]
+    job_master = JobMaster.objects.get(pk=job_master_id)
+    logger.error(f"Artic task with pk {job_master_id} failed, resetting to complete!")
+    job_master.running = False
+    job_master.complete = True
+    job_master.save()
+
+
+@app.task(time_limit=1200, soft_time_limit=1200, on_failure=set_job_master_complete)
 def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     """
     Run the artic pipeline in this first pass method of dirty bash script
