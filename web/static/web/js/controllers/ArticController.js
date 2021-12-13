@@ -639,7 +639,7 @@ class ArticController {
     console.timeEnd(`scatter`)
   }
 
-  _drawBarcodeCompleteChart (){
+  _drawBarcodeCompleteChart () {
     if (!this._BarcodeCompleteChart) {
       this._BarcodeCompleteChart = makeColumnChart(
           `artic-completed-barcodes`,
@@ -658,16 +658,14 @@ class ArticController {
     const chartSeries = this._BarcodeCompleteChart.series
     const indexInArray = chartSeries.findIndex(obj => obj.name === `Seen`)
     console.log(indexInArray)
-    if (typeof chartSeries !== 'undefined') {
-      while (this._BarcodeCompleteChart.series.length > 0)
-        this._BarcodeCompleteChart.series[0].remove(true);
+    if (typeof chartSeries !== `undefined`) {
+      while (this._BarcodeCompleteChart.series.length > 0) { this._BarcodeCompleteChart.series[0].remove(true) }
     }
-    console.log(barcode_data["Seen"])
+    console.log(barcode_data.Seen)
     for (const [key, value] of Object.entries(barcode_data)) {
-      console.log(`${key}: ${value}`);
-      this._BarcodeCompleteChart.addSeries({ name: key, data: value});
+      console.log(`${key}: ${value}`)
+      this._BarcodeCompleteChart.addSeries({ name: key, data: value })
     }
-
   }
 
   /**
@@ -750,7 +748,7 @@ class ArticController {
       // null for callback function, false for reset paging
       datatableObj.DataTable().ajax.reload(null, false)
     } else {
-      var that = this;
+      var that = this
       // else the datatable must be initialised
       datatableObj.DataTable({
         dom: `Bfrtip`,
@@ -791,32 +789,32 @@ class ArticController {
           data: {
             flowcellId
           },
-          "dataSrc": function ( json ) {
-                var barcode_data  = {}
-          barcode_data['Seen']=[Object.keys(json['data'].filter(function (el){
-                return el.barcode_name!=='unclassified';
+          dataSrc: function (json) {
+            var barcode_data = {}
+            barcode_data.Seen = [Object.keys(json.data.filter(function (el) {
+              return el.barcode_name !== `unclassified`
             })).length]
-          barcode_data['Projected']=[Object.keys(json['data'].filter(function (el){
-                return el.barcode_name!=='unclassified' && el.projected_to_finish;
+            barcode_data.Projected = [Object.keys(json.data.filter(function (el) {
+              return el.barcode_name !== `unclassified` && el.projected_to_finish
             })).length]
-          barcode_data['Sufficient']=[Object.keys(json['data'].filter(function (el){
-                return el.barcode_name!=='unclassified' && el.has_sufficient_coverage;
+            barcode_data.Sufficient = [Object.keys(json.data.filter(function (el) {
+              return el.barcode_name !== `unclassified` && el.has_sufficient_coverage
             })).length]
-            barcode_data['Finished']=[Object.keys(json['data'].filter(function (el){
-                return el.barcode_name!=='unclassified' && el.has_finished;
+            barcode_data.Finished = [Object.keys(json.data.filter(function (el) {
+              return el.barcode_name !== `unclassified` && el.has_finished
             })).length]
-          that._updateBarcodeCompleteChart(barcode_data);
-                //Make your callback here.
-                //alert("Done!");
-                console.log(json['data']);
-                return json.data;
-            },
+            that._updateBarcodeCompleteChart(barcode_data)
+            // Make your callback here.
+            // alert("Done!");
+            console.log(json.data)
+            return json.data
+          },
           async: true,
           error: (xhr, error, code) => {
             console.error(xhr)
             console.error(error)
-          },
-           },
+          }
+        },
         columnDefs: [
           { targets: 0, data: `barcode_name` },
           { targets: 1, data: `chromosome__line_name` },
@@ -1159,6 +1157,62 @@ class ArticController {
   }
 
   /**
+   *
+   *
+   * @param flowcellId {number} Primary key of the flowcell
+   * @param filePath {str} String file path to the tar gz
+   * @private
+   */
+  _getRenderedReport (flowcellId, filePath) {
+    this._axiosInstance({
+      url: `/api/v1/artic/${flowcellId}/export-report/`,
+      method: `get`,
+      params: {
+        filePath
+      },
+      Accept: `application/gzip`,
+      'Content-Type': `application/gzip`,
+      responseType: `blob`
+    }).then(
+      response => {
+        console.log(response)
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement(`a`)
+        link.href = url
+        link.setAttribute(`download`, response.headers[`x-file-name`])
+        document.body.appendChild(link)
+        link.click()
+      }
+    )
+  }
+
+  /**
+   * Check celery progress for exporting the report
+   * @param taskId {str} Primary key of the flowcell
+   * @private
+   */
+  _queryReportProgress (taskId, that) {
+    that._axiosInstance({
+      url: `/api/v1/artic/${taskId}/report-progress/`,
+      method: `get`
+    }).then(
+      response => {
+        console.log(response)
+        if (response.data.state === `SUCCESS`) {
+          clearInterval(that.reportProgressInterval)
+          that._getRenderedReport(that._flowcellId, response.data.tar_path)
+        } else {
+          console.log(response.data)
+          const done = parseInt(response.data.details.done)
+          const total = parseInt(response.data.details.total)
+          $(`#report-progress-bar`).css(`width`, `${Math.round(done / total * 100)}%`)
+          $(`#numbers-done`).html(`${done}/${total} files added...`)
+        }
+      }
+    )
+  }
+
+  /**
    * Export a PDF report of Artic and run data by gathering SVGs
    * and posting them to the server to be assembled and sent back as a pdf
    * @private
@@ -1179,20 +1233,14 @@ class ArticController {
     // const table = ``
     const data = { proportionClassifiedSGV, readCountsPerBarcodeSGV, readLengthPerBarcodeSGV }
     that._axiosInstance({
-      url: `/api/v1/artic/${that._flowcellId}/export-report/`,
+      url: `/api/v1/artic/${that._flowcellId}/start-report/`,
       data,
-      method: `post`,
-      Accept: `application/gzip`,
-      'Content-Type': `application/gzip`,
-      responseType: `blob`
+      method: `post`
     }).then(
       response => {
-        const url = window.URL.createObjectURL(new Blob([response.data]))
-        const link = document.createElement(`a`)
-        link.href = url
-        link.setAttribute(`download`, response.headers[`x-file-name`])
-        document.body.appendChild(link)
-        link.click()
+        that.export_task_id = response.data
+        that.reportProgressInterval = setInterval(this._queryReportProgress, 1000, response.data, that)
+        $(`#export-report-progress`).modal(`show`)
       }
     ).catch(
       error => {
