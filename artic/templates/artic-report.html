@@ -55,21 +55,6 @@
         </tbody>
     </table>
 </article>
-{% if data.snipit_svg_available or data.treesnstuff %}
-    <article id="vocs">
-        <h4 class="new-page">Artic generated SNIPIT plot and tree for {{ data.sample_name }}</h4>
-        <div style="width:100%">
-            {% if data.snipit_svg_available %}
-                <img style="width:21in" src="{{ data.snipit_path }}" alt="snipitsvg should be displayed here.">
-            {% endif %}
-        </div>
-        <figure>
-            {% if data.treesnstuff %}
-                <img style="width: 14in" src="{{ data.tree_path_svg }}" alt="snipitsvg should be displayed here.">
-            {% endif %}
-        </figure>
-    </article>
-{% endif %}
 
 </body>
 </html>
