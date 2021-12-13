@@ -8,10 +8,12 @@ import subprocess
 import tarfile
 from collections import namedtuple
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import toyplot.pdf
 import toyplot.svg
 import toytree as toytree
 from celery.utils.log import get_task_logger
@@ -84,7 +86,7 @@ def unique_amplicon_coordinates(scheme_bed_file):
     return unqiue_amplicon_coords
 
 
-def get_artic_run_stats(pk, svg_data, request, task):
+def get_artic_run_stats(pk, svg_data, request, task, logger):
     """
     Generate a one page pdf on the artic run that we generated
     Parameters
@@ -97,10 +99,12 @@ def get_artic_run_stats(pk, svg_data, request, task):
         AJAX request instance
     task: reads.models.JobMaster
         The job master ORM instance for this artic task
+    logger: logging.logger
+        Logging instance for celery task
     Returns
     -------
-    str
-        File path to artic summary PDF
+    BytesIO
+        Bytes of the pdf we have generated
     """
     flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(pk)
     artic_task = JobMaster.objects.get(pk=jm_id)
@@ -181,12 +185,10 @@ def get_artic_run_stats(pk, svg_data, request, task):
     l = sorted(list(queryset), key=lambda x: x["barcode_name"])
     svg_path = artic_results_path / "snp_plot.svg"
     tree_path = artic_results_path / "iqtree_.treefile"
+    logger.info("treeeee")
     svg_data["treesnstuff"] = False
     if tree_path.exists():
-        with open(
-            tree_path,
-            "r",
-        ) as fh:
+        with open(tree_path, "r",) as fh:
             trey = toytree.tree(fh.read(), tree_format=0)
             canvas, axes, mark = trey.draw(
                 width=1000,
@@ -194,30 +196,28 @@ def get_artic_run_stats(pk, svg_data, request, task):
                 node_sizes=12,
                 node_style={"fill": "green", "stroke": "black", "stroke-width": 0.75,},
             )
-            tree_path_svg = f"/tmp/{flowcell.id}_tree-plot.svg"
-            toyplot.svg.render(canvas, tree_path_svg)
-        svg_data["treesnstuff"] = True
-        svg_data["tree_path_svg"] = f"file:///{tree_path_svg}"
-
-    svg_data["snipit_svg_available"] = False
-    if svg_path.exists():
-        svg_data["snipit_path"] = f"file:///{svg_path}"
-        svg_data["snipit_svg_available"] = True
+            tree_path_png = f"/tmp/{flowcell.id}_tree-plot.pdf"
+            toyplot.pdf.render(canvas, tree_path_png)
+        # svg_data["treesnstuff"] = True
+        # svg_data["tree_path_svg"] = f"file:///{tree_path_png}"
+    logger.info("no treeeee")
 
     svg_data["overall_results"] = l
     # print(svg_data)
-    HTML(
-        string=render(
-            request, "artic-report.html", context={"data": svg_data}
-        ).getvalue()
-    ).write_pdf(
-        f"/tmp/{task.id}_artic_report.pdf",
-        stylesheets=[
-            CSS("web/static/web/css/artic-report.css"),
-            CSS("web/static/web/libraries/bootstrap-4.5.0-dist/css/bootstrap.css"),
-        ],
+    artic_full_report_bytes = BytesIO(
+        HTML(
+            string=render(
+                request, "artic-report.html", context={"data": svg_data}
+            ).getvalue()
+        ).write_pdf(
+            None,
+            stylesheets=[
+                CSS(f"{BASE_DIR}/web/static/web/css/artic-report.css"),
+                CSS(f"{BASE_DIR}/web/static/web/libraries/bootstrap-4.5.0-dist/css/bootstrap.css"),
+            ],
+        )
     )
-    return f"/tmp/{task.id}_artic_report.pdf"
+    return artic_full_report_bytes
 
 
 def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
