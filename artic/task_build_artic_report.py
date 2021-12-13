@@ -220,7 +220,7 @@ def build_artic_report(self, pk: int, svg_data):
             state="PROGRESS", meta={"done": count, "total": len(barcodes) + 3}
         )
         try:
-            tar.add(f"/tmp/{flowcell.id}_tree-plot.pdf", arcname=f"figures/{flowcell.id}_tree-plot.pdf")
+            tar.add(f"/tmp/{flowcell.id}_tree-plot.pdf", arcname=f"/figures/{flowcell.id}_tree-plot.pdf")
         except FileNotFoundError as e:
             print("tree svg file not found")
         count += 1
@@ -230,7 +230,7 @@ def build_artic_report(self, pk: int, svg_data):
         logger.info("SNP SVG")
         try:
             print("adding svg")
-            tar.add("snp_plot.svg", arcname="figures/snp_plot.svg")
+            tar.add("snp_plot.svg", arcname="/figures/snp_plot.svg")
         except FileNotFoundError as e:
             print("snipit file not found")
         count += 1
