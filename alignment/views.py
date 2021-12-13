@@ -273,7 +273,7 @@ def cnv_detail_chart(
     result_dir = get_alignment_result_dir(
         "", job.flowcell.owner.username, flowcell.name, job.id, create=False
     )
-    array_paths = list(result_dir.rglob(f"*/{contig_name}_cnv_bins.npy*"))
+    array_paths = list(result_dir.rglob(f"*/{barcode}/{contig_name}/{contig_name}_cnv_bins.npy*"))
     if not array_paths:
         return Response("Non arrays found for this flowcell", status=status.HTTP_404_NOT_FOUND)
     contig_array = np.array([])
@@ -331,7 +331,7 @@ def cnv_detail_chart(
     #    print (type(test1))
     #    print (same_dist_elems(test1))
         if len(test1) > 2 and same_dist_elems(test1):
-            print ("Houston we have a problem.")
+            print("Houston we have a problem.")
         else:
             my_bkps = test1
         if counter >= 25:
