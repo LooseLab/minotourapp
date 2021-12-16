@@ -37,10 +37,10 @@ class CnvChartController {
   _contigSelectChange (event, axiosInstance) {
     const contigName = this._cnvDetailContigSelect.find(`:selected`).val()
     const expectedPloidy = this._expectedPloidySelect.val()
-    const barcodePk = this._barcodeCnvSelect.find(`:selected`).attr(`data-pk`)
+    const barcodePk = this._barcodeCnvSelect.find(`:selected`).attr(`data-barcode-pk`)
     const jobPk = this._barcodeCnvSelect.find(`:selected`).attr(`data-job-pk`)
-    const minDiff = $(`#penalty-value`).val()
-    const penValue = $(`#min-size-value`).val()
+    const penValue = $(`#penalty-value`).val()
+    const minDiff = $(`#min-size-value`).val()
     const url = `/api/v1/alignment/${this._flowcellId}/cnv-chart-detail/${barcodePk}/${jobPk}/${contigName}/${expectedPloidy}/${penValue}/${minDiff}/${this._bin_slice}/${this._median_bin_value}`
     this._cnvDetailContigSelect.find(`#cnv-deet-placeholder`).remove()
     this._loadDetailChartData(url, axiosInstance)
@@ -60,7 +60,7 @@ class CnvChartController {
         const barcodeHtml = []
         response.data.forEach(([barcode, barcodePk, refName, jobPk]) => {
           if (!this._barcodesLoaded.has(barcode)) {
-            barcodeHtml.push(`<option data-pk="${barcodePk}" data-job-pk="${jobPk}">${barcode} - ${refName}</option>`)
+            barcodeHtml.push(`<option data-barcode-pk="${barcodePk}" data-job-pk="${jobPk}">${barcode} - ${refName}</option>`)
           }
         })
         this._barcodeCnvSelect.append(barcodeHtml)
