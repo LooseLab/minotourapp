@@ -1,5 +1,6 @@
 import json
 import time
+from collections import defaultdict
 from itertools import groupby
 from typing import Tuple, List
 
@@ -50,7 +51,6 @@ def get_cnv_barcodes(request, pk):
     None
     """
     flowcell = Flowcell.objects.get(pk=pk, owner_id=request.user.id)
-    runs = flowcell.runs.all().values_list("id", flat=True)
     jobs = JobMaster.objects.filter(flowcell=flowcell, job_type_id=5)
     if not jobs:
         return Response("No CNV jobs on this flowcell", status=status.HTTP_204_NO_CONTENT)
@@ -266,7 +266,6 @@ def cnv_detail_chart(
     """
     flowcell = Flowcell.objects.get(pk=pk)
     barcode = Barcode.objects.get(pk=barcode_pk).name
-    runs = flowcell.runs.all().values_list("id", flat=True)
     job = get_object_or_404(JobMaster, job_type_id=5, pk=job_pk)
     expected_ploidy = int(exp_ploidy)
     results = {}
@@ -275,7 +274,7 @@ def cnv_detail_chart(
     )
     array_paths = list(result_dir.rglob(f"*/{barcode}/{contig_name}/{contig_name}_cnv_bins.npy*"))
     if not array_paths:
-        return Response("Non arrays found for this flowcell", status=status.HTTP_404_NOT_FOUND)
+        return Response("No arrays found for this flowcell", status=status.HTTP_404_NOT_FOUND)
     contig_array = np.array([])
     for contig_array_path in array_paths:
         if not contig_array.size:
@@ -327,9 +326,6 @@ def cnv_detail_chart(
     while not my_bkps:
         counter+=1
         test1 = algo_c.predict(pen=int(pen_value))
-    #    print ("test1:",test1)
-    #    print (type(test1))
-    #    print (same_dist_elems(test1))
         if len(test1) > 2 and same_dist_elems(test1):
             print("Houston we have a problem.")
         else:
@@ -338,7 +334,6 @@ def cnv_detail_chart(
             mk_bkps = None
             break
 
-    #my_bkps = algo_c.predict(pen=int(pen_value))
     print(my_bkps)
     if my_bkps:
         band_x_coords = []
@@ -376,7 +371,6 @@ def cnv_chart(request, pk: int, barcode_pk: int, job_pk: int, expected_ploidy: i
     expected_ploidy = int(expected_ploidy)
     flowcell = Flowcell.objects.get(pk=pk)
     barcode = Barcode.objects.get(pk=barcode_pk).name
-    runs = flowcell.runs.all().values_list("id", flat=True)
     job = JobMaster.objects.get(pk=job_pk, job_type_id=5)
     array_path_me_baby = {}
     result_me_baby = {}
@@ -408,17 +402,10 @@ def cnv_chart(request, pk: int, barcode_pk: int, job_pk: int, expected_ploidy: i
         )
     )
     total_map_starts = 0
-    arrays = sorted(list(result_dir.rglob(f"*/{barcode}/*/*cnv_bins.npy*")), key = lambda x: x.parts[-2])
-    print (result_dir)
-    print (arrays)
+    arrays = sorted(list(result_dir.rglob(f"*/{barcode}/*/*cnv_bins.npy*")), key=lambda x: x.parts[-2])
     g = groupby(arrays, key=lambda x: x.parts[-2])
     array_path_me_baby[barcode] = dict(natsorted({key: list(value) for key, value in g}.items(), key=lambda x: x[0]))
-        # array_path_me_baby[barcode] = natsorted(
-        #     list(result_dir.rglob(f"{barcode}/*/*cnv_bins.npy")),
-        #     key=lambda x: x.parts[-2],
-        # )
     # get the total mapping starts per barcode
-    print (array_path_me_baby[barcode])
     for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
         if contig_name == "chrM":
             continue
@@ -472,7 +459,7 @@ def cnv_chart(request, pk: int, barcode_pk: int, job_pk: int, expected_ploidy: i
         )
         binned_ploidys = np.nan_to_num(
             new_bin_values / median_bin_value * expected_ploidy, nan=0, posinf=0,
-        ).round(decimals=5)
+        ).round(decimals=2)
 
         result_me_baby[contig_name] = np.array(
             list(zip(x_coords, binned_ploidys))
@@ -735,3 +722,111 @@ def per_genome_coverage_summary(request, flowcell_pk):
         "categories": categories,
     }
     return Response(results, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, min_diff):
+    """
+    `get_cnv_positions` - Get the CNV positions according to ruptures for a given job_master pk of job_type 5
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The request object provided by django rest framework
+    job_master_pk: int
+        Primary key of the minimap + CNV task
+    reads_per_bin: int
+        The number of goal reads in a bin
+    expected_ploidy: int
+        The expected ploidy of the species
+    min_diff: int
+        The minimum difference for ruptures
+    Returns
+    -------
+    dict of dict of list
+        Dictionary of barcodes to dictionary of chromosomes with lists of putative breakpoints
+    """
+    job_master = get_object_or_404(JobMaster, pk=job_master_pk, job_type_id=5)
+    genome_length = int(job_master.reference.length)
+    folder_dir = get_alignment_result_dir(
+        "", request.username, job_master.flowcell.name, job_master_pk, create=False
+    )
+    array_path_me_baby = defaultdict(dict)
+    arrays = natsorted(list(folder_dir.rglob(f"*/*/*cnv_bins.npy*")), key=lambda x: (x.parts[-3], x.parts[-2]))
+    g = groupby(arrays, key=lambda x: (x.parts[-3], x.parts[-2]))
+    barcode_info = defaultdict(dict)
+    for (barcode, contig), group in g:
+        array_path_me_baby[barcode][contig] = list(group)
+    for barcode in array_path_me_baby:
+        new_bin_values_holder = {}
+        total_map_starts = 0
+        for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
+            if contig_name == "chrM":
+                continue
+            for contig_array_path in contig_array_paths:
+                contig_array_mmap = open_and_load_array(contig_array_path)
+                total_map_starts += contig_array_mmap[0].sum()
+        barcode_info[barcode]["total_mapped_starts"] = total_map_starts
+        bin_size = int(genome_length / (total_map_starts / int(reads_per_bin)))
+        bin_size = np.ceil(bin_size / 10).astype(int)
+        barcode_info[barcode]["bin_size"] = bin_size
+        # Get the median bin values across the whole genome in order to calculate contig ploidy against the other contigs
+        temp_holder_new_bin_values = []
+        for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
+            if contig_name == "chrM":
+                continue
+            contig_array = np.array([])
+            for contig_array_path in contig_array_paths:
+                if not contig_array.size:
+                    contig_array = open_and_load_array(contig_array_path)
+                else:
+                    contig_array += open_and_load_array(contig_array_path)
+            new_bin_values = np.fromiter(
+                (
+                    contig_array[0][start: start + bin_size].sum()
+                    for start in range(0, contig_array[0].size + 1, bin_size)
+                ),
+                dtype=np.float64,
+            )
+            new_bin_values_holder[contig_name] = (new_bin_values, contig_array.size)
+            temp_holder_new_bin_values.extend(new_bin_values.tolist())
+        median_bin_value = np.median(temp_holder_new_bin_values)
+        break_points = {}
+        #todo new bin values step repeated below could be removed - small time saving???
+        if bin_size <= 1e5:
+            for contig_name, (new_bin_values, num_bins) in new_bin_values_holder.items():
+                binned_ploidys = np.nan_to_num(
+                    new_bin_values / median_bin_value * int(expected_ploidy), nan=0, posinf=0,
+                ).round(decimals=2)
+                x_coords = range(0, (num_bins + 1) * 10, bin_size * 10, )
+                points = np.array(list(zip(x_coords, binned_ploidys)))
+                algo_c = rpt.KernelCPD(kernel="linear", min_size=int(min_diff)).fit(
+                    points[:, 1]
+                )
+                # guesstimated parameter for how big a shift needs to be.
+                # The value of my_bkps is the coordinate in the sample data where a break occurs.
+                # This therefore needs to be converted back to the BIN value where this occured.
+                # thus for each point in the my_bkps we need to grab the row from the data table.
+
+                # This block of code catches an error where the breakpoints are all precisely spread
+                # We presume this isn't true and so recalculate the breakpoints.
+                # This can end up being in an infinite loop.
+                # To prevent that we set a crazy max iterations (25)
+                my_bkps = None
+                counter = 0
+                while not my_bkps:
+                    counter += 1
+                    test1 = algo_c.predict(pen=int(3))
+                    if len(test1) > 2 and same_dist_elems(test1):
+                        print("Houston we have a problem.")
+                    else:
+                        my_bkps = test1
+                    if counter >= 25:
+                        mk_bkps = None
+                        break
+                if my_bkps:
+                    band_x_coords = []
+                    for x in my_bkps:
+                        band_x_coords.append(points[x - 1].tolist())
+                    break_points[contig_name] = band_x_coords
+            barcode_info[barcode]["break_points"] = break_points
+    return Response(barcode_info, status=status.HTTP_200_OK)
