@@ -1,6 +1,7 @@
 import base64
 import gzip
 import json
+import shutil
 import tarfile
 from io import BytesIO
 
@@ -219,20 +220,29 @@ def build_artic_report(self, pk: int, svg_data):
         self.update_state(
             state="PROGRESS", meta={"done": count, "total": len(barcodes) + 3}
         )
+
+        logger.info("SNP SVG")
         try:
-            tar.add(f"/tmp/{flowcell.id}_tree-plot.pdf", arcname=f"/figures/{flowcell.id}_tree-plot.pdf")
+            print("adding svg")
+            shutil.copy2(str(artic_results_path / "snp_plot.svg"), f"/tmp/snp_plot_{task.id}.svg")
+            tar.add(
+                f"/tmp/snp_plot_{task.id}.svg",
+                recursive=True,
+            )
         except FileNotFoundError as e:
-            print("tree svg file not found")
+            print("snipit file not found")
         count += 1
         self.update_state(
             state="PROGRESS", meta={"done": count, "total": len(barcodes) + 3}
         )
-        logger.info("SNP SVG")
         try:
-            print("adding svg")
-            tar.add("snp_plot.svg", arcname="/figures/snp_plot.svg")
+            tar.add(
+                f"/tmp/{flowcell.id}_tree-plot.pdf",
+                arcname=f"/figures/{flowcell.id}_tree-plot.pdf",
+                recursive=False,
+            )
         except FileNotFoundError as e:
-            print("snipit file not found")
+            print("tree svg file not found")
         count += 1
         self.update_state(
             state="PROGRESS", meta={"done": count, "total": len(barcodes) + 3}
@@ -240,5 +250,6 @@ def build_artic_report(self, pk: int, svg_data):
         logger.info("Writing file")
         with open(f"/tmp/{pk}_artic_report_test.tar.gz", "wb") as f:
             f.write(tar_fh.getvalue())
+            f.close()
         logger.info("Done")
         return f"/tmp/{pk}_artic_report_test.tar.gz"
