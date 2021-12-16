@@ -48,5 +48,10 @@ urlpatterns = [
         r'^api/v1/alignment/(?P<pk>[0-9]+)/cnv-chart-detail/(?P<barcode_pk>[0-9]+)/(?P<job_pk>[0-9]+)/(?P<contig_name>[a-zA-Z0-9 ]+)/(?P<exp_ploidy>[0-9]+)/(?P<pen_value>[0-9]+)/(?P<min_diff>[0-9]+)/(?P<bin_slice>[0-9]+)/(?P<median_bin_value>[0-9]+)$',
         views.cnv_detail_chart,
         name="cnv-detail-chart"
+    ),
+    url(
+        r'^api/v1/alignment/breakpoints/(?P<job_master_pk>[0-9]+)/(?P<reads_per_bin>[0-9]+)/(?P<min_diff>[0-9]+)$',
+        views.get_cnv_positions,
+        name="cnv-detail-chart"
     )
 ]
