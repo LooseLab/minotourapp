@@ -748,7 +748,7 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
     job_master = get_object_or_404(JobMaster, pk=job_master_pk, job_type_id=5)
     genome_length = int(job_master.reference.length)
     folder_dir = get_alignment_result_dir(
-        "", request.username, job_master.flowcell.name, job_master_pk, create=False
+        "", request.user.username, job_master.flowcell.name, job_master_pk, create=False
     )
     array_path_me_baby = defaultdict(dict)
     arrays = natsorted(list(folder_dir.rglob(f"*/*/*cnv_bins.npy*")), key=lambda x: (x.parts[-3], x.parts[-2]))
