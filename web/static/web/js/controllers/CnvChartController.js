@@ -13,7 +13,7 @@ class CnvChartController {
     this._cnvDetailContigSelect = $(`#contigCNVDetail`)
     this._barcodeCnvSelect.on(
       `change`, (event) => {
-        const barcodePk = this._barcodeCnvSelect.find(`:selected`).attr(`data-pk`)
+        const barcodePk = this._barcodeCnvSelect.find(`:selected`).attr(`data-barcode-pk`)
         const jobPk = this._barcodeCnvSelect.find(`:selected`).attr(`data-job-pk`)
         const expectedPloidy = this._expectedPloidySelect.val()
         const url = `/api/v1/alignment/${flowcellId}/cnv-chart/${barcodePk}/${jobPk}/${expectedPloidy}`
