@@ -484,20 +484,9 @@ def update_run_summaries(fastq_df):
             # read time on the run summary in th DB update it and vice versa for last read
             first_read_time_str = run_summary["first_read_start_time"]
             last_read_time_str = run_summary["last_read_start_time"]
-            try:
-                first_read_time_date = datetime.strptime(
-                    first_read_time_str, "%Y-%m-%dT%H:%M:%S%z"
-                )
-                last_read_time_date = datetime.strptime(
-                    last_read_time_str, "%Y-%m-%dT%H:%M:%S%z"
-                )
-            except ValueError as e:
-                first_read_time_date = datetime.strptime(
-                    first_read_time_str.split("Z")[0], "%Y-%m-%dT%H:%M:%S"
-                ).replace(tzinfo=pytz.UTC)
-                last_read_time_date = datetime.strptime(
-                    last_read_time_str.split("Z")[0], "%Y-%m-%dT%H:%M:%S"
-                ).replace(tzinfo=pytz.UTC)
+
+            first_read_time_date, last_read_time_date = handle_timestamps(first_read_time_str,last_read_time_str)
+
             if first_read_time_date < run_summary_orm.first_read_start_time:
                 run.start_time = run_summary["first_read_start_time"]
                 run.save()
@@ -518,6 +507,39 @@ def update_run_summaries(fastq_df):
                 run_summary_orm.total_read_length / run_summary_orm.read_count
             )
             run_summary_orm.save()
+
+
+def handle_timestamps(first_read_time_str,last_read_time_str):
+    try:
+        first_read_time_date = datetime.strptime(
+            first_read_time_str, "%Y-%m-%dT%H:%M:%S.%f%z"
+        )
+        last_read_time_date = datetime.strptime(
+            last_read_time_str, "%Y-%m-%dT%H:%M:%S.%f%z"
+        )
+        return first_read_time_date,last_read_time_date
+    except ValueError as e:
+        pass
+    try:
+        first_read_time_date = datetime.strptime(
+            first_read_time_str, "%Y-%m-%dT%H:%M:%S%z"
+        )
+        last_read_time_date = datetime.strptime(
+            last_read_time_str, "%Y-%m-%dT%H:%M:%S%z"
+        )
+        return first_read_time_date,last_read_time_date
+    except ValueError as e:
+        pass
+    try:
+        first_read_time_date = datetime.strptime(
+            first_read_time_str.split("Z")[0], "%Y-%m-%dT%H:%M:%S"
+        ).replace(tzinfo=pytz.UTC)
+        last_read_time_date = datetime.strptime(
+            last_read_time_str.split("Z")[0], "%Y-%m-%dT%H:%M:%S"
+        ).replace(tzinfo=pytz.UTC)
+        return first_read_time_date,last_read_time_date
+    except ValueError as e:
+        pass
 
 
 @app.task
