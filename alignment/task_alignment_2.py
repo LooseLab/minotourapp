@@ -399,23 +399,27 @@ def sv_hunt(data_set, folder_dir):
     final_result = result_table.groupby(
         ["barcode_id", "source_chrom", "source", "target_chrom", "target"]
     ).count()
-    summed_data = pd.DataFrame(final_result.to_records())
 
-    file_path = Path(f"{folder_dir}/SV_data.pickle")
+    if not final_result.empty:
+        summed_data = pd.DataFrame(final_result.to_records())
 
-    if file_path.is_file():
-        # file exists
-        extradata = pd.read_pickle(file_path)
-        summed_data = (
-            pd.concat([summed_data, extradata])
-            .groupby(["barcode_id", "source_chrom", "source", "target_chrom", "target"])
-            .sum()
-            .reset_index()
-        )
+        file_path = Path(f"{folder_dir}/SV_data.pickle")
 
-    summed_data.to_pickle(file_path)
+        if file_path.is_file():
+            # file exists
+            extradata = pd.read_pickle(file_path)
+            summed_data = (
+                pd.concat([summed_data, extradata])
+                .groupby(["barcode_id", "source_chrom", "source", "target_chrom", "target"])
+                .sum()
+                .reset_index()
+            )
 
-    return summed_data
+        summed_data.to_pickle(file_path)
+
+        return summed_data
+
+    return None
 
 
 @app.task
