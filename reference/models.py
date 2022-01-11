@@ -62,7 +62,6 @@ class ReferenceInfo(models.Model):
         return f"Name: {self.name}, Private: {self.private}"
 
 
-
 class ReferenceLine(models.Model):
     """
     Represents contigs inside the reference
@@ -77,6 +76,7 @@ class ReferenceLine(models.Model):
     )
     chromosome_length = models.BigIntegerField(
     )
+
     def __str__(self):
         return f"{self.reference} {self.line_name}"
 
@@ -87,6 +87,7 @@ def delete_reference_files(sender, instance=None, created=False, **kwargs):
     Delete the actual reference files when a reference info is deleted
     """
     try:
+        # remove the index for the reference file
         os.unlink(f"{instance.file_location.path}.fxi")
     except FileNotFoundError as e:
         pass
