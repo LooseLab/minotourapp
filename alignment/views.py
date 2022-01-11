@@ -732,7 +732,7 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
     ----------
     request: rest_framework.request.Request
         The request object provided by django rest framework
-    job_master_pk: int
+    job_master_pk: intre
         Primary key of the minimap + CNV task
     reads_per_bin: int
         The number of goal reads in a bin
@@ -748,7 +748,7 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
     job_master = get_object_or_404(JobMaster, pk=job_master_pk, job_type_id=5)
     genome_length = int(job_master.reference.length)
     folder_dir = get_alignment_result_dir(
-        "", request.user.username, job_master.flowcell.name, job_master_pk, create=False
+        "", request.user.get_username(), job_master.flowcell.name, job_master_pk, create=False
     )
     array_path_me_baby = defaultdict(dict)
     arrays = natsorted(list(folder_dir.rglob(f"*/*/*cnv_bins.npy*")), key=lambda x: (x.parts[-3], x.parts[-2]))
@@ -757,6 +757,8 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
     for (barcode, contig), group in g:
         array_path_me_baby[barcode][contig] = list(group)
     for barcode in array_path_me_baby:
+        if barcode == "unclassified":
+            continue
         new_bin_values_holder = {}
         total_map_starts = 0
         for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
