@@ -832,3 +832,47 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
                     break_points[contig_name] = band_x_coords
             barcode_info[barcode]["break_points"] = break_points
     return Response(barcode_info, status=status.HTTP_200_OK)
+
+
+@api_view(["GET", "HEAD"])
+def sv_table_list(request, flowcell_pk):
+    """
+    HEAD whether a given alignment run has a pickle of SVs and if it does allow clients to GET it
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Request object
+    Returns
+    -------
+
+    """
+
+    if request.method == "HEAD":
+        headers = {"x-data": False}
+        job_masters = JobMaster.objects.filter(flowcell_id=flowcell_pk, job_type_id=5)
+        for job_master in job_masters:
+            folder_dir = get_alignment_result_dir(
+                "", request.user.get_username(), job_master.flowcell.name, job_master.id, create=False
+            )
+            if list(folder_dir.rglob("SV_data.pickle")):
+                headers = {"x-data": True}
+        return Response(headers=headers)
+    elif request.method == "GET":
+        df = pd.DataFrame()
+        job_masters = JobMaster.objects.filter(flowcell_id=flowcell_pk, job_type_id=5)
+        for job_master in job_masters:
+            folder_dir = get_alignment_result_dir(
+                "", request.user.get_username(), job_master.flowcell.name, job_master.id, create=False
+            )
+            pickle_paths = list(folder_dir.rglob("SV_data.pickle"))
+            for pickle_path in pickle_paths:
+                df = pd.concat([df, pd.read_pickle(pickle_path)])
+        df = df[(df["source_coord"] != 1) & (df["target_coord"] != 1)]
+        barcode_lookup = {b.id: b.name for b in Barcode.objects.filter(id__in=np.unique(df["barcode_id"].values))}
+        df["barcode_name"] = df["barcode_id"].map(barcode_lookup)
+        df["source"] = df["source_chrom"] + " " + df["source"].astype(str)
+        df["target"] = df["target_chrom"] + " " + df["target"].astype(str)
+        df["read_count"] = df["source_coord"]
+        df = df.drop(columns=["barcode_id", "source_chrom", "target_chrom", "source_coord", "target_coord"])
+        data = df.to_dict(orient="records")
+        return Response({"data": data})

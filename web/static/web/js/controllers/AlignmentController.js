@@ -23,6 +23,7 @@ class AlignmentController {
       barcodeSelect: []
     }
     this._sumToCheck = 0
+    this._hasSV = false
     this._selects = [this._readTypeSelect, this._referenceSelect, this._chromosomeSelect, this._barcodeSelect]
     this._addChangeListenerToSelects()
     // this._requestMappedChromosomes(flowcellId)
@@ -36,6 +37,7 @@ class AlignmentController {
       console.log(`clearing Alignment interval`)
       clearInterval(this._interval)
     })
+    this._createSvTable(`sv-summary`)
   }
 
   /**
@@ -322,5 +324,52 @@ class AlignmentController {
         chart.addSeries(series)
       }
     })
+  }
+
+  /**
+   * Create the SV table if the pickle of data exists
+   * @param divId {str} Id of the div to create the datatable in
+   * @private
+   */
+  _createSvTable (divId) {
+    if (!Object.prototype.hasOwnProperty.call(this, `_svTable`)) { this._svTable = $(`#sv-table`) }
+    this._axiosInstance.head(`/api/v1/alignment/${this._flowcellId}/sv-table`).then(response => {
+      console.log(response)
+      if (response.headers[`x-data`] === `True`) {
+        this._hasSV = true
+        const svBlock = $(`#sv-summary`)
+        if (!(svBlock.css(`display`) === `flex`)) {
+          svBlock.css(`display`, `flex`)
+        }
+        if ($.fn.DataTable.isDataTable(this._svTable)) {
+          console.log(`is table`)
+          this._svTable.DataTable().ajax.reload(null, false)
+        } else {
+          console.log(`initialising table`)
+          this._svTable.DataTable(
+            {
+              ajax: {
+                url: `/api/v1/alignment/${this._flowcellId}/sv-table`,
+                async: true,
+                error: (xhr, error, code) => {
+                  console.error(xhr)
+                  console.error(code)
+                }
+              },
+              columns: [
+                { data: `barcode_name` },
+                { data: `source` },
+                { data: `target` },
+                { data: `read_count` }
+              ]
+            }
+          )
+        }
+      }
+    }).catch(
+      error => {
+        console.error(error)
+      }
+    )
   }
 }
