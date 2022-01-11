@@ -611,7 +611,7 @@ def get_amplicon_stats(
         ],
     )
     a = np.array(amplicon_band_coords)[:, :2]
-    a = a.astype(np.int16)
+    a = a.astype(np.uint32)
     (
         flowcell,
         artic_results_path,
