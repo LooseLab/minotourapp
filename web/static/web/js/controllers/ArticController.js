@@ -180,7 +180,8 @@ class ArticController {
               style: {
                 color: `grey`
               },
-              rotation: 270
+              rotation: 270,
+              useHTML: true
             }
           }
         })
