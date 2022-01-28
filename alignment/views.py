@@ -751,16 +751,22 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
         "", request.user.get_username(), job_master.flowcell.name, job_master_pk, create=False
     )
     array_path_me_baby = defaultdict(dict)
+    # get arrays pathlib paths
     arrays = natsorted(list(folder_dir.rglob(f"*/*/*cnv_bins.npy*")), key=lambda x: (x.parts[-3], x.parts[-2]))
+    # group them by the barcode and contig name
     g = groupby(arrays, key=lambda x: (x.parts[-3], x.parts[-2]))
+    # dict to store metadata return values
     barcode_info = defaultdict(dict)
     for (barcode, contig), group in g:
         array_path_me_baby[barcode][contig] = list(group)
+    # For each barcode
     for barcode in array_path_me_baby:
         if barcode == "unclassified":
             continue
+        # hold the values for each selected region of bins
         new_bin_values_holder = {}
         total_map_starts = 0
+        # get the total number of mapped reads we have starts
         for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
             if contig_name == "chrM":
                 continue
@@ -768,20 +774,23 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
                 contig_array_mmap = open_and_load_array(contig_array_path)
                 total_map_starts += contig_array_mmap[0].sum()
         barcode_info[barcode]["total_mapped_starts"] = total_map_starts
+        # calculate bin size in number of bins
         bin_size = int(genome_length / (total_map_starts / int(reads_per_bin)))
         bin_size = np.ceil(bin_size / 10).astype(int)
-        barcode_info[barcode]["bin_size"] = bin_size
+        barcode_info[barcode]["bin_size"] = bin_size * 10 # bin size in bases
         # Get the median bin values across the whole genome in order to calculate contig ploidy against the other contigs
         temp_holder_new_bin_values = []
         for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
             if contig_name == "chrM":
                 continue
             contig_array = np.array([])
+            # this is something to do with run_ids as in combine the values across different runs?
             for contig_array_path in contig_array_paths:
                 if not contig_array.size:
                     contig_array = open_and_load_array(contig_array_path)
                 else:
                     contig_array += open_and_load_array(contig_array_path)
+            # Create the new bin values by summing the slices of the array
             new_bin_values = np.fromiter(
                 (
                     contig_array[0][start: start + bin_size].sum()
@@ -793,7 +802,6 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
             temp_holder_new_bin_values.extend(new_bin_values.tolist())
         median_bin_value = np.median(temp_holder_new_bin_values)
         break_points = {}
-        #todo new bin values step repeated below could be removed - small time saving???
         if bin_size <= 1e5:
             for contig_name, (new_bin_values, num_bins) in new_bin_values_holder.items():
                 binned_ploidys = np.nan_to_num(
