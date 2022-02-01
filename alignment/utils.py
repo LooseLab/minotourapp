@@ -93,7 +93,7 @@ def get_alignment_result_dir(run_id: str, username: str, flowcell_name: str, job
     if create:
         alignment_results_path.mkdir(exist_ok=True, parents=True)
     if not alignment_results_path.exists():
-        raise FileNotFoundError(f"{alignment_results_path} does not exist.")
+        raise FileNotFoundError(alignment_results_path)
     return alignment_results_path
 
 
