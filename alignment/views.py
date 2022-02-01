@@ -13,6 +13,7 @@ from natsort import natsorted
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from alignment.models import PafSummaryCov
 from alignment.utils import _human_key, get_alignment_result_dir, get_or_create_array, open_and_load_array
@@ -724,6 +725,19 @@ def per_genome_coverage_summary(request, flowcell_pk):
     return Response(results, status=status.HTTP_200_OK)
 
 
+class JobMasterPk(APIView):
+    """
+    Get the Job MAster pk in swordfish for a task on a flowcell with minimap_cnv as the task type
+    Parameters
+    ----------
+
+    """
+    def get(self, request, flowcell_pk):
+        jm = get_object_or_404(JobMaster, flowcell__id=flowcell_pk, job_type_id=5)
+        jm = jm.__dict__
+        jm.pop("_state")
+        return Response(jm, status=status.HTTP_200_OK)
+
 @api_view(["GET"])
 def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, min_diff):
     """
@@ -773,11 +787,25 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
             for contig_array_path in contig_array_paths:
                 contig_array_mmap = open_and_load_array(contig_array_path)
                 total_map_starts += contig_array_mmap[0].sum()
-        barcode_info[barcode]["total_mapped_starts"] = total_map_starts
+        # barcode_info[barcode]["total_mapped_starts"] = total_map_starts
         # calculate bin size in number of bins
         bin_size = int(genome_length / (total_map_starts / int(reads_per_bin)))
         bin_size = np.ceil(bin_size / 10).astype(int)
-        barcode_info[barcode]["bin_size"] = bin_size * 10 # bin size in bases
+        # barcode_info[barcode]["bin_size"] = bin_size * 10 # bin size in bases
+        barcode_info[barcode].update(
+            {
+                "name": barcode,
+                "control": False,
+                "min_chunks": 0,
+                "max_chunks": 4,
+                "single_on": "stop_receiving",
+                "single_off": "unblock",
+                "multi_on": "stop_receiving",
+                "multi_off": "unblock",
+                "no_seq": "proceed",
+                "no_map": "proceed"
+            }
+        )
         # Get the median bin values across the whole genome in order to calculate contig ploidy against the other contigs
         temp_holder_new_bin_values = []
         for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
@@ -801,16 +829,15 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
             new_bin_values_holder[contig_name] = (new_bin_values, contig_array.size)
             temp_holder_new_bin_values.extend(new_bin_values.tolist())
         median_bin_value = np.median(temp_holder_new_bin_values)
-        break_points = {}
-        if bin_size <= 1e5:
+        break_point_targets = []
+        if bin_size < 1e6:
             for contig_name, (new_bin_values, num_bins) in new_bin_values_holder.items():
                 binned_ploidys = np.nan_to_num(
                     new_bin_values / median_bin_value * int(expected_ploidy), nan=0, posinf=0,
                 ).round(decimals=2)
-                x_coords = range(0, (num_bins + 1) * 10, bin_size * 10, )
-                points = np.array(list(zip(x_coords, binned_ploidys)))
+                x_coords = list(range(0, (num_bins + 1) * 10, bin_size * 10, ))
                 algo_c = rpt.KernelCPD(kernel="linear", min_size=int(min_diff)).fit(
-                    points[:, 1]
+                    binned_ploidys
                 )
                 # guesstimated parameter for how big a shift needs to be.
                 # The value of my_bkps is the coordinate in the sample data where a break occurs.
@@ -834,11 +861,10 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
                         mk_bkps = None
                         break
                 if my_bkps:
-                    band_x_coords = []
                     for x in my_bkps:
-                        band_x_coords.append(points[x - 1].tolist())
-                    break_points[contig_name] = band_x_coords
-            barcode_info[barcode]["break_points"] = break_points
+                        # Add contig name, start - 0.5 * bin width, start + 0.5 * bin_width, strand
+                        break_point_targets.extend([f"{contig_name},{x_coords[x - 1] - 0.5 * bin_size*10},{x_coords[x - 1] + 0.5 * bin_size*10},+",f"{contig_name},{x_coords[x - 1] - 0.5 * bin_size*10},{x_coords[x - 1] + 0.5 * bin_size*10},-"])
+            barcode_info[barcode]["targets"] = break_point_targets
     return Response(barcode_info, status=status.HTTP_200_OK)
 
 
