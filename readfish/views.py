@@ -61,20 +61,23 @@ class ValidateSwordfishStartup(APIView):
     Validate whether the task has been created
     """
 
-    def get(self, request, run_id, type):
+    def get(self, request, run_id, action, task):
         # run exists
-        if type == "run":
+        if action == "run":
             run = get_object_or_404(Run, runid=run_id)
             return Response(model_to_dict(run))
         # job exists
-        elif type == "task":
+        elif action == "task":
             run = Run.objects.get(runid=run_id)
-            jm = get_object_or_404(JobMaster, job_type_id=16, flowcell=run.flowcell)
+            task_type = 16 if task == "balance" else 5
+            jm = get_object_or_404(
+                JobMaster, job_type_id=task_type, flowcell=run.flowcell
+            )
             return Response(model_to_dict(jm), status=status.HTTP_200_OK)
 
         else:
             return Response(
-                f"Validation of type {type} unknown.",
+                f"Validation of type {action} unknown.",
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -87,7 +90,7 @@ class ConnectHere(APIView):
     def head(self, request):
         return Response(
             status=status.HTTP_200_OK,
-            headers={"x-sf-version": ["0.0.1"], "x-mt-ver": VERSION},
+            headers={"x-sf-version": ["0.0.2"], "x-mt-ver": VERSION},
         )
 
 
@@ -144,9 +147,9 @@ class GetToTheChopper(APIView):
             )
         )
         barcodes_on_record = set(
-            ArticBarcodeMetadata.objects.filter(flowcell=flowcell).exclude(barcode__name="unclassified").values_list(
-                "barcode__name", flat=True
-            )
+            ArticBarcodeMetadata.objects.filter(flowcell=flowcell)
+            .exclude(barcode__name="unclassified")
+            .values_list("barcode__name", flat=True)
         )
         if not barcodes_on_record:
             return Response(
@@ -154,12 +157,16 @@ class GetToTheChopper(APIView):
             )
         barcodes_to_still_sequence = barcodes_on_record - completed_barcodes
         bed = get_start_to_start_coords(job_master)
-        positive_starts = bed[bed["strand"].eq("+")][
-            ["range_start", "range_end"]
-        ].values.astype(int).tolist()
-        negative_starts = bed[bed["strand"].eq("-")][
-            ["range_start", "range_end"]
-        ].values.astype(int).tolist()
+        positive_starts = (
+            bed[bed["strand"].eq("+")][["range_start", "range_end"]]
+            .values.astype(int)
+            .tolist()
+        )
+        negative_starts = (
+            bed[bed["strand"].eq("-")][["range_start", "range_end"]]
+            .values.astype(int)
+            .tolist()
+        )
         amplicon_band_coords, _ = get_amplicon_band_data(
             job_master.primer_scheme.scheme_species,
             job_master.primer_scheme.scheme_version,
@@ -184,7 +191,9 @@ class GetToTheChopper(APIView):
                 amplicon_median_coverage = np.median(amplicon_coverage)
                 amplicon_coverages_median.append(amplicon_median_coverage)
             amplicon_coverages_median = np.array(amplicon_coverages_median)
-            amps_to_reject = np.where(amplicon_coverages_median > int(coverage_threshold))[0]
+            amps_to_reject = np.where(
+                amplicon_coverages_median > int(coverage_threshold)
+            )[0]
             if amps_to_reject.size == len(amplicon_band_coords):
                 self.add_barcode_to_completed_table(barcode_name, run_id)
                 completed_barcodes.add(barcode_name)
@@ -211,7 +220,7 @@ class GetToTheChopper(APIView):
                 "multi_on": "unblock",
                 "multi_off": "stop_receiving",
                 "no_seq": "proceed",
-                "no_map": "proceed"
+                "no_map": "proceed",
             }
         for completed_barcode_name in completed_barcodes:
             barcode_rejection_coordinates[completed_barcode_name] = {
@@ -225,6 +234,6 @@ class GetToTheChopper(APIView):
                 "multi_on": "unblock",
                 "multi_off": "unblock",
                 "no_seq": "proceed",
-                "no_map": "proceed"
+                "no_map": "proceed",
             }
         return Response(barcode_rejection_coordinates, status=status.HTTP_200_OK)
