@@ -59,4 +59,9 @@ urlpatterns = [
         views.sv_table_list,
         name="sv-table"
     ),
+    url(
+        r"^api/v1/alignment/get_task/(?P<flowcell_pk>[0-9]+)",
+        views.JobMasterPk.as_view(),
+        name="cnv-task"
+    )
 ]
