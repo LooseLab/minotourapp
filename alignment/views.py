@@ -10,6 +10,7 @@ import ruptures as rpt
 from django.db.models import F, Sum, Avg
 from django.shortcuts import get_object_or_404
 from natsort import natsorted
+from pandas import Series
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -738,6 +739,29 @@ class JobMasterPk(APIView):
         jm.pop("_state")
         return Response(jm, status=status.HTTP_200_OK)
 
+
+def _make_sv_targets(row: Series) -> list:
+    """
+    return readfish compatible targets
+    Parameters
+    ----------
+    row: pd.core.series.Series
+        A row from the SV pickle
+
+    Returns
+    -------
+    list
+        List of targets for the source and target of the SV, on both + and - strand
+    """
+    return [
+        f"{row['source_chrom']},{row['source_start']},{row['source_end']},+",
+        f"{row['source_chrom']},{row['source_start']},{row['source_end']},-",
+        f"{row['target_chrom']},{row['target_start']},{row['target_end']},+",
+        f"{row['target_chrom']},{row['target_start']},{row['target_end']},-",     
+            ]
+    
+
+
 @api_view(["GET"])
 def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, min_diff):
     """
@@ -766,6 +790,20 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
     )
     array_path_me_baby = defaultdict(dict)
     # get arrays pathlib paths
+    # Matts pandas code for SV stuff
+    df = pd.DataFrame()
+    folder_dir = get_alignment_result_dir(
+        "", request.user.get_username(), job_master.flowcell.name, job_master.id, create=False
+    )
+    pickle_paths = list(folder_dir.rglob("SV_data.pickle"))
+    if pickle_paths:
+        for pickle_path in pickle_paths:
+            df = pd.concat([df, pd.read_pickle(pickle_path)])
+        df = df[(df["source_coord"] != 1) & (df["target_coord"] != 1)]
+        barcode_lookup = {b.id: b.name for b in Barcode.objects.filter(id__in=np.unique(df["barcode_id"].values))}
+        df["barcode_name"] = df["barcode_id"].map(barcode_lookup)
+        df = df[["barcode_name", "source_chrom", "source", "target_chrom", "target"]]
+    # back to cool CNV stuff
     arrays = natsorted(list(folder_dir.rglob(f"*/*/*cnv_bins.npy*")), key=lambda x: (x.parts[-3], x.parts[-2]))
     # group them by the barcode and contig name
     g = groupby(arrays, key=lambda x: (x.parts[-3], x.parts[-2]))
@@ -865,6 +903,21 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
                         # Add contig name, start - 0.5 * bin width, start + 0.5 * bin_width, strand
                         break_point_targets.extend([f"{contig_name},{x_coords[x - 1] - 0.5 * bin_size*10},{x_coords[x - 1] + 0.5 * bin_size*10},+",f"{contig_name},{x_coords[x - 1] - 0.5 * bin_size*10},{x_coords[x - 1] + 0.5 * bin_size*10},-"])
             barcode_info[barcode]["targets"] = break_point_targets
+
+            if not df.empty:
+                df = df[df["source_chrom"] != "chrM"]
+                half_bin_size = 0.5 * bin_size * 10
+                # filthy but loosing will to live
+                barcode_df = df[df["barcode_name"] == barcode]
+                barcode_df["source_start"] = np.maximum(barcode_df["source"] - half_bin_size, 0)
+                barcode_df["source_end"] = barcode_df["source"] + half_bin_size
+                barcode_df["target_start"] = np.maximum(barcode_df["target"] - half_bin_size, 0)
+                barcode_df["target_end"] = barcode_df["target"] + half_bin_size
+                targets_list = barcode_df.apply(_make_sv_targets, axis=1)
+                for targets in targets_list.values.tolist():
+                    barcode_info[barcode]["targets"].extend(targets)
+
+                
     return Response(barcode_info, status=status.HTTP_200_OK)
 
 
@@ -904,6 +957,8 @@ def sv_table_list(request, flowcell_pk):
         df = df[(df["source_coord"] != 1) & (df["target_coord"] != 1)]
         barcode_lookup = {b.id: b.name for b in Barcode.objects.filter(id__in=np.unique(df["barcode_id"].values))}
         df["barcode_name"] = df["barcode_id"].map(barcode_lookup)
+        df = df[df["source_chrom"] != "chrM"]
+        df = df[["barcode_name", "source_chrom", "source_coord", "target_coord"]]
         df["source"] = df["source_chrom"] + " " + df["source"].astype(str)
         df["target"] = df["target_chrom"] + " " + df["target"].astype(str)
         df["read_count"] = df["source_coord"]

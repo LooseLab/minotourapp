@@ -74,7 +74,6 @@ class ValidateSwordfishStartup(APIView):
                 JobMaster, job_type_id=task_type, flowcell=run.flowcell
             )
             return Response(model_to_dict(jm), status=status.HTTP_200_OK)
-
         else:
             return Response(
                 f"Validation of type {action} unknown.",
@@ -90,7 +89,7 @@ class ConnectHere(APIView):
     def head(self, request):
         return Response(
             status=status.HTTP_200_OK,
-            headers={"x-sf-version": ["0.0.2"], "x-mt-ver": VERSION},
+            headers={"x-sf-version": ["0.0.2"], "x-mt-version": VERSION},
         )
 
 
