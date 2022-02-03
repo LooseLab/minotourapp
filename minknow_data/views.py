@@ -663,7 +663,7 @@ def version(request):
     json
         Dict of server version, clients supported and minknow version supported
     """
-    resp = {"server": VERSION, "clients": ["1.4.5"], "minknow": ["3.6.5", "4.0.3", "4.0.4", "4.0.5"]}
+    resp = {"server": VERSION, "clients": ["1.4.5", "1.4.6"], "minknow": ["3.6.5", "4.0.3", "4.0.4", "4.0.5"]}
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 
