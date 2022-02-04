@@ -754,10 +754,10 @@ def _make_sv_targets(row: Series) -> list:
         List of targets for the source and target of the SV, on both + and - strand
     """
     return [
-        f"{row['source_chrom']},{row['source_start']},{row['source_end']},+",
-        f"{row['source_chrom']},{row['source_start']},{row['source_end']},-",
-        f"{row['target_chrom']},{row['target_start']},{row['target_end']},+",
-        f"{row['target_chrom']},{row['target_start']},{row['target_end']},-",     
+        f"{row['source_chrom']},{int(row['source_start'])},{int(row['source_end'])},+",
+        f"{row['source_chrom']},{int(row['source_start'])},{int(row['source_end'])},-",
+        f"{row['target_chrom']},{int(row['target_start'])},{int(row['target_end'])},+",
+        f"{row['target_chrom']},{int(row['target_start'])},{int(row['target_end'])},-",
             ]
     
 
@@ -803,6 +803,7 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
         barcode_lookup = {b.id: b.name for b in Barcode.objects.filter(id__in=np.unique(df["barcode_id"].values))}
         df["barcode_name"] = df["barcode_id"].map(barcode_lookup)
         df = df[["barcode_name", "source_chrom", "source", "target_chrom", "target"]]
+        df = df[df["source_chrom"] != "chrM"]
     # back to cool CNV stuff
     arrays = natsorted(list(folder_dir.rglob(f"*/*/*cnv_bins.npy*")), key=lambda x: (x.parts[-3], x.parts[-2]))
     # group them by the barcode and contig name
@@ -841,7 +842,8 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
                 "multi_on": "stop_receiving",
                 "multi_off": "unblock",
                 "no_seq": "proceed",
-                "no_map": "proceed"
+                "no_map": "proceed",
+                "targets": []
             }
         )
         # Get the median bin values across the whole genome in order to calculate contig ploidy against the other contigs
@@ -868,7 +870,7 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
             temp_holder_new_bin_values.extend(new_bin_values.tolist())
         median_bin_value = np.median(temp_holder_new_bin_values)
         break_point_targets = []
-        if bin_size < 1e6:
+        if bin_size * 10 < 1e6:
             for contig_name, (new_bin_values, num_bins) in new_bin_values_holder.items():
                 binned_ploidys = np.nan_to_num(
                     new_bin_values / median_bin_value * int(expected_ploidy), nan=0, posinf=0,
@@ -901,11 +903,11 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
                 if my_bkps:
                     for x in my_bkps:
                         # Add contig name, start - 0.5 * bin width, start + 0.5 * bin_width, strand
-                        break_point_targets.extend([f"{contig_name},{x_coords[x - 1] - 0.5 * bin_size*10},{x_coords[x - 1] + 0.5 * bin_size*10},+",f"{contig_name},{x_coords[x - 1] - 0.5 * bin_size*10},{x_coords[x - 1] + 0.5 * bin_size*10},-"])
+                        # TODO make this a smart f string thing
+                        break_point_targets.extend([f"{contig_name},{int(x_coords[x - 1] - 0.5 * bin_size*10)},{int(x_coords[x - 1] + 0.5 * bin_size*10)},+",f"{contig_name},{int(x_coords[x - 1] - 0.5 * bin_size*10)},{int(x_coords[x - 1] + 0.5 * bin_size*10)},-"])
             barcode_info[barcode]["targets"] = break_point_targets
 
             if not df.empty:
-                df = df[df["source_chrom"] != "chrM"]
                 half_bin_size = 0.5 * bin_size * 10
                 # filthy but loosing will to live
                 barcode_df = df[df["barcode_name"] == barcode]
@@ -958,7 +960,6 @@ def sv_table_list(request, flowcell_pk):
         barcode_lookup = {b.id: b.name for b in Barcode.objects.filter(id__in=np.unique(df["barcode_id"].values))}
         df["barcode_name"] = df["barcode_id"].map(barcode_lookup)
         df = df[df["source_chrom"] != "chrM"]
-        df = df[["barcode_name", "source_chrom", "source_coord", "target_coord"]]
         df["source"] = df["source_chrom"] + " " + df["source"].astype(str)
         df["target"] = df["target_chrom"] + " " + df["target"].astype(str)
         df["read_count"] = df["source_coord"]
