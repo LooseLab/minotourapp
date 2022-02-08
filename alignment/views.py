@@ -802,8 +802,12 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
         df = df[(df["source_coord"] != 1) & (df["target_coord"] != 1)]
         barcode_lookup = {b.id: b.name for b in Barcode.objects.filter(id__in=np.unique(df["barcode_id"].values))}
         df["barcode_name"] = df["barcode_id"].map(barcode_lookup)
-        df = df.groupby("barcode_id", as_index=False).apply(
-            lambda x: x[np.abs(x.source_coord - x.source_coord.mean()) <= (3 * x.source_coord.std())]).droplevel(0)
+        try:
+            df = df.groupby("barcode_id", as_index=False).apply(
+                lambda x: x[np.abs(x.source_coord - x.source_coord.mean()) <= (3 * x.source_coord.std())]).droplevel(0)
+        except ValueError as e:
+            df = df.groupby("barcode_id", as_index=False).apply(
+                lambda x: x[np.abs(x.source_coord - x.source_coord.mean()) <= (3 * x.source_coord.std())])
         df = df[["barcode_name", "source_chrom", "source", "target_chrom", "target"]]
         df = df[df["source_chrom"] != "chrM"]
 
