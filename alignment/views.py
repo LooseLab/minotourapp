@@ -802,8 +802,11 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
         df = df[(df["source_coord"] != 1) & (df["target_coord"] != 1)]
         barcode_lookup = {b.id: b.name for b in Barcode.objects.filter(id__in=np.unique(df["barcode_id"].values))}
         df["barcode_name"] = df["barcode_id"].map(barcode_lookup)
+        df = df.groupby("barcode_id", as_index=False).apply(
+            lambda x: x[np.abs(x.source_coord - x.source_coord.mean()) <= (3 * x.source_coord.std())]).droplevel(0)
         df = df[["barcode_name", "source_chrom", "source", "target_chrom", "target"]]
         df = df[df["source_chrom"] != "chrM"]
+
     # back to cool CNV stuff
     arrays = natsorted(list(folder_dir.rglob(f"*/*/*cnv_bins.npy*")), key=lambda x: (x.parts[-3], x.parts[-2]))
     # group them by the barcode and contig name
@@ -918,8 +921,6 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
                 targets_list = barcode_df.apply(_make_sv_targets, axis=1)
                 for targets in targets_list.values.tolist():
                     barcode_info[barcode]["targets"].extend(targets)
-
-                
     return Response(barcode_info, status=status.HTTP_200_OK)
 
 
