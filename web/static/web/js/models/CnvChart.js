@@ -61,8 +61,10 @@ class CnvChart {
             lineColor: `transparent`
           },
           yAxis: {
+            lineWidth: 0,
             gridLineWidth: 0,
-            minorGridLineWidth: 0
+            minorGridLineWidth: 0,
+            lineColor: `transparent`
           },
 
           plotOptions: {
