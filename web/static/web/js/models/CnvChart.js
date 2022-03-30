@@ -61,8 +61,8 @@ class CnvChart {
             }
           }
         },
-        sourceWidth: 3200,
-        sourceHeight: 1000,
+        sourceWidth: 1600,
+        sourceHeight: 500,
         fallbackToExportServer: false
       },
     })
