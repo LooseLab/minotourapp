@@ -10,9 +10,11 @@ import ruptures as rpt
 from django.db.models import F, Sum, Avg
 from django.shortcuts import get_object_or_404
 from natsort import natsorted
+from pandas import Series
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from alignment.models import PafSummaryCov
 from alignment.utils import _human_key, get_alignment_result_dir, get_or_create_array, open_and_load_array
@@ -724,6 +726,42 @@ def per_genome_coverage_summary(request, flowcell_pk):
     return Response(results, status=status.HTTP_200_OK)
 
 
+class JobMasterPk(APIView):
+    """
+    Get the Job MAster pk in swordfish for a task on a flowcell with minimap_cnv as the task type
+    Parameters
+    ----------
+
+    """
+    def get(self, request, flowcell_pk):
+        jm = get_object_or_404(JobMaster, flowcell__id=flowcell_pk, job_type_id=5)
+        jm = jm.__dict__
+        jm.pop("_state")
+        return Response(jm, status=status.HTTP_200_OK)
+
+
+def _make_sv_targets(row: Series) -> list:
+    """
+    return readfish compatible targets
+    Parameters
+    ----------
+    row: pd.core.series.Series
+        A row from the SV pickle
+
+    Returns
+    -------
+    list
+        List of targets for the source and target of the SV, on both + and - strand
+    """
+    return [
+        f"{row['source_chrom']},{int(row['source_start'])},{int(row['source_end'])},+",
+        f"{row['source_chrom']},{int(row['source_start'])},{int(row['source_end'])},-",
+        f"{row['target_chrom']},{int(row['target_start'])},{int(row['target_end'])},+",
+        f"{row['target_chrom']},{int(row['target_start'])},{int(row['target_end'])},-",
+            ]
+    
+
+
 @api_view(["GET"])
 def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, min_diff):
     """
@@ -751,37 +789,83 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
         "", request.user.get_username(), job_master.flowcell.name, job_master_pk, create=False
     )
     array_path_me_baby = defaultdict(dict)
+    # get arrays pathlib paths
+    # Matts pandas code for SV stuff
+    df = pd.DataFrame()
+    folder_dir = get_alignment_result_dir(
+        "", request.user.get_username(), job_master.flowcell.name, job_master.id, create=False
+    )
+    pickle_paths = list(folder_dir.rglob("SV_data.pickle"))
+    if pickle_paths:
+        for pickle_path in pickle_paths:
+            df = pd.concat([df, pd.read_pickle(pickle_path)])
+        df = df[(df["source_coord"] != 1) & (df["target_coord"] != 1)]
+        barcode_lookup = {b.id: b.name for b in Barcode.objects.filter(id__in=np.unique(df["barcode_id"].values))}
+        df["barcode_name"] = df["barcode_id"].map(barcode_lookup)
+        try:
+            df = df.groupby("barcode_id", as_index=False).apply(
+                lambda x: x[np.abs(x.source_coord - x.source_coord.mean()) <= (3 * x.source_coord.std())]).droplevel(0)
+        except ValueError as e:
+            df = df.groupby("barcode_id", as_index=False).apply(
+                lambda x: x[np.abs(x.source_coord - x.source_coord.mean()) <= (3 * x.source_coord.std())])
+        df = df[["barcode_name", "source_chrom", "source", "target_chrom", "target"]]
+        df = df[df["source_chrom"] != "chrM"]
+
+    # back to cool CNV stuff
     arrays = natsorted(list(folder_dir.rglob(f"*/*/*cnv_bins.npy*")), key=lambda x: (x.parts[-3], x.parts[-2]))
+    # group them by the barcode and contig name
     g = groupby(arrays, key=lambda x: (x.parts[-3], x.parts[-2]))
+    # dict to store metadata return values
     barcode_info = defaultdict(dict)
     for (barcode, contig), group in g:
         array_path_me_baby[barcode][contig] = list(group)
+    # For each barcode
     for barcode in array_path_me_baby:
         if barcode == "unclassified":
             continue
+        # hold the values for each selected region of bins
         new_bin_values_holder = {}
         total_map_starts = 0
+        # get the total number of mapped reads we have starts
         for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
             if contig_name == "chrM":
                 continue
             for contig_array_path in contig_array_paths:
                 contig_array_mmap = open_and_load_array(contig_array_path)
                 total_map_starts += contig_array_mmap[0].sum()
-        barcode_info[barcode]["total_mapped_starts"] = total_map_starts
+        # barcode_info[barcode]["total_mapped_starts"] = total_map_starts
+        # calculate bin size in number of bins
         bin_size = int(genome_length / (total_map_starts / int(reads_per_bin)))
         bin_size = np.ceil(bin_size / 10).astype(int)
-        barcode_info[barcode]["bin_size"] = bin_size
+        # barcode_info[barcode]["bin_size"] = bin_size * 10 # bin size in bases
+        barcode_info[barcode].update(
+            {
+                "name": barcode,
+                "control": False,
+                "min_chunks": 0,
+                "max_chunks": 4,
+                "single_on": "stop_receiving",
+                "single_off": "unblock",
+                "multi_on": "stop_receiving",
+                "multi_off": "unblock",
+                "no_seq": "proceed",
+                "no_map": "proceed",
+                "targets": []
+            }
+        )
         # Get the median bin values across the whole genome in order to calculate contig ploidy against the other contigs
         temp_holder_new_bin_values = []
         for contig_name, contig_array_paths in array_path_me_baby[barcode].items():
             if contig_name == "chrM":
                 continue
             contig_array = np.array([])
+            # this is something to do with run_ids as in combine the values across different runs?
             for contig_array_path in contig_array_paths:
                 if not contig_array.size:
                     contig_array = open_and_load_array(contig_array_path)
                 else:
                     contig_array += open_and_load_array(contig_array_path)
+            # Create the new bin values by summing the slices of the array
             new_bin_values = np.fromiter(
                 (
                     contig_array[0][start: start + bin_size].sum()
@@ -792,17 +876,15 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
             new_bin_values_holder[contig_name] = (new_bin_values, contig_array.size)
             temp_holder_new_bin_values.extend(new_bin_values.tolist())
         median_bin_value = np.median(temp_holder_new_bin_values)
-        break_points = {}
-        #todo new bin values step repeated below could be removed - small time saving???
-        if bin_size <= 1e5:
+        break_point_targets = []
+        if bin_size * 10 < 1e6:
             for contig_name, (new_bin_values, num_bins) in new_bin_values_holder.items():
                 binned_ploidys = np.nan_to_num(
                     new_bin_values / median_bin_value * int(expected_ploidy), nan=0, posinf=0,
                 ).round(decimals=2)
-                x_coords = range(0, (num_bins + 1) * 10, bin_size * 10, )
-                points = np.array(list(zip(x_coords, binned_ploidys)))
+                x_coords = list(range(0, (num_bins + 1) * 10, bin_size * 10, ))
                 algo_c = rpt.KernelCPD(kernel="linear", min_size=int(min_diff)).fit(
-                    points[:, 1]
+                    binned_ploidys
                 )
                 # guesstimated parameter for how big a shift needs to be.
                 # The value of my_bkps is the coordinate in the sample data where a break occurs.
@@ -826,11 +908,23 @@ def get_cnv_positions(request, job_master_pk, reads_per_bin, expected_ploidy, mi
                         mk_bkps = None
                         break
                 if my_bkps:
-                    band_x_coords = []
                     for x in my_bkps:
-                        band_x_coords.append(points[x - 1].tolist())
-                    break_points[contig_name] = band_x_coords
-            barcode_info[barcode]["break_points"] = break_points
+                        # Add contig name, start - 0.5 * bin width, start + 0.5 * bin_width, strand
+                        # TODO make this a smart f string thing
+                        break_point_targets.extend([f"{contig_name},{int(x_coords[x - 1] - 0.5 * bin_size*10)},{int(x_coords[x - 1] + 0.5 * bin_size*10)},+",f"{contig_name},{int(x_coords[x - 1] - 0.5 * bin_size*10)},{int(x_coords[x - 1] + 0.5 * bin_size*10)},-"])
+            barcode_info[barcode]["targets"] = break_point_targets
+
+            if not df.empty:
+                half_bin_size = 0.5 * bin_size * 10
+                # filthy but loosing will to live
+                barcode_df = df[df["barcode_name"] == barcode]
+                barcode_df["source_start"] = np.maximum(barcode_df["source"] - half_bin_size, 0)
+                barcode_df["source_end"] = barcode_df["source"] + half_bin_size
+                barcode_df["target_start"] = np.maximum(barcode_df["target"] - half_bin_size, 0)
+                barcode_df["target_end"] = barcode_df["target"] + half_bin_size
+                targets_list = barcode_df.apply(_make_sv_targets, axis=1)
+                for targets in targets_list.values.tolist():
+                    barcode_info[barcode]["targets"].extend(targets)
     return Response(barcode_info, status=status.HTTP_200_OK)
 
 
@@ -870,6 +964,7 @@ def sv_table_list(request, flowcell_pk):
         df = df[(df["source_coord"] != 1) & (df["target_coord"] != 1)]
         barcode_lookup = {b.id: b.name for b in Barcode.objects.filter(id__in=np.unique(df["barcode_id"].values))}
         df["barcode_name"] = df["barcode_id"].map(barcode_lookup)
+        df = df[df["source_chrom"] != "chrM"]
         df["source"] = df["source_chrom"] + " " + df["source"].astype(str)
         df["target"] = df["target_chrom"] + " " + df["target"].astype(str)
         df["read_count"] = df["source_coord"]

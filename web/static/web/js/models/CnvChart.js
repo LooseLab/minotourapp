@@ -35,9 +35,9 @@ class CnvChart {
         usePreAllocated: true
       },
       plotOptions: {
-        //series: {
+        // series: {
         //    color: '#FF0000'
-        //}
+        // }
       },
       title: {
         text: `Copy Number Variation`
@@ -55,14 +55,29 @@ class CnvChart {
       },
       exporting: {
         chartOptions: { // specific options for the exported image
+          xAxis: {
+            lineWidth: 0,
+            minorGridLineWidth: 0,
+            gridLineWidth: 0,
+            lineColor: `transparent`
+          },
+          yAxis: {
+            lineWidth: 0,
+            gridLineWidth: 0,
+            minorGridLineWidth: 0,
+            lineColor: `transparent`
+          },
+
           plotOptions: {
             series: {
 
             }
           }
         },
+        sourceWidth: 1600,
+        sourceHeight: 500,
         fallbackToExportServer: false
-      },
+      }
     })
   }
 }
