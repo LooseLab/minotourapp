@@ -57,7 +57,8 @@ def unique_amplicon_coordinates(scheme_bed_file):
         scheme_bed_file,
         sep="\t",
         header=None,
-        names=["chromosome", "start", "end", "name", "even", "plus_sign"],
+        usecols=[0, 1, 2, 3],
+        names=["chromosome", "start", "end", "name"],
     )
     df["primer_position"] = df["name"].str.split("_").str[1]
     df = df.set_index("primer_position")
@@ -393,7 +394,7 @@ def convert_amplicon_bed_file_to_json(filepath, json_file, artic_results_primer_
     """
     # TODO not dynamic, how make dynamic, very hardcoded
     # TODO Dropdown on task start for scheme dir?
-    df = pd.read_csv(filepath, sep="\t", header=None)
+    df = pd.read_csv(filepath, sep="\t", header=None, usecols=[0,1,2,3])
     df = df[df.columns[~df.isnull().all()]]
     df["primer_number"] = pd.to_numeric(df[3].str.split("_").str[1])
     df = df.set_index("primer_number")
