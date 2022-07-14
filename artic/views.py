@@ -837,8 +837,6 @@ def get_results_modal_html(request, pk):
     ]
     results_files = [
         ("Consensus sequence", "consensus"),
-        ("Box plot", "box-plot"),
-        ("Bar plot", "bar-plot"),
         ("Fail VCF", "fail-vcf"),
         ("Pass VCF", "pass-vcf"),
         ("Pangolin lineages CSV", "pangolin-lineages"),
