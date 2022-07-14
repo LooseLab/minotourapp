@@ -248,15 +248,7 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
         finished_barcodes = [selected_barcode]
     results_files = {
         "consensus": [
-            f"{barcode_name}/{barcode_name}.consensus.fasta.gz"
-            for barcode_name in finished_barcodes
-        ],
-        "box-plot": [
-            f"{barcode_name}/{barcode_name}-boxplot.png"
-            for barcode_name in finished_barcodes
-        ],
-        "bar-plot": [
-            f"{barcode_name}/{barcode_name}-barplot.png"
+            f"{barcode_name}/{barcode_name}.consensus.fasta"
             for barcode_name in finished_barcodes
         ],
         "fail-vcf": [
@@ -268,23 +260,24 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
             for barcode_name in finished_barcodes
         ],
         "input-fasta": [
-            f"{barcode_name}/{barcode_name}.fastq.gz"
+            f"{barcode_name}/{barcode_name}.fastq"
             for barcode_name in finished_barcodes
         ],
         "pangolin-lineages": [
-            f"{barcode_name}/lineage_report.csv.gz"
+            f"{barcode_name}/lineage_report.csv"
             for barcode_name in finished_barcodes
         ],
         "sorted-bam": [
-            f"{barcode_name}/{barcode_name}.sorted.bam.gz"
+            f"{barcode_name}/{barcode_name}.sorted.bam"
             for barcode_name in finished_barcodes
         ],
         "sorted-bam-bai": [
-            f"{barcode_name}/{barcode_name}.sorted.bam.bai.gz"
+            f"{barcode_name}/{barcode_name}.sorted.bam.bai"
             for barcode_name in finished_barcodes
         ],
     }
     chosen_files = [results_files[key] for key in chosen]
+
     # change into the directory
     os.chdir(artic_results_dir)
     results_file = artic_results_dir / f"results_artic_{flowcell.name}.tar.gz"
@@ -294,7 +287,12 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
                 for barcode_file in filey:
                     tar.add(barcode_file)
             except FileNotFoundError as e:
-                print("file not found")
+                print(f"file not found {repr(e)}")
+                try:
+                    for barcode_file in filey:
+                        tar.add(f"{barcode_file}.gz")
+                except FileNotFoundError as e:
+                    print(f"file not found {repr(e)}")
 
     with open(results_file, "rb") as fh:
         response = HttpResponse(fh.read(), content_type="application/gzip")
