@@ -60,7 +60,7 @@ def unique_amplicon_coordinates(scheme_bed_file):
         usecols=[0, 1, 2, 3],
         names=["chromosome", "start", "end", "name"],
     )
-    df["primer_position"] = df["name"].str.split("_").str[1]
+    df["primer_position"] = df["name"].str.extract(r'_(\d+)_\D+$')
     df = df.set_index("primer_position")
     df[["primer_start", "primer_end"]] = df.groupby("primer_position").agg(
         {"start": np.min, "end": np.max}
@@ -73,7 +73,7 @@ def unique_amplicon_coordinates(scheme_bed_file):
         (df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])
     ).astype(int)
     df["previous_end"] = df["end"].shift()
-    unqiue_amplicon_coords = np.column_stack(
+    unique_amplicon_coords = np.column_stack(
         (
             np.where(
                 df["primer_start"] < df["previous_end"],
@@ -83,8 +83,8 @@ def unique_amplicon_coordinates(scheme_bed_file):
             df["primer_end"].values,
         )
     )
-    unqiue_amplicon_coords = unqiue_amplicon_coords.astype(int)
-    return unqiue_amplicon_coords
+    unique_amplicon_coords = unique_amplicon_coords.astype(int)
+    return unique_amplicon_coords
 
 
 def get_artic_run_stats(pk, svg_data, request, task, logger):
