@@ -392,9 +392,9 @@ def convert_amplicon_bed_file_to_json(filepath, json_file, artic_results_primer_
     """
     # TODO not dynamic, how make dynamic, very hardcoded
     # TODO Dropdown on task start for scheme dir?
-    df = pd.read_csv(filepath, sep="\t", header=None, usecols=[0,1,2,3])
+    df = pd.read_csv(filepath, sep="\t", header=None, usecols=[0,1,2,3,4])
     df = df[df.columns[~df.isnull().all()]]
-    df["primer_number"] = pd.to_numeric(df[3].str.split("_").str[1])
+    df["primer_number"] = df[3].str.extract(r'_(\d+)_\D+$')
     df = df.set_index("primer_number")
     df[["primer_start", "primer_end"]] = df.groupby("primer_number").agg(
         {1: np.min, 2: np.max}
