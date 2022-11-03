@@ -22,7 +22,7 @@ def get_start_to_start_coords(jm):
         usecols=range(5),
         names=["chromosome", "start", "stop", "primer", "group"],
     )
-    bed[["amplicon", "strand"]] = bed["primer"].str.split("_", expand=True)[[1, 2]]
+    bed[["amplicon", "strand"]] = bed["primer"].str.split("_", expand=True).iloc[: ,-2:]
     bed["strand"] = bed["strand"].map({"LEFT": "+", "RIGHT": "-"})
     bed["amplicon"] = bed["amplicon"].astype(int)
     bed["mod_start"] = bed.groupby("strand")["start"].transform(lambda g: g.shift(-1))
