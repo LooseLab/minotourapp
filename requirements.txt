@@ -1,5 +1,5 @@
 numpy
-django==3.2.10
+django==3.2.16
 djangorestframework==3.13.1
 mysqlclient
 python-dateutil
