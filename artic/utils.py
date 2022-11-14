@@ -8,10 +8,12 @@ import subprocess
 import tarfile
 from collections import namedtuple
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import toyplot.pdf
 import toyplot.svg
 import toytree as toytree
 from celery.utils.log import get_task_logger
@@ -30,6 +32,7 @@ from reads.models import JobMaster
 # Colour palette of amplicon bands
 colour_palette = ["#ffd9dc", "#ffefdc", "#ffffbc", "#dcffe4", "#bae1ff"]
 logger = get_task_logger(__name__)
+
 
 def get_sequencing_stats_pdf():
     """
@@ -50,22 +53,41 @@ def unique_amplicon_coordinates(scheme_bed_file):
     numpy.ndarray
 
     """
-    df = pd.read_csv(scheme_bed_file, sep="\t", header=None,
-                     names=["chromosome", "start", "end", "name", "even", "plus_sign"])
-    df["primer_position"] = df["name"].str.split("_").str[1]
+    df = pd.read_csv(
+        scheme_bed_file,
+        sep="\t",
+        header=None,
+        usecols=[0, 1, 2, 3],
+        names=["chromosome", "start", "end", "name"],
+    )
+    df["primer_position"] = df["name"].str.extract(r'(\d+)\D*$')
     df = df.set_index("primer_position")
-    df[["primer_start", "primer_end"]] = df.groupby("primer_position").agg({"start": np.min, "end": np.max})
+    df[["primer_start", "primer_end"]] = df.groupby("primer_position").agg(
+        {"start": np.min, "end": np.max}
+    )
     df = df.loc[~df.index.duplicated(keep="last")]
-    df["primer_end"] = ((df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])).astype(int)
-    df["pair_end"] = ((df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])).astype(int)
+    df["primer_end"] = (
+        (df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])
+    ).astype(int)
+    df["pair_end"] = (
+        (df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])
+    ).astype(int)
     df["previous_end"] = df["end"].shift()
-    unqiue_amplicon_coords = np.column_stack((np.where(df["primer_start"] < df["previous_end"], df["previous_end"],
-                                                       df["primer_start"]), df["primer_end"].values))
-    unqiue_amplicon_coords = unqiue_amplicon_coords.astype(int)
-    return unqiue_amplicon_coords
+    unique_amplicon_coords = np.column_stack(
+        (
+            np.where(
+                df["primer_start"] < df["previous_end"],
+                df["previous_end"],
+                df["primer_start"],
+            ),
+            df["primer_end"].values,
+        )
+    )
+    unique_amplicon_coords = unique_amplicon_coords.astype(int)
+    return unique_amplicon_coords
 
 
-def get_artic_run_stats(pk, svg_data, request, task):
+def get_artic_run_stats(pk, svg_data, request, task, logger):
     """
     Generate a one page pdf on the artic run that we generated
     Parameters
@@ -78,14 +100,14 @@ def get_artic_run_stats(pk, svg_data, request, task):
         AJAX request instance
     task: reads.models.JobMaster
         The job master ORM instance for this artic task
+    logger: logging.logger
+        Logging instance for celery task
     Returns
     -------
-    str
-        File path to artic summary PDF
+    BytesIO
+        Bytes of the pdf we have generated
     """
-    flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(
-        pk
-    )
+    flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(pk)
     artic_task = JobMaster.objects.get(pk=jm_id)
     queryset = PafSummaryCov.objects.filter(job_master=artic_task).values(
         "barcode_name",
@@ -107,7 +129,9 @@ def get_artic_run_stats(pk, svg_data, request, task):
     scheme = task.primer_scheme.scheme_species
     scheme_version = task.primer_scheme.scheme_version
     scheme_dir = task.primer_scheme.scheme_directory
-    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version, scheme_dir)
+    amplicon_band_coords, colours = get_amplicon_band_data(
+        scheme, scheme_version, scheme_dir
+    )
     num_amplicons = len(amplicon_band_coords)
     time_stamp = datetime.now()
     for paf_summary_cov in queryset:
@@ -160,52 +184,41 @@ def get_artic_run_stats(pk, svg_data, request, task):
         ].projected_to_finish
     svg_data["sample_name"] = flowcell.name
     l = sorted(list(queryset), key=lambda x: x["barcode_name"])
-    svg_path = (
-            artic_results_path / "snp_plot.svg"
-    )
-    tree_path = (
-            artic_results_path
-            /
-            "iqtree_.treefile"
-    )
+    svg_path = artic_results_path / "snp_plot.svg"
+    tree_path = artic_results_path / "iqtree_.treefile"
+    logger.info("treeeee")
     svg_data["treesnstuff"] = False
     if tree_path.exists():
-        with open("/home/rory/Projects/data/Artic/artic/Temp_results/10_103_artic/iqtree_.treefile", "r") as fh:
+        with open(tree_path, "r",) as fh:
             trey = toytree.tree(fh.read(), tree_format=0)
-            canvas, axes, mark = trey.draw(width=1000, height=700,
-
-                                          node_sizes=12,
-                                          node_style={
-                                              "fill": "green",
-                                              "stroke": "black",
-                                              "stroke-width": 0.75,
-                                          });
-            tree_path_svg = f"/tmp/{flowcell.id}_tree-plot.svg"
-            toyplot.svg.render(canvas, tree_path_svg)
-        svg_data["treesnstuff"] = True
-        svg_data["tree_path_svg"] = f"file:///{tree_path_svg}"
-
-    svg_data["snipit_svg_available"] = False
-    if svg_path.exists():
-        svg_data[
-            "snipit_path"
-        ] = f"file:///{svg_path}"
-        svg_data["snipit_svg_available"] = True
+            canvas, axes, mark = trey.draw(
+                width=1000,
+                height=700,
+                node_sizes=12,
+                node_style={"fill": "green", "stroke": "black", "stroke-width": 0.75,},
+            )
+            tree_path_png = f"/tmp/{flowcell.id}_tree-plot.pdf"
+            toyplot.pdf.render(canvas, tree_path_png)
+        # svg_data["treesnstuff"] = True
+        # svg_data["tree_path_svg"] = f"file:///{tree_path_png}"
+    logger.info("no treeeee")
 
     svg_data["overall_results"] = l
     # print(svg_data)
-    HTML(string=render(
-        request, "artic-report.html", context={"data": svg_data}
-    ).getvalue()).write_pdf(
-        f"/tmp/{task.id}_artic_report.pdf",
-        stylesheets=[
-            CSS("web/static/web/css/artic-report.css"),
-            CSS(
-                "web/static/web/libraries/bootstrap-4.5.0-dist/css/bootstrap.css"
-            ),
-        ],
+    artic_full_report_bytes = BytesIO(
+        HTML(
+            string=render(
+                request, "artic-report.html", context={"data": svg_data}
+            ).getvalue()
+        ).write_pdf(
+            None,
+            stylesheets=[
+                CSS(f"{BASE_DIR}/web/static/web/css/artic-report.css"),
+                CSS(f"{BASE_DIR}/web/static/web/libraries/bootstrap-4.5.0-dist/css/bootstrap.css"),
+            ],
+        )
     )
-    return f"/tmp/{task.id}_artic_report.pdf"
+    return artic_full_report_bytes
 
 
 def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
@@ -235,15 +248,7 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
         finished_barcodes = [selected_barcode]
     results_files = {
         "consensus": [
-            f"{barcode_name}/{barcode_name}.consensus.fasta.gz"
-            for barcode_name in finished_barcodes
-        ],
-        "box-plot": [
-            f"{barcode_name}/{barcode_name}-boxplot.png"
-            for barcode_name in finished_barcodes
-        ],
-        "bar-plot": [
-            f"{barcode_name}/{barcode_name}-barplot.png"
+            f"{barcode_name}/{barcode_name}.consensus.fasta"
             for barcode_name in finished_barcodes
         ],
         "fail-vcf": [
@@ -255,23 +260,24 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
             for barcode_name in finished_barcodes
         ],
         "input-fasta": [
-            f"{barcode_name}/{barcode_name}.fastq.gz"
+            f"{barcode_name}/{barcode_name}.fastq"
             for barcode_name in finished_barcodes
         ],
         "pangolin-lineages": [
-            f"{barcode_name}/lineage_report.csv.gz"
+            f"{barcode_name}/lineage_report.csv"
             for barcode_name in finished_barcodes
         ],
         "sorted-bam": [
-            f"{barcode_name}/{barcode_name}.sorted.bam.gz"
+            f"{barcode_name}/{barcode_name}.sorted.bam"
             for barcode_name in finished_barcodes
         ],
         "sorted-bam-bai": [
-            f"{barcode_name}/{barcode_name}.sorted.bam.bai.gz"
+            f"{barcode_name}/{barcode_name}.sorted.bam.bai"
             for barcode_name in finished_barcodes
         ],
     }
     chosen_files = [results_files[key] for key in chosen]
+
     # change into the directory
     os.chdir(artic_results_dir)
     results_file = artic_results_dir / f"results_artic_{flowcell.name}.tar.gz"
@@ -281,7 +287,12 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
                 for barcode_file in filey:
                     tar.add(barcode_file)
             except FileNotFoundError as e:
-                print("file not found")
+                print(f"file not found {repr(e)}")
+                try:
+                    for barcode_file in filey:
+                        tar.add(f"{barcode_file}.gz")
+                except FileNotFoundError as e:
+                    print(f"file not found {repr(e)}")
 
     with open(results_file, "rb") as fh:
         response = HttpResponse(fh.read(), content_type="application/gzip")
@@ -292,7 +303,7 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
         return response
 
 
-def get_amplicon_band_data(scheme, scheme_version, scheme_dir):
+def get_amplicon_band_data(scheme, scheme_version, scheme_dir, nooverlap=True):
     """
     Retrieve coordinates on reference for amplicon bands, and a colour scheme for any amplicon pools
     Parameters
@@ -309,11 +320,16 @@ def get_amplicon_band_data(scheme, scheme_version, scheme_dir):
         A list of coordinates, start and stop on x axis, and a colour scheme lookup dictionary for amplicon pools.
 
     """
-    json_file_path = get_amplicon_json_file_path(scheme, scheme_version, Path(scheme_dir))
+    json_file_path = get_amplicon_json_file_path(
+        scheme, scheme_version, Path(scheme_dir)
+    )
     with open(json_file_path, "r") as fh:
         amplicon_bands = json.load(fh)
     # Get data
-    amplicon_band_coords = json.loads(amplicon_bands["amplicons"])
+    if nooverlap:
+        amplicon_band_coords = json.loads(amplicon_bands["unique_amplicons"])
+    else:
+        amplicon_band_coords = json.loads(amplicon_bands["amplicons"])
     colours = {
         amplicon_bands["pools"][index]: colour_palette[index]
         for index in range(len(amplicon_bands["pools"]))
@@ -376,9 +392,9 @@ def convert_amplicon_bed_file_to_json(filepath, json_file, artic_results_primer_
     """
     # TODO not dynamic, how make dynamic, very hardcoded
     # TODO Dropdown on task start for scheme dir?
-    df = pd.read_csv(filepath, sep="\t", header=None)
+    df = pd.read_csv(filepath, sep="\t", header=None, usecols=[0,1,2,3,4])
     df = df[df.columns[~df.isnull().all()]]
-    df["primer_number"] = pd.to_numeric(df[3].str.split("_").str[1])
+    df["primer_number"] = df[3].str.extract(r'(\d+)\D*$')
     df = df.set_index("primer_number")
     df[["primer_start", "primer_end"]] = df.groupby("primer_number").agg(
         {1: np.min, 2: np.max}
@@ -387,9 +403,10 @@ def convert_amplicon_bed_file_to_json(filepath, json_file, artic_results_primer_
     df = df.set_index(["primer_start", "primer_end"])
     df = df.loc[~df.index.duplicated(keep="first")]
     df = df.reset_index()
-    df[["primer_start", "primer_end"]] = unique_amplicon_coordinates(filepath)
+    df[["unique_primer_start", "unique_primer_end"]] = unique_amplicon_coordinates(filepath)
     json_data = {
         "amplicons": df[["primer_start", "primer_end", 4]].to_json(orient="values"),
+        "unique_amplicons":df[["unique_primer_start", "unique_primer_end", 4]].to_json(orient="values"),
         "name": f"{df[0].unique()[0]}_primer_scheme",
         "pools": df[4].unique().tolist(),
     }
@@ -597,7 +614,7 @@ def get_amplicon_stats(
         ],
     )
     a = np.array(amplicon_band_coords)[:, :2]
-    a = a.astype(np.int16)
+    a = a.astype(np.uint32)
     (
         flowcell,
         artic_results_path,
@@ -622,9 +639,9 @@ def get_amplicon_stats(
         amplicon_coverages_mean.append(np.mean(amplicon_coverage))
         amplicon_median_coverage = np.median(amplicon_coverage)
         amplicon_coverages_median.append(amplicon_median_coverage)
-        #For some amplicon schemes we end up with a situation where amplicons basically don't exits so need to chack for nan
+        # For some amplicon schemes we end up with a situation where amplicons basically don't exits so need to chack for nan
         if math.isnan(amplicon_median_coverage):
-            cant_count +=1
+            cant_count += 1
         elif int(amplicon_median_coverage) == 0:
             failed_amplicon_count += 1
         elif int(amplicon_median_coverage) < 20:
@@ -690,8 +707,10 @@ def predict_barcode_will_finish(
         * ideal_reads_count_constant
     )
     return (
-        predicted_coverages[predicted_coverages > coverage_per_amplicon].size / amplicon_median_array.size
+        predicted_coverages[predicted_coverages > coverage_per_amplicon].size
+        / amplicon_median_array.size
     ) * 100 > minimum_required_amplicons
+
 
 @app.task()
 def update_pangolin():

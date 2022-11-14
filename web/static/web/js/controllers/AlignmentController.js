@@ -10,6 +10,7 @@ class AlignmentController {
     this._axiosInstance = axios.create({
       headers: { 'X-CSRFToken': getCookie(`csrftoken`) }
     })
+    this.cnvChartController = new CnvChartController(`cnv-me`, flowcellId, `detail-cnv-me`)
     this._selectData = []
     this._readTypeSelect = $(`#readTypeSelect`)
     this._referenceSelect = $(`#referenceSelect`)
@@ -19,9 +20,10 @@ class AlignmentController {
       referenceSelect: [this._readTypeSelect, this._chromosomeSelect, this._barcodeSelect],
       readTypeSelect: [this._chromosomeSelect, this._barcodeSelect],
       chromosomeSelect: [this._barcodeSelect],
-      barcodeSelect: [],
+      barcodeSelect: []
     }
     this._sumToCheck = 0
+    this._hasSV = false
     this._selects = [this._readTypeSelect, this._referenceSelect, this._chromosomeSelect, this._barcodeSelect]
     this._addChangeListenerToSelects()
     // this._requestMappedChromosomes(flowcellId)
@@ -29,11 +31,13 @@ class AlignmentController {
     this._createColumnCharts()
     this._fetchChromosomeInGenomeCoverageData(flowcellId)
     this._addListenerToResetButton()
+    this._populateCNVDropDown(this._flowcellId)
     this._interval = setInterval(this._reloadPageData, 45000, flowcellId, this)
     $(window).on(`unload`, function () {
       console.log(`clearing Alignment interval`)
       clearInterval(this._interval)
     })
+    this._createSvTable(`sv-summary`)
   }
 
   /**
@@ -59,6 +63,24 @@ class AlignmentController {
   }
 
   /**
+   * Populate the barcodes in the CNV drop down
+   * @param flowcellId {number} flowcell primary key
+   * @private
+   */
+  _populateCNVDropDown (flowcellId) {
+    this.cnvChartController._populateCnvBarcodeSelect(`/api/v1/alignment/${flowcellId}/cnv-barcode`, this._axiosInstance)
+  }
+
+  // /**
+  //  * Draw the CNV chart
+  //  * @param flowcellId {number} Flowcell there's
+  //  * @private
+  //  */
+  // _drawCnvChart (flowcellId) {
+  //   this.cnvChartController._loadChartData(`/api/v1/alignment/${flowcellId}/cnv-chart/2`, this._axiosInstance)
+  // }
+
+  /**
    * Update the drop downs, setting values for uniqueness then adding them to class
    * @param flowcellId {number} The flowcell primary key record
    * @private
@@ -82,7 +104,7 @@ class AlignmentController {
   }
 
   /**
-   * Add the zoom reset to the rest button
+   * Add the zoom reset to the reset button
    * @private
    */
   _addListenerToResetButton () {
@@ -140,7 +162,7 @@ class AlignmentController {
       if (!appropriateOptionExists) {
         options.add(`<option value="-1" id="${base}Placeholder" selected>Please Choose</option>`)
       }
-      select.html([...options].reverse())
+      select.html([...options].sort())
       // if no selection has been made, we have no task id
     })
     // if we have children in every select and the selected option isn't a please choose
@@ -302,5 +324,52 @@ class AlignmentController {
         chart.addSeries(series)
       }
     })
+  }
+
+  /**
+   * Create the SV table if the pickle of data exists
+   * @param divId {str} Id of the div to create the datatable in
+   * @private
+   */
+  _createSvTable (divId) {
+    if (!Object.prototype.hasOwnProperty.call(this, `_svTable`)) { this._svTable = $(`#sv-table`) }
+    this._axiosInstance.head(`/api/v1/alignment/${this._flowcellId}/sv-table`).then(response => {
+      console.log(response)
+      if (response.headers[`x-data`] === `True`) {
+        this._hasSV = true
+        const svBlock = $(`#sv-summary`)
+        if (!(svBlock.css(`display`) === `flex`)) {
+          svBlock.css(`display`, `flex`)
+        }
+        if ($.fn.DataTable.isDataTable(this._svTable)) {
+          console.log(`is table`)
+          this._svTable.DataTable().ajax.reload(null, false)
+        } else {
+          console.log(`initialising table`)
+          this._svTable.DataTable(
+            {
+              ajax: {
+                url: `/api/v1/alignment/${this._flowcellId}/sv-table`,
+                async: true,
+                error: (xhr, error, code) => {
+                  console.error(xhr)
+                  console.error(code)
+                }
+              },
+              columns: [
+                { data: `barcode_name` },
+                { data: `source` },
+                { data: `target` },
+                { data: `read_count` }
+              ]
+            }
+          )
+        }
+      }
+    }).catch(
+      error => {
+        console.error(error)
+      }
+    )
   }
 }

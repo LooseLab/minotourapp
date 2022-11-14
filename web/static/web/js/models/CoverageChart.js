@@ -120,9 +120,7 @@ class CoverageChart {
         reflow: true,
         marginLeft: 50,
         marginRight: 20,
-        style: {
-          position: `absolute`
-        },
+
         boost: {
           useGPUTranslations: true,
           usePreAllocated: true
@@ -159,7 +157,7 @@ class CoverageChart {
         text: null
       },
       xAxis: {
-        minRange: 1500,
+        minRange: 100,
         crosshair: true
       },
       yAxis: {
@@ -199,7 +197,9 @@ class CoverageChart {
         enabled: false
       },
       tooltip: {
-        pointFormat: `<span style="color:{point.color}">●</span> The coverage for bin starting {point.x}: <b>{point.y}</b><br/>`
+        pointFormatter: function () {
+          return `<span style="color:{this.color}">●</span> The coverage for bin ${this.x} - ${this.x + 10}: <b>${this.y}</b><br/>`
+        }
       }
     })
   }
@@ -211,13 +211,16 @@ class CoverageChart {
   afterSelection (event) {
     event.preventDefault()
     const self = this
-    const min = Math.trunc(event.xAxis[0].min)
+    console.log(event.xAxis)
+    let min = Math.trunc(event.xAxis[0].min)
     const max = Math.trunc(event.xAxis[0].max)
     const taskId = $(`#referenceSelect option:selected`).attr(`data-jm-id`)
     const barcodeId = this._barcodeSelect.val()
     const readTypeId = this._readTypeSelect.val()
     const chromosomeId = this._chromosomeSelect.val()
     const url = `/api/v1/alignment/coverage/${taskId}/${barcodeId}/${readTypeId}/${chromosomeId}/${min}/${max}`
+    min = min < 0 ? 0 : min
+    console.log(min)
     this._masterChart.xAxis[0].removePlotBand(`mask-before`)
     this._masterChart.xAxis[0].addPlotBand({
       id: `mask-before`,
@@ -232,21 +235,15 @@ class CoverageChart {
         const data = response.data.newChartData
         const sumToCheck = response.data.sumToCheck
         self._refLength = response.data.refLength
-        if (!checkHighChartsDataIsIdentical([sumToCheck], [this._oldSumToCheck])) {
-          // self._coverageChart.masterChart.xAxis[0].setExtremes(0, response.data.refLength)
-          // self._coverageChart.masterChart.series[0].setData(data.Sequenced, false, false, false)
-          // self._coverageChart.masterChart.series[1].setData(data.Unblocked, false, false, false)
-          self._detailChart.series[0].setData(data.Sequenced, false, false, false)
-          self._detailChart.series[1].setData(data.Unblocked, false, false, false)
-          self._masterChart.xAxis[0].removePlotBand(`mask-before`)
-          self._detailChart.hideLoading()
-          // self._coverageChart.masterChart.hideLoading()
-          self._detailChart.redraw()
-          // self._coverageChart.masterChart.redraw()
-        } else {
-          self._detailChart.hideLoading()
-          // self._coverageChart.masterChart.hideLoading()
-        }
+        console.log(self._detailChart.series)
+        self._detailChart.series[0].setData(data.sequenced, false, false, false)
+        self._detailChart.series[1].setData(data.unblocked, false, false, false)
+        self._masterChart.xAxis[0].removePlotBand(`mask-before`)
+        self._detailChart.hideLoading()
+        // self._coverageChart.masterChart.hideLoading()
+        self._detailChart.redraw()
+        // self._coverageChart.masterChart.redraw()
+
         this._oldSumToCheck = sumToCheck
       }).catch(
       error => {

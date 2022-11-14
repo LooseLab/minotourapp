@@ -4,6 +4,7 @@ conda activate artic
 if ! command -v artic &> /dev/null
 then
   cd /var/lib/minotour/apps/fieldbioinformatics/
+  git checkout 1.3.0-dev
   echo "artic could not be found, installing" >&2
   python setup.py install
 fi

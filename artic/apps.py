@@ -19,7 +19,7 @@ class ArticConfig(AppConfig):
         -------
 
         """
-        from artic.utils import check_artic_static_exists, update_pangolin
+        from artic.utils import check_artic_static_exists
         check_artic_static_exists()
         from minotourapp.utils import get_env_variable
         MT_VoC_PATH = get_env_variable("MT_VoC_PATH")
@@ -48,4 +48,3 @@ class ArticConfig(AppConfig):
                     print(
                         f"Git error, presumably being updated simultaneously {repr(e)}"
                     )
-        update_pangolin()

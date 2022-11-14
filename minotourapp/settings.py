@@ -19,7 +19,7 @@ from kombu import Exchange, Queue
 from minotourapp.utils import get_env_variable
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+VERSION = "1.1.1"
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'readuntil',
     'minknow_data',
     'guardian',
-
+    'readfish'
 ]
 
 MIDDLEWARE = [
@@ -207,8 +207,8 @@ CELERY_QUEUES = (
     Queue('minimap', default_exchange, routing_key='alignment#', consumer_arguments={'x-priority': 5}),
 )
 CELERY_IMPORTS = ('web.tasks', 'communication.tasks_send_message',
-                  'alignment.tasks_alignment', 'reads.tasks.tasks_archive_flowcell', 'artic.task_secure_artic_runs',
-                  'artic.task_artic_alignment')
+                  'reads.tasks.tasks_archive_flowcell', 'artic.task_secure_artic_runs',
+                  'artic.task_artic_alignment', 'alignment.task_alignment_2', 'artic.task_build_artic_report')
 CELERY_ROUTES = ({
     'run_minimap2_alignment': {
         'queue': 'minimap',
@@ -245,7 +245,7 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': 30,
     },
     'remove_old_references': {
-        'task': 'alignment.tasks_alignment.remove_old_references',
+        'task': 'alignment.task_alignment_2.remove_old_references',
         'schedule': 1800,
         'options': {
             "queue": "minimap"
@@ -257,21 +257,15 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(minute=0, hour=0)
     },
     # Run the thing on the thing
-    'clear_intermediate_alignment': {
-        'task': 'alignment.tasks_alignment.aggregate_intermediate_table',
-        'schedule': 45,
-        'options': {
-            "queue": "minimap"
-        }
-    },
+
     'update_pangolin': {
-        'task': 'update_pangolin',
+        'task': 'artic.utils.update_pangolin',
         'schedule': crontab(minute=0, hour=0)
     },
     'update_vocs': {
-        'task': 'update_vocs',
+        'task': 'artic.task_artic_alignment.update_vocs',
         'schedule': crontab(minute=0, hour=0)
-    }
+    },
 }
 
 # For sending twitter messages

@@ -4,7 +4,7 @@ from __future__ import absolute_import, unicode_literals
 
 from celery.utils.log import get_task_logger
 
-from alignment.tasks_alignment import run_minimap2_alignment
+from alignment.task_alignment_2 import run_minimap2_alignment
 from artic.task_artic_alignment import (
     run_artic_command, run_artic_pipeline,
 )
@@ -101,12 +101,12 @@ def run_monitor():
                     )
                     # run the command task.
                     run_artic_command.delay(
-                        str(base_result_dir_path), barcode_name, flowcell_job.id
+                        str(base_result_dir_path), barcode_name, job_master_pk=flowcell_job.id
                     )
 
                     logger.info("Added Artic to the redis cli queue.")
                 elif running_artic_jobs >= max_artic_pipeline_instances:
-                    logger.warning(
+                    logger.debug(
                         f"Sadly we do not have enough available compute power to run more than {max_artic_pipeline_instances} Artic pipelines simultaneously"
                     )
                 else:

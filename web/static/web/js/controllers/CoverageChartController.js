@@ -33,10 +33,11 @@ class CoverageChartController {
         const data = response.data.newChartData
         const sumToCheck = response.data.sumToCheck
         self._refLength = response.data.refLength
-        if (!checkHighChartsDataIsIdentical([sumToCheck], [this._oldSumToCheck])) {
+        if (this._oldSumToCheck !== sumToCheck) {
+          console.log(`new data`)
           self._coverageChart.masterChart.xAxis[0].setExtremes(0, response.data.refLength)
-          self._coverageChart.masterChart.series[0].setData(data.Sequenced, false, false, false)
-          self._coverageChart.masterChart.series[1].setData(data.Unblocked, false, false, false)
+          self._coverageChart.masterChart.series[0].setData(data.sequenced, false, false, false)
+          self._coverageChart.masterChart.series[1].setData(data.unblocked, false, false, false)
           // self._coverageChart.detailChart.series[0].setData(data.Sequenced, false, false, false)
           // self._coverageChart.detailChart.series[1].setData(data.Unblocked, false, false, false)
           self._coverageChart.masterChart.xAxis[0].removePlotBand(`mask-before`)
@@ -60,6 +61,7 @@ class CoverageChartController {
    */
   resetDetailChartZoom () {
     this._coverageChart.detailChart.xAxis[0].setExtremes(0, self._refLength)
+    this._coverageChart.detailChart.series[0].setData(0,false, false, false)
     this._coverageChart.masterChart.xAxis[0].removePlotBand(`mask-before`)
   }
 }

@@ -12,7 +12,7 @@ import pytz
 import redis
 from celery.utils.log import get_task_logger
 
-from alignment.tasks_alignment import run_minimap2_alignment
+from alignment.task_alignment_2 import run_minimap2_alignment
 from artic.task_artic_alignment import run_artic_pipeline
 from metagenomics.new_centrifuge import run_centrifuge_pipeline
 from minknow_data.models import Run, Flowcell
@@ -249,7 +249,13 @@ def update_flowcell(reads_list):
         dtype="datetime64[m]",
     )
     read_df["start_time_truncate"] = read_df["start_time_round"].apply(
-        lambda dt: datetime(dt.year, dt.month, dt.day, dt.hour, int(np.nan_to_num(10 * (dt.minute // 10))))
+        lambda dt: datetime(
+            dt.year,
+            dt.month,
+            dt.day,
+            dt.hour,
+            int(np.nan_to_num(10 * (dt.minute // 10))),
+        )
     )
     update_run_summaries(read_df)
     read_df_all_reads = read_df.copy()
@@ -321,7 +327,7 @@ def update_flowcell(reads_list):
     )
 
 
-def check_if_flowcell_has_streamable_tasks(flowcell_pk):
+def check_if_flowcell_has_streamable_tasks(flowcell_pk: int) -> dict:
     """
     Check if the flowcell has streamable tasks.
     Parameters
@@ -330,11 +336,11 @@ def check_if_flowcell_has_streamable_tasks(flowcell_pk):
         Primary key of the flowcell to check tasks from.
     Returns
     -------
-    tasks: list of int
+    tasks: list of dict
         List of streamable job_masters IDs
     """
 
-    streamable_tasks_pks = [16, 4, 10]
+    streamable_tasks_pks = {16, 5, 4, 10}
     tasks = (
         JobMaster.objects.filter(
             flowcell_id=flowcell_pk, job_type__id__in=streamable_tasks_pks
@@ -365,11 +371,11 @@ def sort_reads_by_flowcell_fire_tasks(reads):
         for task in task_lookups:
             if task["job_type_id"] == 16 and not task["from_database"]:
                 run_artic_pipeline.delay(task["id"], flowcell_reads)
-            elif task["job_type_id"] == 4 and not task["from_database"]:
-                redis_instance.incr("minimaptasks")
+            elif task["job_type_id"] in {4, 5} and not task["from_database"]:
                 run_minimap2_alignment.apply_async(
                     args=(task["id"], flowcell_reads), queue="minimap"
                 )
+                redis_instance.incr(f"{flowcell_id}_minimap_tasks")
             elif task["job_type_id"] == 10 and not task["from_database"]:
                 run_centrifuge_pipeline.delay(task["id"], flowcell_reads)
 
@@ -478,24 +484,11 @@ def update_run_summaries(fastq_df):
             # read time on the run summary in th DB update it and vice versa for last read
             first_read_time_str = run_summary["first_read_start_time"]
             last_read_time_str = run_summary["last_read_start_time"]
-            try:
-                first_read_time_date = datetime.strptime(
-                    first_read_time_str, "%Y-%m-%dT%H:%M:%S%z"
-                )
-                last_read_time_date = datetime.strptime(
-                        last_read_time_str, "%Y-%m-%dT%H:%M:%S%z"
-                )
-            except ValueError as e:
-                first_read_time_date = datetime.strptime(
-                    first_read_time_str.split("Z")[0], "%Y-%m-%dT%H:%M:%S"
-                ).replace(tzinfo=pytz.UTC)
-                last_read_time_date = datetime.strptime(
-                    last_read_time_str.split("Z")[0], "%Y-%m-%dT%H:%M:%S"
-                ).replace(tzinfo=pytz.UTC)
+
+            first_read_time_date, last_read_time_date = handle_timestamps(first_read_time_str,last_read_time_str)
+
             if first_read_time_date < run_summary_orm.first_read_start_time:
-                run.start_time = run_summary[
-                    "first_read_start_time"
-                ]
+                run.start_time = run_summary["first_read_start_time"]
                 run.save()
                 run_summary_orm.first_read_start_time = run_summary[
                     "first_read_start_time"
@@ -511,9 +504,42 @@ def update_run_summaries(fastq_df):
             run_summary_orm.total_read_length += int(run_summary["total_read_length"])
             run_summary_orm.read_count += int(run_summary["read_count"])
             run_summary_orm.avg_read_length = (
-                    run_summary_orm.total_read_length / run_summary_orm.read_count
+                run_summary_orm.total_read_length / run_summary_orm.read_count
             )
             run_summary_orm.save()
+
+
+def handle_timestamps(first_read_time_str,last_read_time_str):
+    try:
+        first_read_time_date = datetime.strptime(
+            first_read_time_str, "%Y-%m-%dT%H:%M:%S.%f%z"
+        )
+        last_read_time_date = datetime.strptime(
+            last_read_time_str, "%Y-%m-%dT%H:%M:%S.%f%z"
+        )
+        return first_read_time_date,last_read_time_date
+    except ValueError as e:
+        pass
+    try:
+        first_read_time_date = datetime.strptime(
+            first_read_time_str, "%Y-%m-%dT%H:%M:%S%z"
+        )
+        last_read_time_date = datetime.strptime(
+            last_read_time_str, "%Y-%m-%dT%H:%M:%S%z"
+        )
+        return first_read_time_date,last_read_time_date
+    except ValueError as e:
+        pass
+    try:
+        first_read_time_date = datetime.strptime(
+            first_read_time_str.split("Z")[0], "%Y-%m-%dT%H:%M:%S"
+        ).replace(tzinfo=pytz.UTC)
+        last_read_time_date = datetime.strptime(
+            last_read_time_str.split("Z")[0], "%Y-%m-%dT%H:%M:%S"
+        ).replace(tzinfo=pytz.UTC)
+        return first_read_time_date,last_read_time_date
+    except ValueError as e:
+        pass
 
 
 @app.task
@@ -573,9 +599,24 @@ def save_reads_bulk(reads):
     reads_as_json = json.dumps(reads)
     ### We want to pause to let the number of chunks get below 10?
     count = redis_instance.scard("reads")
-    while count > 40:
+    minimap_task_per_flowcell_limit = 10
+    flowcell_minimap_counts = [
+        int(redis_instance.get(f"{f_id}_minimap_tasks"))
+        for f_id in flowcell_dict
+        if redis_instance.get(f"{f_id}_minimap_tasks")
+    ]
+    minimap2_task_count_exceed = any(
+        t > minimap_task_per_flowcell_limit for t in flowcell_minimap_counts
+    )
+    while count > 40 or minimap2_task_count_exceed:
         time.sleep(5)
         count = redis_instance.scard("reads")
+        flowcell_minimap_counts = [
+            int(redis_instance.get(f"{f_id}_minimap_tasks")) for f_id in flowcell_dict if redis_instance.get(f"{f_id}_minimap_tasks")
+        ]
+        minimap2_task_count_exceed = any(
+            t > minimap_task_per_flowcell_limit for t in flowcell_minimap_counts
+        )
     redis_instance.sadd("reads", reads_as_json)
     # Bulk create the entries
     skip_sequence_saving = int(get_env_variable("MT_SKIP_SAVING_SEQUENCE"))
@@ -784,7 +825,6 @@ def get_values_and_delete_redis_key(r, key):
     p.get(key)
     p.delete(key)
     return p.execute()[0]
-
 
 
 def scan_keys(r, pattern):

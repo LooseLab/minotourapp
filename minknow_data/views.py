@@ -15,6 +15,7 @@ from minknow_data.models import Minion, MinionEvent, MinionRunStats, MinionContr
 from minknow_data.serializers import MinionRunStatsSerializer, MinionSerializer, MinIONControlSerializer, \
     MinIONEventSerializer, MinIONScriptsSerializer, MinionInfoSerializer, MinionMessageSerializer, \
     MinionRunInfoSerializer, MinIONEventTypeSerializer
+from minotourapp.settings import VERSION
 from reads.utils import create_histogram_series
 
 
@@ -662,7 +663,7 @@ def version(request):
     json
         Dict of server version, clients supported and minknow version supported
     """
-    resp = {"server": "1.0", "clients": ["1.4"], "minknow": ["3.6.5", "4.0.3", "4.0.4", "4.0.5"]}
+    resp = {"server": VERSION, "clients": ["1.4.5", "1.4.6", "1.4.7", "1.4.8"], "minknow": ["3.6.5", "4.0.3", "4.0.4", "4.0.5"]}
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 

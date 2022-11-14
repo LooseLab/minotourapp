@@ -1,6 +1,6 @@
 numpy
-django>=3.0.7
-djangorestframework
+django==3.2.10
+djangorestframework==3.13.1
 mysqlclient
 python-dateutil
 pytz
@@ -19,10 +19,13 @@ numba
 pyfastx
 mappy
 wheel
-git+git://github.com/connor-lab/aln2type@main
+git+https://github.com/connor-lab/aln2type@main
 Gitpython
 WeasyPrint
 matplotlib
 scipy
 readpaf
 toytree
+ruptures
+natsort
+toyplot

@@ -1,188 +1,43 @@
 import datetime
+import datetime
 import fnmatch
 import gzip
 import json
 import os
-import tarfile
 from collections import defaultdict
 from pathlib import Path
 from shutil import rmtree
 from urllib.parse import parse_qs
 
 import pandas as pd
+import rest_framework.response
+from celery.result import AsyncResult
 from django.db.models import Q
 from django.db.utils import IntegrityError
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
-from matplotlib.figure import Figure
 from rest_framework import status
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from weasyprint import HTML, CSS
 
 from alignment.models import PafSummaryCov
 # Create your views here.
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
 from artic.task_artic_alignment import np
+from artic.task_build_artic_report import build_artic_report
 from artic.utils import (
     get_amplicon_band_data,
     quick_get_artic_results_directory,
     remove_duplicate_sequences_numpy,
     get_all_results,
     get_amplicon_stats,
-    get_artic_run_stats,
 )
 from minknow_data.models import Flowcell
 from minotourapp.utils import get_env_variable
 from reads.models import JobMaster, FlowcellSummaryBarcode, Barcode, PrimerScheme
 from reference.models import ReferenceInfo
-
-
-@api_view(["POST"])
-def export_artic_report(request, pk):
-    """
-    Export a pdf report of the artic page upon user request
-    Parameters
-    ----------
-    request: rest_framework.request.Request
-        The request object containing sgv data
-    pk: int
-        The primary key of the flowcell to generate the report for
-
-    Returns
-    -------
-    A PDF blob to be downloaded
-    """
-    flowcell = Flowcell.objects.get(pk=pk)
-    task = JobMaster.objects.filter(flowcell_id=pk, job_type_id=16).last()
-    tar_file_path = f"/tmp/{task.id}_artic_report.tar.gz"
-    tar_file_name = f"{task.id}_artic_report.tar.gz"
-    with tarfile.open(tar_file_path, "w:gz") as tar:
-
-        for abm in ArticBarcodeMetadata.objects.filter(job_master=task):
-            data_2 = {}
-            selected_barcode = str(abm.barcode.name)
-            print(selected_barcode)
-            (
-                flowcell,
-                artic_results_path,
-                artic_task_id,
-                coverage_path,
-            ) = quick_get_artic_results_directory(flowcell.id, selected_barcode)
-            try:
-                with open(str(coverage_path), "rb") as fh:
-                    arr = np.fromfile(fh, dtype=np.uint16)
-                    fig = Figure(figsize=(8, 2))
-                    ax = fig.subplots()
-                    ax.plot(arr)
-                    fig.suptitle(f"{selected_barcode} Coverage across genome")
-                    ax.set_xlabel(f"Reference position")
-                    ax.set_ylabel(f"Coverage")
-                    fig.savefig(f"/tmp/{task.id}_{selected_barcode}.png")
-                    data_2[
-                        "coverage_graph"
-                    ] = f"file:///tmp/{task.id}_{selected_barcode}.png"
-            except FileNotFoundError as e:
-                print(f"Error {repr(e)}")
-                continue
-            json_path = (
-                artic_results_path
-                / selected_barcode
-                / "json_files"
-                / f"{selected_barcode}_ARTIC_medaka.json.gz"
-            )
-            if json_path.exists():
-                with gzip.open(json_path, "r") as fin:
-                    data = json.loads(fin.read().decode("utf-8"))
-                    data = hyphen_to_underscore(data)
-            else:
-                data = {}
-            csv_path = (
-                artic_results_path
-                / selected_barcode
-                / "csv_files"
-                / f"{selected_barcode}_ARTIC_medaka.csv"
-            )
-            if csv_path.exists():
-                df = pd.read_csv(csv_path)
-                html_string = df.T.to_html(
-                    classes="table table-sm table-responsive", border=0, justify="left"
-                )
-                data["hidden_html_string"] = html_string
-
-            csv_path = (
-                artic_results_path
-                / selected_barcode
-                / f"{selected_barcode}_ARTIC_medaka.csv.gz"
-            )
-            if csv_path.exists():
-                df = pd.read_csv(csv_path)
-                html_string = df.to_html(
-                    classes="table table-sm table-responsive",
-                    border=0,
-                    index=False,
-                    justify="left",
-                )
-                data["hidden_html_string2"] = html_string
-            voc_report_html_string = (
-                render(
-                    request,
-                    "artic-variant-of-concern.html",
-                    context={"artic_barcode_VoC": data},
-                )
-                .getvalue()
-                .decode()
-            )
-            data["barcode_name"] = selected_barcode
-            data["voc_report_html"] = voc_report_html_string
-            # data[
-            #     "artic_bar_plot_path"
-            # ] = f"file:///{str(artic_results_path)}/{selected_barcode}/{selected_barcode}-barplot.png"
-            # data[
-            #     "artic_box_plot_path"
-            # ] = f"file:///{str(artic_results_path)}/{selected_barcode}/{selected_barcode}-boxplot.png"
-            data.update(data_2)
-            HTML(
-                string=render(
-                    request, "barcode_report.html", context={"data": data}
-                ).getvalue()
-            ).write_pdf(
-                f"/tmp/{task.id}_{selected_barcode}_artic_report.pdf",
-                stylesheets=[
-                    CSS("web/static/web/css/artic-report.css"),
-                    CSS(
-                        "web/static/web/libraries/bootstrap-4.5.0-dist/css/bootstrap.css"
-                    ),
-                ],
-            )
-            try:
-                tar.add(
-                    f"/tmp/{task.id}_{selected_barcode}_artic_report.pdf",
-                    recursive=False,
-                )
-            except FileNotFoundError as e:
-                print("file not found")
-        artic_summary_pdf_path = get_artic_run_stats(pk, request.data, request, task)
-        try:
-            tar.add(artic_summary_pdf_path, recursive=False)
-        except FileNotFoundError as e:
-            print("file not found")
-        try:
-            tar.add(f"/tmp/{flowcell.id}_tree-plot.svg", recursive=False)
-        except FileNotFoundError as e:
-            print("tree svg file not found")
-        try:
-            os.chdir(artic_results_path)
-            tar.add("snp_plot.svg", recursive=False)
-        except FileNotFoundError as e:
-            print("snipit file not found")
-    with open(tar_file_path, "rb") as fh:
-        response = HttpResponse(fh.read(), content_type="application/zip")
-        response["Content-Disposition"] = f"attachment; filename={tar_file_name}"
-        response["x-file-name"] = tar_file_name
-    return response
 
 
 @api_view(["GET", "POST"])
@@ -555,31 +410,40 @@ def get_artic_summary_table_data(request):
     return Response({"data": queryset})
 
 
-def relabel_tree(tree,artic_results_path):
+def relabel_tree(tree, artic_results_path):
     ### This code finds labels if they exist and uses them to decorate the tree.
-    tree = tree.replace("/ARTIC/medaka","")
-    query = 'barcode??'
-    subbarcodes = fnmatch.filter((tree[i:i + len(query)] for i in range(len(tree) - len(query))), query)
+    tree = tree.replace("/ARTIC/medaka", "")
+    query = "barcode??"
+    subbarcodes = fnmatch.filter(
+        (tree[i : i + len(query)] for i in range(len(tree) - len(query))), query
+    )
     for barcode in subbarcodes:
         try:
             lineage = pd.read_csv(
                 artic_results_path / barcode / "lineage_report.csv.gz"
             )["lineage"][0]
-            tree = tree.replace(barcode,f"{barcode} {lineage}")
+            tree = tree.replace(barcode, f"{barcode} {lineage}")
         except FileNotFoundError:
             pass
         try:
-            with gzip.open(artic_results_path / barcode / "json_files" / f"{barcode}_ARTIC_medaka.json.gz", 'rt', encoding='UTF-8') as zipfile:
+            with gzip.open(
+                artic_results_path
+                / barcode
+                / "json_files"
+                / f"{barcode}_ARTIC_medaka.json.gz",
+                "rt",
+                encoding="UTF-8",
+            ) as zipfile:
                 my_object = json.load(zipfile)
             extra_string = ""
-            for result in my_object['typing']:
-                if result['sample-typing-result']['variant-status'] != None:
-                    if 'phe-label' in result['sample-typing-summary'].keys():
-                        phe_label = result['sample-typing-summary']['phe-label']
+            for result in my_object["typing"]:
+                if result["sample-typing-result"]["variant-status"] != None:
+                    if "phe-label" in result["sample-typing-summary"].keys():
+                        phe_label = result["sample-typing-summary"]["phe-label"]
                     else:
                         phe_label = ""
-                    if 'who-label' in result['sample-typing-summary'].keys():
-                        who_label = result['sample-typing-summary']['who-label']
+                    if "who-label" in result["sample-typing-summary"].keys():
+                        who_label = result["sample-typing-summary"]["who-label"]
                     else:
                         who_label = ""
                     extra_string = f"{extra_string} {phe_label} {who_label}"
@@ -590,56 +454,41 @@ def relabel_tree(tree,artic_results_path):
     return tree
 
 
-
 @api_view(("GET",))
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
 def get_artic_analysis_html(request):
-    data={}
+    data = {}
     flowcell_id = request.GET.get("flowcellId", None)
     if not flowcell_id:
-        return Response(
-            "No flowcell ID provided.", status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response("No flowcell ID provided.", status=status.HTTP_400_BAD_REQUEST)
     ## Now we check to see if a json report exists for this flowcell and barcode.
     flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(
         flowcell_id
     )
-    tree_path = (
-            artic_results_path
-            /
-            "iqtree_.treefile"
-    )
+    tree_path = artic_results_path / "iqtree_.treefile"
 
     if tree_path.exists():
-        with open(tree_path,"r") as tree:
+        with open(tree_path, "r") as tree:
             contents = tree.readlines()
         tree = contents[0].strip()
-        tree = relabel_tree(tree,artic_results_path)
-        data["tree"]=tree
-        data["tree_available"]=True
+        tree = relabel_tree(tree, artic_results_path)
+        data["tree"] = tree
+        data["tree_available"] = True
 
-    svg_path = (
-            artic_results_path
-            /
-            "snp_plot.svg"
-    )
+    svg_path = artic_results_path / "snp_plot.svg"
 
     if svg_path.exists():
-        snipit_svg=""
+        snipit_svg = ""
         with open(svg_path, "r") as f:
             for l in f:
                 l = l.rstrip("\n")
                 snipit_svg += f"{l}\n"
-        #with open(svg_path,"r") as svg:
+        # with open(svg_path,"r") as svg:
         #    contents = svg.readlines()
-        data["svg"]=snipit_svg
-        data["svg_available"]=True
+        data["svg"] = snipit_svg
+        data["svg_available"] = True
 
-
-    return render(
-        request, "artic-analysis.html", context={"artic_analysis": data},
-    )
-
+    return render(request, "artic-analysis.html", context={"artic_analysis": data},)
 
 
 @api_view(("GET",))
@@ -886,8 +735,10 @@ def manually_create_artic_command_job_master(request):
     barcode_pk = request.data.get("barcodePk", None)
     flowcell_id = request.data.get("flowcellId", None)
     job_master_pk = request.data.get("jobPk", None)
-    #ToDo this is hard coded to check against job type 16.
-    primer_scheme = JobMaster.objects.get(flowcell_id=flowcell_id, job_type=16).primer_scheme
+    # ToDo this is hard coded to check against job type 16.
+    primer_scheme = JobMaster.objects.get(
+        flowcell_id=flowcell_id, job_type=16
+    ).primer_scheme
     if not job_type_id or not barcode_pk or not flowcell_id:
         return Response(
             "Flowcell id, barcode id, jobTypeId are required fields.",
@@ -908,7 +759,7 @@ def manually_create_artic_command_job_master(request):
         reference=reference,
         barcode=barcode,
         flowcell_id=flowcell_id,
-        primer_scheme=primer_scheme
+        primer_scheme=primer_scheme,
     )
     if created:
         return Response(
@@ -986,8 +837,6 @@ def get_results_modal_html(request, pk):
     ]
     results_files = [
         ("Consensus sequence", "consensus"),
-        ("Box plot", "box-plot"),
-        ("Bar plot", "bar-plot"),
         ("Fail VCF", "fail-vcf"),
         ("Pass VCF", "pass-vcf"),
         ("Pangolin lineages CSV", "pangolin-lineages"),
@@ -1192,7 +1041,7 @@ def run_all_incomplete(request, pk):
             reference=jm.reference,
             barcode=barcode.barcode,
             flowcell=jm.flowcell,
-            primer_scheme=jm.primer_scheme
+            primer_scheme=jm.primer_scheme,
         )
     return Response("Marked all incomplete barcodes for rerun.")
 
@@ -1217,14 +1066,14 @@ def mark_all_barcodes_for_pipeline(request, pk):
     jm = JobMaster.objects.get(flowcell_id=pk, job_type_id=16)
     barcodes = jm.JobMastersArticBarcodeMetadatas.all()
     for barcode in barcodes:
-        if barcode.name == "unclassified":
+        if barcode.barcode.name == "unclassified":
             continue
         job_master, created = JobMaster.objects.get_or_create(
             job_type_id=17,
             reference=jm.reference,
             barcode=barcode.barcode,
             flowcell=jm.flowcell,
-            primer_scheme=jm.primer_scheme
+            primer_scheme=jm.primer_scheme,
         )
         if not created:
             job_master.complete = False
@@ -1244,7 +1093,9 @@ class PrimerSchemeList(APIView):
         qs = [
             {
                 "id": q.id,
-                "deletable": q.owner.id == request.user.id if q.owner is not None else False,
+                "deletable": q.owner.id == request.user.id
+                if q.owner is not None
+                else False,
                 "scheme_version": q.scheme_version,
                 "scheme_species": q.scheme_species,
                 "private": q.private,
@@ -1279,6 +1130,18 @@ class PrimerSchemeList(APIView):
             if file.name.endswith(".scheme.bed"):
                 file_dict["bed_file"] = pathy
             elif file.name.endswith(".reference.fasta"):
+                if file.multiple_chunks():
+                    fasta_sequences = 0
+                    for chunk in file.chunks():
+                        print(chunk.decode().count(">"))
+                        fasta_sequences += chunk.decode().count(">")
+                else:
+                    fasta_sequences = file.read().decode().count("\n>")
+                if fasta_sequences:
+                    return Response(
+                        "Reference FASTA file must contain only one sequence.",
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 file_dict["ref_file"] = pathy
             else:
                 return Response(
@@ -1299,9 +1162,11 @@ class PrimerSchemeList(APIView):
             reference_file=file_dict["ref_file"],
             owner=request.user,
         )
-        coords, cols = get_amplicon_band_data(ps.scheme_species, ps.scheme_version, ps.scheme_directory)
-        coords = np.array(coords)[:,:2].astype(int)
-        coords = (coords[:,1:2] - coords[:,:1]) + 150
+        coords, cols = get_amplicon_band_data(
+            ps.scheme_species, ps.scheme_version, ps.scheme_directory
+        )
+        coords = np.array(coords)[:, :2].astype(int)
+        coords = (coords[:, 1:2] - coords[:, :1]) + 150
         mean_length = coords.mean()
         min_length = mean_length - mean_length * 0.3
         max_length = mean_length + mean_length * 0.5
@@ -1346,3 +1211,80 @@ def primer_manager(request):
 
     """
     return render(request, "primer_scheme_manager.html", context={"request": request})
+
+
+@api_view(["GET"])
+def get_report(request, pk):
+    """
+    Return the blob of the artic report to be downloaded in tar.gz format
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The rest framework request
+    pk: int
+        Flowcell primary key
+
+    Returns
+    -------
+    """
+    flowcell = Flowcell.objects.get(pk=pk)
+    if not request.user == flowcell.owner:
+        return Response(
+            "You do not own this flowcell. Please contact owner.",
+            status=status.HTTP_402_PAYMENT_REQUIRED,
+        )
+    tar_path = Path(request.GET.get("filePath"))
+    print(request.GET)
+    print(tar_path)
+    print(tar_path.name)
+    with open(tar_path, "rb") as fh:
+        response = HttpResponse(fh.read(), content_type="application/gzip")
+        response["Content-Disposition"] = f"attachment; filename={tar_path.name}"
+        response["x-file-name"] = tar_path.name
+    return response
+
+
+@api_view(["GET"])
+def get_progress(request, task_id):
+    """
+    Get the progress of a celery task - used for exporting report
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The rest framework request
+    task_id: str
+        UUID of the celery task to investigate
+
+    Returns
+    -------
+    json
+
+    """
+    result = AsyncResult(task_id)
+    response_data = {
+        "state": result.state,
+        "details": result.info,
+    }
+    print(response_data)
+    if result.state == "SUCCESS":
+        response_data["tar_path"] = result.get()
+    elif result.state == "FAILURE":
+        return Response("Failed", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return HttpResponse(json.dumps(response_data), content_type="application/json")
+
+
+@api_view(["POST"])
+def start_export_report(request, pk):
+    """
+    Export the report
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+
+    Returns
+    -------
+    rest_framework.response.Response
+
+    """
+    task = build_artic_report.delay(int(pk), request.data)
+    return Response(task.task_id, status=status.HTTP_200_OK)

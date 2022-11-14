@@ -137,6 +137,9 @@ function makeColumnChart (divId, chartTitle, yAxisTitle) {
       marginRight: 10,
       zoomType: `x`
     },
+    boost: {
+      seriesThreshold: 10
+    },
     title: {
       text: chartTitle
     },

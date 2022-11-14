@@ -8,7 +8,6 @@ from collections import defaultdict, Counter
 from copy import deepcopy
 from datetime import datetime, timezone, timedelta
 from io import StringIO
-from pathlib import Path
 from shutil import rmtree
 from textwrap import fill
 
@@ -60,16 +59,18 @@ def remove_dups(infasta, outfasta, maxN=50):
 
     """
     records_collection = {}
+    names = set()
     for name, seq, comment in Fastx(infasta, uppercase=True):
-        if percent_N(seq) <= maxN:
+        percent_n = percent_N(seq)
+        if percent_n <= maxN:
             if name not in records_collection:
                 records_collection[name] = {
                     "seq": seq,
-                    "proportionN": percent_N(seq)
+                    "proportionN": percent_n
                 }
-            elif percent_N(seq) <= records_collection[name]["proportionN"]:
+            elif percent_n <= records_collection[name]["proportionN"]:
                 records_collection[name]["seq"] = seq
-                records_collection[name]["proportionN"] = percent_N(seq)
+                records_collection[name]["proportionN"] = percent_n
     with open(outfasta, "w") as cleaned_fasta:
         fasta_str = "\n".join([f">{seq_id}\n{fill(info['seq'], width=80)}" for seq_id, info in records_collection.items()])
         cleaned_fasta.write(fasta_str)
@@ -382,7 +383,7 @@ def run_variant_command(base_results_directory, barcode_name, jm):
         separator = ", "
         VoCs = separator.join(VoCs_df["phe-label"].to_list())
 
-        if len(VoCs_df) > 0:
+        if not VoCs_df.empty:
             m, created = Message.objects.get_or_create(
                 recipient=jm.flowcell.owner,
                 sender=jm.flowcell.owner,
@@ -483,7 +484,33 @@ def clear_old_data(artic_results_path, barcode_name):
                 filey.unlink()
 
 
-@app.task(time_limit=1200, soft_time_limit=1200)
+def set_job_master_complete(self, exc, task_id, args, kwargs, einfo):
+    """
+    Set the command jobmaster to complete, so we don't stall out
+    Parameters
+    ----------
+    self
+    exc: Exception raised by the task
+    task_id: Unique Id of the failed task
+    args: original arguments of the faield task
+    kwargs: keyword arguments of the failed task
+    einfo: ExceptionInfo
+        Info about the exception raised
+
+    Returns
+    -------
+    None
+
+    """
+    job_master_id = kwargs["job_master_pk"]
+    job_master = JobMaster.objects.get(pk=job_master_id)
+    logger.error(f"Artic task with pk {job_master_id} failed, resetting to complete!")
+    job_master.running = False
+    job_master.complete = True
+    job_master.save()
+
+
+@app.task(time_limit=2400, soft_time_limit=2400, on_failure=set_job_master_complete)
 def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     """
     Run the artic pipeline in this first pass method of dirty bash script
@@ -530,10 +557,13 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         if not out.decode().strip().split(" ")[-1][:3] == "1.1"
         else ""
     )
+    skip_muscle = (
+        "--skip-muscle" if int(get_env_variable("MT_SKIP_MUSCLE")) else ""
+    )
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate {artic_env} && artic minion --medaka {med_model} --normalise {normalise} --threads {threads} --scheme-directory {scheme_dir} --read-file {fastq_path} {scheme_name}/{scheme_ver} {barcode_name}",
+        f"source {MT_CONDA_PREFIX} && conda activate {artic_env} && artic minion --medaka {med_model} --normalise {normalise} --threads {threads} --scheme-directory {scheme_dir} {skip_muscle} --read-file {fastq_path} {scheme_name}/{scheme_ver} {barcode_name}",
     ]
     logger.info(cmd)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -560,93 +590,84 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     ## Collect all compressed files
     ## Todo - only do this every few (10?) minutes?
 
-    cmd = [
-        "bash",
-        "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building && cat {base_results_directory}/barcode*/*.consensus.fasta.gz > "
-        f"{base_results_directory}/zip_all_barcodes.fasta.gz",
-    ]
-    logger.info(cmd)
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = proc.communicate()
-    logger.info(err)
-    subprocess.Popen(
-        ["gunzip", "-f", f"{base_results_directory}/zip_all_barcodes.fasta.gz"]
-    ).communicate()
-    extraseqs_path = Path(scheme_dir).joinpath(
-        scheme_name, "additional_resources", "sequences.fasta"
-    )
-    addthese = str(extraseqs_path) if extraseqs_path.exists() else ""
-    cmd = [
-        "bash",
-        "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building "
-        f"&& touch {base_results_directory}/zip_all_barcodes.fasta"
-        f"&& cat {reference_path} {addthese} {base_results_directory}/zip_all_barcodes.fasta {base_results_directory}/barcode*/*.consensus.fasta"
-        f" > {base_results_directory}/all_barcodes.fasta"
-        # f"source {MT_CONDA_PREFIX} && conda activate tree_building && touch {base_results_directory}/zip_all_barcodes.fasta && cat {base_results_directory}/zip_all_barcodes.fasta > {base_results_directory}/all_barcodes.fasta"
-    ]
-    logger.info(cmd)
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = proc.communicate()
-    logger.info(err)
+    if int(get_env_variable("MT_SKIP_MUSCLE")):
+        cmd = [
+            "bash",
+            "-c",
+            f"source {MT_CONDA_PREFIX} && conda activate tree_building && cat {base_results_directory}/barcode*/*.muscle.fasta.gz > "
+            f"{base_results_directory}/all_muscle_out.fasta.gz",
+        ]
+        logger.info(cmd)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = proc.communicate()
+        logger.info(err)
+        subprocess.Popen(
+            ["gunzip", "-f", f"{base_results_directory}/all_muscle_out.fasta.gz"]
+        ).communicate()
+        extraseqs_path = Path(scheme_dir).joinpath(
+            scheme_name, "additional_resources", "sequences.fasta"
+        )
+        addthese = str(extraseqs_path) if extraseqs_path.exists() else ""
+        # Cat all uncompressed files together including gather and decompressed consensus files
+        cmd = [
+            "bash",
+            "-c",
+            f"source {MT_CONDA_PREFIX} && conda activate tree_building "
+            f"&& touch {base_results_directory}/zip_all_barcodes.fasta"
+            f"&& cat {reference_path} {addthese} {base_results_directory}/zip_all_barcodes.fasta {base_results_directory}/barcode*/*.muscle.out.fasta"
+            f" > {base_results_directory}/all_barcodes_muscle_aligned.fasta"
+            # f"source {MT_CONDA_PREFIX} && conda activate tree_building && touch {base_results_directory}/zip_all_barcodes.fasta && cat {base_results_directory}/zip_all_barcodes.fasta > {base_results_directory}/all_barcodes.fasta"
+        ]
+        logger.info(cmd)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = proc.communicate()
+        logger.info(err)
 
-    ## We may have duplicated sequences by mistake - so we need to get rid of them
-    ## We also need to remove all sequences below some completeness threshold. In this case we are going to use 90%
-    remove_dups(
-        f"{base_results_directory}/all_barcodes.fasta",
-        f"{base_results_directory}/all_barcodes_clean.fasta",
-    )
+        ## We may have duplicated sequences by mistake - so we need to get rid of them
+        ## We also need to remove all sequences below some completeness threshold. In this case we are going to use 90%
+        remove_dups(
+            f"{base_results_directory}/all_barcodes_muscle_aligned.fasta",
+            f"{base_results_directory}/all_barcodes_clean.fasta",
+        )
 
-    ## Build tree
-    cmd = [
-        "bash",
-        "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building && mafft --auto"
-        f" {base_results_directory}/all_barcodes_clean.fasta  > {base_results_directory}/all_barcodes.aln",
-    ]
-    logger.info(cmd)
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = proc.communicate()
-    logger.info(err)
+        ## Build tree
+        cmd = [
+            "bash",
+            "-c",
+            f"source {MT_CONDA_PREFIX} && conda activate tree_building && iqtree -redo -s "
+            f"{base_results_directory}/all_barcodes_clean.fasta -m MFP --prefix {base_results_directory}/iqtree_",
+        ]
+        logger.info(cmd)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = proc.communicate()
+        logger.info(err)
+        # ## A potential issue here is that the alignment includes files which have been added from elsewhere on the run. These are not interesting for us to look at - so we need to remove them.
+        # thin_aln(
+        #     f"{base_results_directory}/all_barcodes.aln",
+        #     f"{base_results_directory}/all_barcodes_thin.aln",
+        #     reference_path,
+        # )
 
-    cmd = [
-        "bash",
-        "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building && iqtree -redo -s "
-        f"{base_results_directory}/all_barcodes.aln -m MFP --prefix {base_results_directory}/iqtree_",
-    ]
-    logger.info(cmd)
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = proc.communicate()
-    logger.info(err)
-    ## A potential issue here is that the alignment includes files which have been added from elsewhere on the run. These are not interesting for us to look at - so we need to remove them.
-    thin_aln(
-        f"{base_results_directory}/all_barcodes.aln",
-        f"{base_results_directory}/all_barcodes_thin.aln",
-        reference_path,
-    )
-
-    cmd = [
-        "bash",
-        "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building && snipit "
-        f"{base_results_directory}/all_barcodes_thin.aln -f svg --size-option scale -o"
-        f" {base_results_directory}/snp_plot",
-    ]
-    logger.info(cmd)
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = proc.communicate()
-    logger.info(err)
+        cmd = [
+            "bash",
+            "-c",
+            f"source {MT_CONDA_PREFIX} && conda activate tree_building && snipit "
+            f"{base_results_directory}/all_barcodes_clean.fasta -f svg --size-option scale -o"
+            f" {base_results_directory}/snp_plot",
+        ]
+        logger.info(cmd)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = proc.communicate()
+        logger.info(err)
     # Update the Barcode Metadata to show the task has been run on this barcode
     ArticBarcodeMetadata.objects.filter(
         flowcell=jm.flowcell, job_master__job_type_id=16, barcode__name=barcode_name
     ).update(has_finished=True, marked_for_rerun=False)
 
     # This shouldn't be run until you clean up the artic run.
-    clear_unused_artic_files(
-        f"{base_results_directory}/{barcode_name}", barcode_name, jm.flowcell.id
-    )
+    # clear_unused_artic_files(
+    #     f"{base_results_directory}/{barcode_name}", barcode_name, jm.flowcell.id
+    # )
 
     jm = JobMaster.objects.get(pk=job_master_pk)
     jm.running = False

@@ -20,7 +20,7 @@ class SharingController {
         {
           targets: 2,
           data: 2,
-          render: (data, type, full, meta) => `<span href="#" onclick="mSharingController.delete('${full.permission_code}', ${full.user}, ${full.flowcell})">DELETE</span>`
+          render: (data, type, full, meta) => `<span href="#" class="deletey" onclick="mSharingController.delete('${full.permission_code}', ${full.user}, ${full.flowcell})"><i class="far fa-trash-alt" style="color: blue"></i> DELETE</span>`
         }]
     })
     this.getAll()

@@ -54,6 +54,7 @@ ENV MT_CONDA_PREFIX="/root/miniconda3/etc/profile.d/conda.sh"
 ENV MT_MINIMAP2_INDEX_DIR="0"
 
 
+
 ##### Artic Task Environment Variables
 ## These variables are divided into those required for analysis and primer set configuration and those required for general configuration of the artic pipelines
 # Read the Artic scheme directories, found where the Artic NCOV pipeline github repo was cloned. Example  /home/rory/Projects/artic-ncov2019/primer_schemes
@@ -83,6 +84,8 @@ ENV MT_ARTIC_RESULTS_DIR='/var/lib/minotour/apps/data'
 ENV MT_ARTIC_MAX_PIPELINES="1"
  # Number of hours until clearing artic files
 ENV MT_ARTIC_TIME_UNTIL_CLEARING="12"
+ENV MT_ALIGNMENT_DATA_DIR="/var/lib/minotour/apps/data"
+
 ENV TZ=Europe/London
 
 ENV CONDA_DIR="/root/miniconda3"
@@ -109,11 +112,13 @@ RUN conda init bash
 
 WORKDIR /var/lib/minotour/apps
 
-RUN git clone https://github.com/artic-network/fieldbioinformatics.git
+RUN git clone https://github.com/Adoni5/fieldbioinformatics.git
 RUN git clone https://github.com/cov-lineages/pangolin.git
 WORKDIR /var/lib/minotour/apps/fieldbioinformatics
 RUN conda install -c conda-forge mamba
+RUN git checkout 1.3.0-dev
 RUN mamba env create -f environment.yml
+
 
 WORKDIR /var/lib/minotour/apps/pangolin
 

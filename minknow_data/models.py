@@ -371,85 +371,59 @@ class Run(models.Model):
     :to_delete: to be removed
     :start_time: returns the time of the earliest read; updated by web.tasks.update_run_start_time
     """
-
     minion = models.ForeignKey(
-
         Minion,
         blank=True,
         null=True,
         related_name='runs',
         on_delete=models.CASCADE,
     )
-
     flowcell = models.ForeignKey(
-
         Flowcell,
         related_name='runs',
         on_delete=models.CASCADE,
-
     )
-
     owner = models.ForeignKey(
-
         settings.AUTH_USER_MODEL,
         related_name='runs',
         on_delete=models.DO_NOTHING,
-
     )
-
     name = models.CharField(
-
         max_length=256
     )
-
     runid = models.CharField(
-
         max_length=64
     )
-
     is_barcoded = models.BooleanField(
-
         default=False
     )
-
     has_fastq = models.BooleanField(
-
         default=True
     )
-
     active = models.BooleanField(
-
         default=False
     )
-
     to_delete = models.BooleanField(
-
         default=False
     )
-
     start_time = models.DateTimeField(
-
         blank=True,
         null=True
     )
 
     class Meta:
-
         verbose_name = 'Run'
         verbose_name_plural = 'Runs'
 
     def __str__(self):
-
         return "{} - {}".format(self.name, self.runid)
 
     def flowcell_name(self):
         """
         Returns flowcell name - to be removed and replaces by run's instance.flowcell.name
         """
-
         try:
             return self.flowcell.name
-
         except AttributeError:
             return "undefined"
 
@@ -457,7 +431,6 @@ class Run(models.Model):
         """
         Returns the time of the most recent RunStat - to be removed and replaces by a field and updated by a task
         """
-
         try:
             return self.RunStats.last().created_date
         except AttributeError:
@@ -479,7 +452,6 @@ class Run(models.Model):
 
     def sample_name(self):
         """
-        TODO Matt - what is the connection between Run and RunDetails.
         """
 
         try:
@@ -489,7 +461,6 @@ class Run(models.Model):
 
     def minKNOW_flow_cell_id(self):
         """
-        TODO Matt - what is the connection between Run and RunDetails. Runs belong to flowcells at the moment.
         """
         try:
             return self.RunDetails.last().minKNOW_flow_cell_id
@@ -498,7 +469,6 @@ class Run(models.Model):
 
     def minKNOW_version(self):
         """
-        TODO Matt
         """
         try:
             return self.RunDetails.last().minKNOW_version
@@ -507,7 +477,6 @@ class Run(models.Model):
 
     def max_channel(self):
         """
-        TODO Matt - Maybe removed and replace by field and task
         """
         try:
             return self.runchansum.order_by('channel').last().channel
@@ -516,7 +485,6 @@ class Run(models.Model):
 
     def flowcell_type(self):
         """
-        TODO Matt - Maybe removed and replace by field and task
         """
         try:
             max_channel = self.max_channel()
@@ -533,7 +501,6 @@ class Run(models.Model):
 
     def computer_name(self):
         """
-        TODO Matt - Maybe removed and replace by field and task
         """
 
         if self.minion and self.minion.currentrundetails and self.minion.currentrundetails.last():

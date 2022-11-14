@@ -107,7 +107,19 @@
     "fields": {
       "name": "Minimap2",
       "description": "Reference Mapping",
-      "long_description": "Minimap2 can be used to map reads against a reference genome. Several genomes are already installed in minoTour. Others (less than 100 Mb in size) can be uploaded for your own use under 'admin'.",
+      "long_description": "Minimap2 can be used to map reads against a reference genome. ",
+      "reference": true,
+      "transcriptome": false,
+      "readcount": true,
+      "private": false
+    }
+  },  {
+    "model": "reads.jobtype",
+    "pk": 5,
+    "fields": {
+      "name": "Minimap2 + CNV",
+      "description": "Reference Mapping + CNV",
+      "long_description": "Minimap2 can be used to map reads against a reference genome. Mapping starts are binned to calculate CNV",
       "reference": true,
       "transcriptome": false,
       "readcount": true,
@@ -281,32 +293,6 @@
       "transcriptome": false,
       "readcount": false,
       "private": false
-    }
-  },
-  {
-    "model": "reads.primerscheme",
-    "pk": 1,
-    "fields": {
-      "scheme_species": "nCoV-2019",
-      "_scheme_version": "V1",
-      "_scheme_directory": "../extra/primer_schemes",
-      "bed_file": "../extra/primer_schemes/nCoV-2019/V1/nCoV-2019.scheme.bed",
-      "reference_file": "../extra/primer_schemes/nCoV-2019/V1/nCoV-2019.reference.fasta",
-      "private": false,
-      "owner": null
-    }
-  },
-  {
-    "model": "reads.primerscheme",
-    "pk": 4,
-    "fields": {
-      "scheme_species": "SARS-CoV-2",
-      "_scheme_version": "V4",
-      "_scheme_directory": "../extra/primer_schemes",
-      "bed_file": "../extra/primer_schemes/SARS-CoV-2/V4/SARS-CoV-2.scheme.bed",
-      "reference_file": "../extra/primer_schemes/SARS-CoV-2/V4/SARS-CoV-2.reference.fasta",
-      "private": false,
-      "owner": null
     }
   }
 ]

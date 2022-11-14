@@ -5,12 +5,12 @@ from alignment import views
 urlpatterns = [
     url(
         r'^api/v1/alignment/coverage/(?P<task_id>[0-9]+)/(?P<barcode_id>[a-zA-Z0-9 ]+)/(?P<read_type_id>[0-9]+)/(?P<chromosome_id>[0-9]+)/$',
-        views.rough_coverage_complete_chromosome_flowcell,
+        views.coverage_master,
         name="rough_coverage_complete_chromosome_flowcell"
     ),
     url(
         r'^api/v1/alignment/coverage/(?P<task_id>[0-9]+)/(?P<barcode_id>[a-zA-Z0-9 ]+)/(?P<read_type_id>[0-9]+)/(?P<chromosome_id>[0-9]+)/(?P<start>[0-9]+)/(?P<end>[0-9]+)/$',
-        views.rough_coverage_partial_chromosome_flowcell,
+        views.coverage_detail,
         name="rough_coverage_partial_chromosome_flowcell"
     ),
     url(
@@ -33,5 +33,35 @@ urlpatterns = [
         r'^api/v1/alignment/(?P<flowcell_pk>[0-9]+)/genome-coverage-summary',
         views.per_genome_coverage_summary,
         name="genome-coverage-summary"
+    ),
+    url(
+        r'^api/v1/alignment/(?P<pk>[0-9]+)/cnv-chart/(?P<barcode_pk>[0-9]+)/(?P<job_pk>[0-9]+)/(?P<expected_ploidy>[0-9])',
+        views.cnv_chart,
+        name="cnv-chart"
+    ),
+    url(
+        r'^api/v1/alignment/(?P<pk>[0-9]+)/cnv-barcode',
+        views.get_cnv_barcodes,
+        name="cnv-barcodes"
+    ),
+    url(
+        r'^api/v1/alignment/(?P<pk>[0-9]+)/cnv-chart-detail/(?P<barcode_pk>[0-9]+)/(?P<job_pk>[0-9]+)/(?P<contig_name>[a-zA-Z0-9 ]+)/(?P<exp_ploidy>[0-9]+)/(?P<pen_value>[0-9]+)/(?P<min_diff>[0-9]+)/(?P<bin_slice>[0-9]+)/(?P<median_bin_value>[0-9]+)$',
+        views.cnv_detail_chart,
+        name="cnv-detail-chart"
+    ),
+    url(
+        r'^api/v1/alignment/breakpoints/(?P<job_master_pk>[0-9]+)/(?P<reads_per_bin>[0-9]+)/(?P<expected_ploidy>[0-9]+)/(?P<min_diff>[0-9]+)$',
+        views.get_cnv_positions,
+        name="cnv-detail-chart"
+    ),
+    url(
+        r'^api/v1/alignment/(?P<flowcell_pk>[0-9]+)/sv-table',
+        views.sv_table_list,
+        name="sv-table"
+    ),
+    url(
+        r"^api/v1/alignment/get_task/(?P<flowcell_pk>[0-9]+)",
+        views.JobMasterPk.as_view(),
+        name="cnv-task"
     )
 ]

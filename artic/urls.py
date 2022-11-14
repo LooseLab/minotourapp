@@ -92,12 +92,22 @@ urlpatterns = [
     url(
         r"^api/v1/artic/(?P<pk>[0-9]+)/re-run-all/",
         views.mark_all_barcodes_for_pipeline,
-        name="run-all-incomplete",
+        name="run-all",
     ),
     url(
         r"^api/v1/artic/(?P<pk>[0-9]+)/export-report/",
-        views.export_artic_report,
+        views.get_report,
         name="export-artic-report"
+    ),
+    url(
+        r"^api/v1/artic/(?P<pk>[0-9]+)/start-report/",
+        views.start_export_report,
+        name="export-artic-report"
+    ),
+    url(
+        r"^api/v1/artic/(?P<task_id>[a-zA-Z0-9-]+)/report-progress/",
+        views.get_progress,
+        name="artic-report-progress"
     ),
     url(
         r"^api/v1/artic/manager/",

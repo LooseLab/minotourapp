@@ -1,3 +1,4 @@
+"""Mapping class, holds mappy aligner objects open for use around minotour in a threaded class"""
 import time
 
 import mappy as mp
@@ -36,7 +37,8 @@ class MappingServer:
         """
         logger.info("checking references")
         logger.info(self.references)
-        for reference in self.mapping_objects:
+        loop_me_baby = dict(self.mapping_objects)
+        for reference in loop_me_baby:
             logger.info(reference)
             if (
                     self.mapping_objects[reference]["last_used"]
@@ -133,28 +135,36 @@ class MappingServer:
         )
         self.mapping_objects[reference]["last_used"] = time.time()
 
-    def map_sequence(self, reference, sequence):
+    def map_sequence(self, reference, read_tuple, include_barcode=False):
         """
         This is a fast mapper that takes a sequence and returns the mapped sequence.
         Parameters
         ----------
         reference: str
             The name of the reference to be mapped against
-        sequence: collections.namedtuple
-            Named tuple of Sequence string and read ID
+        read_tuple: dict
+            The read split into different dictionary fields
+        include_barcode: bool, default False
+            Include the name of the barcode in the paf results in the last index
         Returns
         -------
         list of str
             List of Paf formatted mapping hits
         """
-        results = []
         # For each alignment to be mapped against, returns a PAF format line
-        for hit in self.mapping_objects[reference]["reference"].map(sequence.sequence):
-            results.append(
-                f"{sequence.read_id}\t{len(sequence.sequence)}\t{hit}"
+        result_me_up_inside = []
+        for hit in self.mapping_objects[reference]["reference"].map(read_tuple["sequence"]):
+            results = [read_tuple['read_id'], read_tuple['sequence']]
+            split_hit = str(hit).split("\t")
+            if include_barcode:
+                barcode = read_tuple.get("barcode", False)
+                split_hit.append("no_barcode" if not barcode else barcode)
+            results.extend(
+                split_hit
             )
+            result_me_up_inside.append(results)
         self.refresh_index(reference)
-        return results
+        return result_me_up_inside
 
     def refresh_index(self, reference):
         """

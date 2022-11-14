@@ -22,6 +22,91 @@
         </div>
     </div>
 </div>
+<div class="card card-primary card-outline" id="cnv" style="display: none">
+    <div class="card-header">
+        <h4 class="card-title">
+            <i class="fas fa-dna"></i>
+            CNV
+        </h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <form class="form-horizontal">
+                <div class="form-group">
+
+                    <label for="barcodeCNVSelect" style="display: inline">Barcode:</label>
+                    <select id="barcodeCNVSelect" class="custom-select ms">
+                        <option id="cnv-placeholder">Please choose...</option>
+                    </select>
+                    <label for="ploidy-value" style="display: inline">Expected Ploidy: </label>
+                    <input type="number" id="ploidy-value" value="2">
+
+
+                </div>
+
+                <label for="bin-width" style="display: inline"> Bin width: <span id="bin-width-value"></span></label>
+
+            </form>
+        </div>
+        <div class="row">
+            <div class="col-md-12 highcharts" id="cnv-me">
+                Hello world
+            </div>
+        </div>
+        <div class="row">
+            Look below for some tasty per contig in-depth detail. Select penalty values and min difference for ruptures.
+        </div>
+        <div class="row">
+            <form class="form-horizontal">
+                <div class="form-group">
+                    <label for="contigCNVDetail" style="display: inline">Contig:</label>
+                    <select id="contigCNVDetail" class="custom-select ms">
+                        <option id="cnv-deet-placeholder">Please choose...</option>
+                    </select>
+                    <label for="penalty-value" style="display: inline">Ruptures penalty: </label>
+                    <input type="number" id="penalty-value" value="3">
+                    <label for="min-size-value" style="display: inline"> Ruptures min size value: </label>
+                    <input type="number" id="min-size-value" value="4">
+                </div>
+            </form>
+            <div class="col-md-12 highcharts" id="detail-cnv-me">
+                H
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card card-primary card-outline" style="display: none" id="sv-summary">
+    <div class="card-header">
+        <h4 class="card-title">
+            <i class="fas fa-chart-bar"></i>
+            Structural variant supporting reads (more than 1 read)
+        </h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-12" >
+                <table class="table table-hover" id="sv-table" style="width: 100%">
+                    <thead>
+                    <tr>
+                        <th>Barcode</th>
+                        <th>Source</th>
+                        <th>Target</th>
+                        <th>Read Count</th>
+                    </tr>
+                    </thead>
+                    <tfoot>
+                    <tr>
+                        <th>Barcode</th>
+                        <th>Source</th>
+                        <th>Target</th>
+                        <th>Read Count</th>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="card card-primary card-outline">
     <div class="card-header">
         <h4 class="card-title">
@@ -97,7 +182,7 @@
             <div id="per-barcode-cov"
                  class="col-md-6 highcharts"
                  style="width:50%; height:300px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i>
+                <i class="fa fa-cog fa-spin fa-3x center"></i>
                 Calculating
             </div>
             <div id="per-barcode-avg"
@@ -109,9 +194,8 @@
         </div>
         <div class="row">
             <div id="coverage_div" class="col-md-12 highcharts" style="width:100%">
-                <div id="coverage_div_detail" class="detail_chart" style="height: 400px"></div>
-
                 <div id="coverage_div_master" class="master_chart" style="height: 10rem"></div>
+                <div id="coverage_div_detail" class="detail_chart" style="height: 400px"></div>
             </div>
         </div>
     </div>
