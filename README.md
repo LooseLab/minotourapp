@@ -9,10 +9,16 @@ An example instance can be found at http://137.44.59.170. Credentials to log in 
     Username: demoAccount
     Password: Welcome-to-minotour
 
-Note that we are working on setting up HTPPS but it's currently friday
+Note that we are working on setting up HTTPS but it's currently friday
 
 ## Running minoTour with docker (super recommended)
 See our sister repo for a nice friendly docker-compose solution (https://github.com/LooseLab/minotour-docker)
+
+### ⚠️⚠️ Experimental features ⚠️⚠️
+Some features in minoTour are experimental and under construction 👷
+
+Primarily, these are the Metgenomics features and the SV and CNV real-time detection. 
+
 
 # Table of contents
 * [Preconfiguration](#preconf)  
