@@ -55,4 +55,4 @@ export MT_ARTIC_RESULTS_DIR='/path/to/artic/directory' # Store the Artic results
 export MT_ARTIC_MAX_PIPELINES="1" # Maximum number of Artic tasks to be run at any one time
 export MT_ARTIC_TIME_UNTIL_CLEARING="12" # Number of hours from final read upload until minoTour treats
 export MT_ALN2TYPE_BIN=""
-
+export MT_SKIP_MUSCLE=0

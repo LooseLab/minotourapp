@@ -208,7 +208,8 @@ class GetToTheChopper(APIView):
             positive_barcode_rejection_targets.extend(
                 negative_barcode_rejection_targets
             )
-            barcode_rejection_coordinates[barcode_name] = {
+            barcode_name_outer = barcode_name if barcode_name != "No_barcode" else "0"
+            barcode_rejection_coordinates[barcode_name_outer] = {
                 "name": barcode_name,
                 "control": False,
                 "min_chunks": 0,
@@ -222,7 +223,9 @@ class GetToTheChopper(APIView):
                 "no_map": "proceed",
             }
         for completed_barcode_name in completed_barcodes:
-            barcode_rejection_coordinates[completed_barcode_name] = {
+            # Works for non barcoded runs
+            completed_barcode_name_outer = completed_barcode_name if completed_barcode_name != "No_barcode" else "0"
+            barcode_rejection_coordinates[completed_barcode_name_outer] = {
                 "name": completed_barcode_name,
                 "control": False,
                 "min_chunks": 0,

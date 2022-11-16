@@ -112,11 +112,13 @@ RUN conda init bash
 
 WORKDIR /var/lib/minotour/apps
 
-RUN git clone https://github.com/artic-network/fieldbioinformatics.git
+RUN git clone https://github.com/Adoni5/fieldbioinformatics.git
 RUN git clone https://github.com/cov-lineages/pangolin.git
 WORKDIR /var/lib/minotour/apps/fieldbioinformatics
 RUN conda install -c conda-forge mamba
+RUN git checkout 1.3.0-dev
 RUN mamba env create -f environment.yml
+
 
 WORKDIR /var/lib/minotour/apps/pangolin
 
