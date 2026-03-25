@@ -1,21 +1,22 @@
-<div class="row">
+<div class="notifications-tab-content">
+<div class="row notifications-tab-row">
     <div class="col-md-6" id="data-list">
-        <div class="card card-primary card-outline" style="min-height: 400px; overflow-wrap: anywhere">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="far fa-comment-alt"></i>
-                    Create Notification
+        <div class="card obsidian-card notif-panel-card notif-panel-card--create">
+            <div class="card-header notif-card-header">
+                <h3 class="card-title notif-card-title">
+                    <i class="far fa-comment-alt" aria-hidden="true"></i>
+                    Create notification
                 </h3>
             </div>
-            <div class="card-body">
-                <div class="container-fluid">
-                    <p class="card-text">Optional automatic notifications: <br>
+            <div class="card-body notif-card-body">
+                <div class="container-fluid notif-panel-inner">
+                    <p class="notif-lead">Optional automatic notifications: <br>
                         (Click for suggestions)
                     </p>
-                    <blockquote>
-                        <div class="row" style="overflow: auto; position: relative">
+                    <div class="notif-suggestions-shell" role="region" aria-label="Notification type suggestions">
+                        <div class="row notif-suggestions-row">
                             <div class="col-sm-4">
-                                <div class="list-group" id="list-tab-top" role="tablist">
+                                <div class="list-group notif-list-group" id="list-tab-top" role="tablist">
                                     <a class="list-group-item list-group-item-action active" id="mux-btn"
                                        data-toggle="list" href="#list-mux" role="tab" aria-controls="home">Mux Scan
                                         Alerts</a>
@@ -32,7 +33,7 @@
                                 </div>
                             </div>
                             <div class="col-sm-8">
-                                <div class="tab-content" id="nav-tabContent">
+                                <div class="tab-content notif-tab-content" id="nav-tabContent">
                                     <!-- Mux alerts -->
                                     <div class="tab-pane fade show active" id="list-mux" role="tabpanel"
                                          aria-labelledby="list-home-list">
@@ -46,7 +47,7 @@
                                                            class="form-control-sm noti-control">
                                                 </div>
                                             </div>
-                                            <input type="submit" class="btn btn-primary"
+                                            <input type="submit" class="btn btn-primary notif-btn-primary"
                                                    value="Submit Choice">
                                         </form>
                                     </div>
@@ -79,7 +80,7 @@ on your minFQ client,<br> we will stop the run if the average flowcell voltage i
                                                 <input type="checkbox" name="run-until" id="run-until"
                                                        class="form-control-sm noti-control">
                                             </div>
-                                            <input type="submit" class="btn btn-primary"
+                                            <input type="submit" class="btn btn-primary notif-btn-primary"
                                                    value="Submit Range">
                                         </form>
                                     </div>
@@ -112,7 +113,7 @@ on your minFQ client,<br> we will stop the run if the average flowcell occupancy
                                                 <input type="checkbox" name="run-until" id="run-until"
                                                        class="form-control-sm noti-control">
                                             </div>
-                                            <input type="submit" class="btn btn-primary"
+                                            <input type="submit" class="btn btn-primary notif-btn-primary"
                                                    value="Submit Range">
                                         </form>
                                     </div>
@@ -122,7 +123,7 @@ on your minFQ client,<br> we will stop the run if the average flowcell occupancy
                                         <form id="waer" class="notification-form">
                                             <div class="form-group">
                                                 <div class="form-check form-check-inline">
-                                                    <label for=warnings-alert-check" class="minotour-label">
+                                                    <label for="warnings-alert-check" class="minotour-label">
                                                         Receive Notifications for MinKNOW warnings and Errors?
                                                     </label>
                                                     <input type="checkbox" name="warnings-alert-check"
@@ -130,7 +131,7 @@ on your minFQ client,<br> we will stop the run if the average flowcell occupancy
                                                            id="warnings-alert-check">
                                                 </div>
                                             </div>
-                                            <input type="submit" class="btn btn-primary"
+                                            <input type="submit" class="btn btn-primary notif-btn-primary"
                                                    value="Submit Choice">
                                         </form>
                                     </div>
@@ -139,7 +140,7 @@ on your minFQ client,<br> we will stop the run if the average flowcell occupancy
                                          aria-labelledby="list-settings-list">
                                         <div class="row">
                                             <div class="col-sm-3">
-                                                <div class="list-group" id="list-tab-tasks" role="tablist">
+                                                <div class="list-group notif-list-group notif-list-group--compact" id="list-tab-tasks" role="tablist">
                                                     <a class="list-group-item list-group-item-action"
                                                        id="list-mapping-top"
                                                        data-toggle="list" href="#list-mapping" role="tab"
@@ -161,7 +162,7 @@ on your minFQ client,<br> we will stop the run if the average flowcell occupancy
                                                             </label>
                                                             <input id="coverage-target" min="1"
                                                                    class="form-control noti-control"
-                                                                   placeholder=0 type="number"
+                                                                   placeholder="0" type="number"
                                                                    name="coverageAmount">
                                                         </div>
                                                         <div class="form-group">
@@ -210,7 +211,7 @@ on your minFQ client,<br> we will stop the run if the average flowcell occupancy
                                                             <input type="checkbox" name="run-until" id="run-until"
                                                                    class="form-control-sm noti-control">
                                                         </div>
-                                                        <input type="submit" class="btn btn-primary"
+                                                        <input type="submit" class="btn btn-primary notif-btn-primary"
                                                                value="Submit Choice">
                                                     </form>
                                                 </div>
@@ -262,8 +263,8 @@ on your minFQ client,<br> we will stop the run if the average flowcell occupancy
                                                             </div>
                                                         </div>
                                                     </form>
-                                                    <input id="multi-form-submit"
-                                                           class="btn btn-primary"
+                                                    <input id="multi-form-submit" type="button"
+                                                           class="btn btn-primary notif-btn-primary"
                                                            value="Submit Choices"
                                                            style="width: 8.25rem">
                                                 </div>
@@ -273,48 +274,48 @@ on your minFQ client,<br> we will stop the run if the average flowcell occupancy
                                 </div>
                             </div>
                         </div>
-                    </blockquote>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card card-primary card-outline" style="min-height: 400px">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="far fa-comment"></i>
-                    Existing Notifications
+        <div class="card obsidian-card notif-panel-card notif-panel-card--table">
+            <div class="card-header notif-card-header">
+                <h3 class="card-title notif-card-title">
+                    <i class="far fa-comment" aria-hidden="true"></i>
+                    Existing notifications
                 </h3>
             </div>
-            <div class="card-body">
-                <div class="table" style="overflow: auto">
-                    <table class="table-responsive table-hover extantNotif dataTable dtr-inline">
+            <div class="card-body notif-card-body">
+                <div class="obsidian-table-wrap notif-table-wrap">
+                    <table class="table table-hover table-sm notif-data-table extantNotif">
                         <thead>
                         <tr>
-                            <th>Id</th>
-                            <th>Notification <br> type</th>
-                            <th>Upper Limit</th>
-                            <th>Lower Limit</th>
-                            <th>Complete</th>
-                            <th>Reference</th>
-                            <th>Chromosome</th>
-                            <th>Coverage Target</th>
-                            <th>Run Until</th>
-                            <th></th>
+                            <th scope="col">Id</th>
+                            <th scope="col">Notification <br> type</th>
+                            <th scope="col">Upper limit</th>
+                            <th scope="col">Lower limit</th>
+                            <th scope="col">Complete</th>
+                            <th scope="col">Reference</th>
+                            <th scope="col">Chromosome</th>
+                            <th scope="col">Coverage target</th>
+                            <th scope="col">Run until</th>
+                            <th scope="col"><span class="sr-only">Actions</span></th>
                         </tr>
                         </thead>
                         <tfoot>
                         <tr>
-                            <th>Id</th>
-                            <th>Notification <br> type</th>
-                            <th>Upper Limit</th>
-                            <th>Lower Limit</th>
-                            <th>Complete</th>
-                            <th>Reference</th>
-                            <th>Chromosome</th>
-                            <th>Coverage Target</th>
-                            <th>Run Until</th>
-                            <th></th>
+                            <th scope="col">Id</th>
+                            <th scope="col">Notification <br> type</th>
+                            <th scope="col">Upper limit</th>
+                            <th scope="col">Lower limit</th>
+                            <th scope="col">Complete</th>
+                            <th scope="col">Reference</th>
+                            <th scope="col">Chromosome</th>
+                            <th scope="col">Coverage target</th>
+                            <th scope="col">Run until</th>
+                            <th scope="col"><span class="sr-only">Actions</span></th>
                         </tr>
                         </tfoot>
                     </table>
@@ -323,46 +324,47 @@ on your minFQ client,<br> we will stop the run if the average flowcell occupancy
         </div>
     </div>
 </div>
+</div>
 {# Success modal #}
-<div class="modal fade" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal"
+<div class="modal fade notif-modal" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal"
      aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content notif-modal-content">
+            <div class="modal-header notif-modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
+                    <span aria-hidden="true">&times;</span>
                 </button>
-                <h4 class="modal-title" id="myModalLabel">Success!</h4>
+                <h4 class="modal-title notif-modal-title" id="myModalLabel">Success</h4>
             </div>
-            <div class="modal-body">
+            <div class="modal-body notif-modal-body">
                 Successfully created conditions.
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <div class="modal-footer notif-modal-footer">
+                <button type="button" class="btn btn-default notif-btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
 </div>
 {# Run until modal #}
-<div class="modal fade" id="run-until-modal" tabindex="-1" role="dialog" aria-labelledby="run-until-modal"
+<div class="modal fade notif-modal" id="run-until-modal" tabindex="-1" role="dialog" aria-labelledby="run-until-modal"
      aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title" id="run-until-modal-label">Please confirm Run Until!</h4>
+        <div class="modal-content notif-modal-content">
+            <div class="modal-header notif-modal-header">
+                <h4 class="modal-title notif-modal-title" id="run-until-modal-label">Please confirm Run Until</h4>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body notif-modal-body">
                 Run Until is used at your own risk, and will lead to your run being stopped early. If you are happy with
                 the
                 conditions you have chosen leading to your run stopping, please continue. Else, cancel, and un-check run
                 until.
             </div>
-            <div class="modal-footer">
-                <button type="button" id="cancel-submit" class="btn btn-default" data-dismiss="modal">Close</button>
-                <button id="submit-condition-modal" class="btn btn-success success" data-dismiss="modal">Submit</button>
+            <div class="modal-footer notif-modal-footer">
+                <button type="button" id="cancel-submit" class="btn btn-default notif-btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" id="submit-condition-modal" class="btn btn-success notif-btn-confirm" data-dismiss="modal">Submit</button>
             </div>
         </div>
     </div>

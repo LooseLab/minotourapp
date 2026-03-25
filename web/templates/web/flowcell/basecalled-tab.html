@@ -1,128 +1,119 @@
-<div id="loader-wrapper" style="text-align: center">
-    <div id="loader"></div>
-    <div class="loader-section section-left basecalled-loader"></div>
-    <div class="loader-section section-right basecalled-loader"></div>
-</div>
-<div class="row">
-    <div class="col-md-12" id="basecalled-summary"></div>
-</div>
-<div class="row"  id="barcode-proportion-cards">
-    <div class="col-md-8">
-        <div class="card card-primary card-outline">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-chart-bar"></i>
-                    Proportion of barcode in Flowcell data
-                </h3>
-            </div>
-            <div class="card-body">
-                <div class=highcharts-container" style="height:400px;" id="barcode-proportion" >
-                </div>
-            </div>
-        </div>
+<div class="basecalled-content">
+    <div class="row basecalled-summary-row">
+        <div class="col-md-12" id="basecalled-summary"></div>
     </div>
-    <div class="col-md-4">
-        <div class="card card-primary card-outline">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-chart-bar"></i>
-                    Proportion of Reads Barcode Classified
-                </h3>
-            </div>
-            <div class="card-body">
-                <div class=highcharts-container" style="height:400px;" id="unclass-pie-proportion">
 
+    <div class="row basecalled-proportion-row" id="barcode-proportion-cards">
+        <div class="col-lg-8 mb-4">
+            <div class="card obsidian-card bc-chart-card">
+                <div class="card-header bc-card-header">
+                    <h3 class="card-title bc-card-title">
+                        <i class="fas fa-chart-bar" aria-hidden="true"></i>
+                        Proportion of barcode in flowcell data
+                    </h3>
+                </div>
+                <div class="card-body bc-card-body">
+                    <div class="highcharts-container bc-chart-host" style="height:400px;" id="barcode-proportion"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card obsidian-card bc-chart-card">
+                <div class="card-header bc-card-header">
+                    <h3 class="card-title bc-card-title">
+                        <i class="fas fa-chart-pie" aria-hidden="true"></i>
+                        Proportion of reads barcode classified
+                    </h3>
+                </div>
+                <div class="card-body bc-card-body">
+                    <div class="highcharts-container bc-chart-host" style="height:400px;" id="unclass-pie-proportion"></div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<div class="card card-primary card-outline">
-    <div class="card-header">
-        <h3 class="card-title">
-            <i class="fas fa-edit"></i>
-            Yield and Throughput By Barcode
-        </h3>
-    </div>
-    <div class="card-body">
-        <h5>Select a Barcode</h5>
-        <ul class="nav nav-tabs" id="nav-tabs-barcodes" role="tablist"></ul>
-        <div class="row"  id="ru-container" style="padding-top: 1rem; visibility: hidden">
-            <div class="col-md-12">
-                <label for="ru-barcodes" style="padding-left: 1rem; display: inline">Read Until Filter: </label>
-                <select class="form-control" name="ru-barcodes" id="ru-barcodes" style="width: 25%; display: inline-block">
-                    <option value="None">None</option>
-                </select>
-            </div>
+
+    <div class="card obsidian-card bc-chart-card bc-yield-card mb-4">
+        <div class="card-header bc-card-header">
+            <h3 class="card-title bc-card-title">
+                <i class="fas fa-chart-area" aria-hidden="true"></i>
+                Yield and throughput by barcode
+            </h3>
         </div>
-        <div class="tab-custom-content">
-            <div class="row">
+        <div class="card-body bc-card-body">
+            <p class="bc-barcode-label">Select a barcode</p>
+            <ul class="nav nav-tabs bc-barcode-tabs" id="nav-tabs-barcodes" role="tablist"></ul>
+            <div class="row bc-ru-row" id="ru-container" style="padding-top: 1rem; visibility: hidden">
                 <div class="col-md-12">
-                    <div class="">
+                    <label class="bc-ru-label" for="ru-barcodes">Read Until filter</label>
+                    <select class="form-control bc-select" name="ru-barcodes" id="ru-barcodes">
+                        <option value="None">None</option>
+                    </select>
+                </div>
+            </div>
+            <div class="tab-custom-content bc-tab-inner">
+                <div class="row bc-charts-grid">
+                    <div class="col-md-12"></div>
+                    <div id="cumulative-yield-over-time"
+                         class="col-md-6 highcharts-container bc-chart-host"
+                         style="height:400px;">
+                    </div>
+                    <div id="cumulative-number-reads-over-time"
+                         class="col-md-6 highcharts-container bc-chart-host"
+                         style="height:400px;">
+                    </div>
+                    <div id="histogram-bases-sequenced-by-read-length"
+                         class="col-md-6 highcharts-container bc-chart-host"
+                         style="height:400px;">
+                    </div>
+                    <div id="histogram-read-lengths"
+                         class="col-md-6 highcharts-container bc-chart-host"
+                         style="height:400px;">
+                    </div>
+                    <div id="collect-histogram-bases-sequenced-by-read-length"
+                         class="col-md-6 highcharts-container bc-chart-host"
+                         style="height:400px;">
+                    </div>
+                    <div id="collect-histogram-read-lengths"
+                         class="col-md-6 highcharts-container bc-chart-host"
+                         style="height:400px;">
+                    </div>
+                    <div id="average-quality-over-time"
+                         class="col-md-6 highcharts-container bc-chart-host"
+                         style="height:400px;">
+                    </div>
+                    <div id="sequencing-rate"
+                         class="col-md-6 highcharts-container bc-chart-host"
+                         style="height:400px;">
+                    </div>
+                    <div id="average-read-lengths-over-time"
+                         class="col-md-6 highcharts-container bc-chart-host"
+                         style="height:400px;">
+                    </div>
+                    <div id="max-read-lengths-over-time"
+                         class="col-md-6 highcharts-container bc-chart-host"
+                         style="height:400px;">
                     </div>
                 </div>
-                <div id="cumulative-yield-over-time"
-                     class="col-md-6 highcharts-container"
-                     style="height:400px;">
-                </div>
-                <div id="cumulative-number-reads-over-time"
-                     class="col-md-6 highcharts-container"
-                     style="height:400px;">
-                </div>
-                <div id="histogram-bases-sequenced-by-read-length"
-                     class="col-md-6 highcharts-container"
-                     style="height:400px;">
-                </div>
-                <div id="histogram-read-lengths"
-                     class="col-md-6 highcharts-container"
-                     style="height:400px;">
-                </div>
-                <div id="collect-histogram-bases-sequenced-by-read-length"
-                     class="col-md-6 highcharts-container"
-                     style="height:400px;">
-                </div>
-                <div id="collect-histogram-read-lengths"
-                     class="col-md-6 highcharts-container"
-                     style="height:400px;">
-                </div>
-                <div id="average-quality-over-time"
-                     class="col-md-6 highcharts-container"
-                     style="height:400px;">
-                </div>
-                <div id="sequencing-rate"
-                     class="col-md-6 highcharts-container"
-                     style="height:400px;">
-                </div>
-                <div id="average-read-lengths-over-time"
-                     class="col-md-6 highcharts-container"
-                     style=" height:400px;">
-                </div>
-                <div id="max-read-lengths-over-time"
-                     class="col-md-6 highcharts-container"
-                     style="height:400px;">
-                </div>
             </div>
         </div>
     </div>
-    <!-- /.card -->
-</div>
-<div class="card card-primary card-outline">
-    <div class="card-header">
-        <h3 class="card-title">
-            <i class="fas fa-fire"></i>
-            Flowcell Heatmaps
-        </h3>
-    </div>
 
-    <div class="card-body">
-        <div id="reads-per-pore"
-             class="col-md-12"
-             style="height:600px;">
+    <div class="card obsidian-card bc-chart-card bc-heatmap-card">
+        <div class="card-header bc-card-header">
+            <h3 class="card-title bc-card-title">
+                <i class="fas fa-fire" aria-hidden="true"></i>
+                Flowcell heatmaps
+            </h3>
         </div>
-
-        <div id="bases-per-pore"
-             class="col-md-12"
-             style="height:600px;">
+        <div class="card-body bc-card-body">
+            <div id="reads-per-pore"
+                 class="col-md-12 bc-heatmap-host"
+                 style="height:600px;">
+            </div>
+            <div id="bases-per-pore"
+                 class="col-md-12 bc-heatmap-host"
+                 style="height:600px;">
+            </div>
         </div>
     </div>
 </div>

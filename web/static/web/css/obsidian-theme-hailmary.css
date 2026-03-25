@@ -1,0 +1,328 @@
+/**
+ * Project Hail Mary inspired theme.
+ * Deep-space navy with cyan/neon instrumentation accents.
+ */
+
+html[data-theme="hailmary"] {
+    color-scheme: dark;
+    background-color: #070d18;
+    --font-body: "Exo 2", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Orbitron", "Exo 2", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-theme="hailmary"] body,
+html[data-theme="hailmary"] body.hold-transition,
+html[data-theme="hailmary"] .minotour-app-root,
+html[data-theme="hailmary"] .content-wrapper,
+html[data-theme="hailmary"] .private-app-shell,
+html[data-theme="hailmary"] .private-main-surface,
+html[data-theme="hailmary"] .flowcells-page,
+html[data-theme="hailmary"] .flowcell-detail-page {
+    background-color: #070d18 !important;
+    color: #e8f7ff;
+}
+
+html[data-theme="hailmary"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(circle at 15% 20%, rgba(32, 216, 255, 0.14) 0%, rgba(32, 216, 255, 0) 40%),
+        radial-gradient(circle at 85% 78%, rgba(86, 240, 0, 0.1) 0%, rgba(86, 240, 0, 0) 42%),
+        radial-gradient(circle at 62% 22%, rgba(181, 109, 255, 0.08) 0%, rgba(181, 109, 255, 0) 40%),
+        repeating-linear-gradient(
+            0deg,
+            rgba(130, 190, 255, 0.04) 0,
+            rgba(130, 190, 255, 0.04) 1px,
+            rgba(0, 0, 0, 0) 1px,
+            rgba(0, 0, 0, 0) 3px
+        );
+}
+
+html[data-theme="hailmary"] .minotour-app-root {
+    position: relative;
+}
+
+html[data-theme="hailmary"] aside.obsidian-settings-sidebar.control-sidebar {
+    z-index: 1040 !important;
+}
+
+html[data-theme="hailmary"] .obsidian-settings-backdrop {
+    z-index: 1035 !important;
+}
+
+html[data-theme="hailmary"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="hailmary"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #0b1322 0%, #10233c 45%, #144a68 100%) !important;
+    border-bottom: 1px solid rgba(32, 216, 255, 0.35);
+}
+
+html[data-theme="hailmary"] nav#tn .navbar-brand,
+html[data-theme="hailmary"] nav#tn .nav-link,
+html[data-theme="hailmary"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #9de8ff !important;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+html[data-theme="hailmary"] nav#tn .nav-link:hover,
+html[data-theme="hailmary"] nav#tn .nav-link.active {
+    background: rgba(32, 216, 255, 0.16);
+    color: #e8fbff !important;
+}
+
+html[data-theme="hailmary"] nav#tn::after {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    background: linear-gradient(90deg, #20d8ff 0%, #56f000 50%, #7df9ff 100%);
+    pointer-events: none;
+}
+
+html[data-theme="hailmary"] .obsidian-card,
+html[data-theme="hailmary"] .card.card-primary.card-outline,
+html[data-theme="hailmary"] .flowcell-detail-page .flowcell-detail-tab-card.card-info {
+    background: linear-gradient(160deg, #0d1626 0%, #0a1220 60%, #080f1a 100%) !important;
+    border-color: rgba(32, 216, 255, 0.35) !important;
+    box-shadow: 0 0 0 1px rgba(32, 216, 255, 0.12), 0 0 28px rgba(32, 216, 255, 0.12), 0 14px 30px rgba(0, 0, 0, 0.58);
+}
+
+html[data-theme="hailmary"] .card-header,
+html[data-theme="hailmary"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(90deg, rgba(32, 216, 255, 0.16) 0%, rgba(11, 19, 34, 0.98) 100%) !important;
+    border-bottom-color: rgba(32, 216, 255, 0.3) !important;
+}
+
+html[data-theme="hailmary"] .card-title,
+html[data-theme="hailmary"] .flowcells-page__title,
+html[data-theme="hailmary"] .flowcell-detail-page .flowcells-page__title {
+    color: #c2ff7a !important;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+html[data-theme="hailmary"] .flowcells-page__lead,
+html[data-theme="hailmary"] .fc-detail-meta,
+html[data-theme="hailmary"] .dataTables_wrapper .dataTables_info,
+html[data-theme="hailmary"] .text-muted,
+html[data-theme="hailmary"] small,
+html[data-theme="hailmary"] .small {
+    color: #8fdfff !important;
+}
+
+html[data-theme="hailmary"] a:not(.btn):not(.nav-link) {
+    color: #56f000;
+    border-bottom-color: rgba(86, 240, 0, 0.36);
+}
+
+html[data-theme="hailmary"] a:not(.btn):not(.nav-link):hover {
+    color: #98ff4a;
+    border-bottom-color: rgba(152, 255, 74, 0.5);
+}
+
+html[data-theme="hailmary"] .btn-primary,
+html[data-theme="hailmary"] .flowcells-btn--primary {
+    background: linear-gradient(180deg, #7df9ff 0%, #20d8ff 100%) !important;
+    border-color: #7df9ff !important;
+    color: #05101b !important;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+html[data-theme="hailmary"] .btn-primary:hover,
+html[data-theme="hailmary"] .flowcells-btn--primary:hover {
+    background: linear-gradient(180deg, #b2ffff 0%, #56ebff 100%) !important;
+    border-color: #b4ffff !important;
+}
+
+html[data-theme="hailmary"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab {
+    color: #7fcfff;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+html[data-theme="hailmary"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab:hover {
+    color: #c6f4ff;
+    background: rgba(32, 216, 255, 0.12);
+}
+
+html[data-theme="hailmary"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab.active {
+    color: #c2ff7a;
+    border-bottom-color: #20d8ff;
+    background: linear-gradient(180deg, rgba(32, 216, 255, 0.2) 0%, rgba(32, 216, 255, 0) 95%);
+}
+
+html[data-theme="hailmary"] .form-control,
+html[data-theme="hailmary"] select.form-control,
+html[data-theme="hailmary"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="hailmary"] .dataTables_wrapper .dataTables_length select {
+    background: #0b1322 !important;
+    border-color: rgba(32, 216, 255, 0.4) !important;
+    color: #e8f7ff !important;
+}
+
+html[data-theme="hailmary"] .table thead th,
+html[data-theme="hailmary"] table.dataTable thead th,
+html[data-theme="hailmary"] table.dataTable tfoot th {
+    background: #0b1322 !important;
+    color: #9de8ff !important;
+    border-bottom-color: rgba(32, 216, 255, 0.45) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+html[data-theme="hailmary"] .table,
+html[data-theme="hailmary"] .table td,
+html[data-theme="hailmary"] .table th,
+html[data-theme="hailmary"] table.dataTable tbody td {
+    color: #e8f7ff;
+    border-color: rgba(32, 216, 255, 0.22) !important;
+}
+
+/* Improve table legibility across flowcells + tabular views */
+html[data-theme="hailmary"] .dataTables_wrapper .dataTables_length,
+html[data-theme="hailmary"] .dataTables_wrapper .dataTables_filter,
+html[data-theme="hailmary"] .dataTables_wrapper .dataTables_info,
+html[data-theme="hailmary"] .dataTables_wrapper .dataTables_paginate,
+html[data-theme="hailmary"] .flowcells-page table.dataTable tbody td,
+html[data-theme="hailmary"] .flowcells-page table.dataTable tbody th,
+html[data-theme="hailmary"] .flowcell-detail-page table.dataTable tbody td,
+html[data-theme="hailmary"] .flowcell-detail-page table.dataTable tbody th {
+    color: #eaf9ff !important;
+}
+
+html[data-theme="hailmary"] .flowcells-page table.dataTable thead th,
+html[data-theme="hailmary"] .flowcell-detail-page table.dataTable thead th {
+    color: #b8ecff !important;
+}
+
+html[data-theme="hailmary"] .flowcells-page .fc-name,
+html[data-theme="hailmary"] .flowcells-page td.fc-col-name,
+html[data-theme="hailmary"] .flowcells-page tr.stylable {
+    color: #c2ff7a !important;
+    font-weight: 700;
+}
+
+html[data-theme="hailmary"] .table-striped tbody tr:nth-of-type(odd),
+html[data-theme="hailmary"] table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(12, 24, 40, 0.9) !important;
+}
+
+html[data-theme="hailmary"] footer#sticky-footer.obsidian-footer.site-footer {
+    background: #0b1322 !important;
+    border-top-color: rgba(32, 216, 255, 0.34) !important;
+}
+
+html[data-theme="hailmary"] footer#sticky-footer .site-footer__copy {
+    color: #8fdfff;
+}
+
+html[data-theme="hailmary"] footer#sticky-footer .site-footer__copy a {
+    color: #c2ff7a;
+    border-bottom-color: rgba(194, 255, 122, 0.4);
+}
+
+html[data-theme="hailmary"] .highcharts-background,
+html[data-theme="hailmary"] .highcharts-plot-background {
+    fill: #0b1322 !important;
+}
+
+html[data-theme="hailmary"] .highcharts-axis-line,
+html[data-theme="hailmary"] .highcharts-tick,
+html[data-theme="hailmary"] .highcharts-grid-line {
+    stroke: rgba(32, 216, 255, 0.26) !important;
+}
+
+html[data-theme="hailmary"] .highcharts-title,
+html[data-theme="hailmary"] .highcharts-subtitle {
+    fill: #c2ff7a !important;
+}
+
+html[data-theme="hailmary"] .highcharts-axis-labels text,
+html[data-theme="hailmary"] .highcharts-legend-item text {
+    fill: #8fdfff !important;
+}
+
+html[data-theme="hailmary"] .highcharts-tooltip-box {
+    fill: #0b1322 !important;
+    stroke: #20d8ff !important;
+}
+
+/* Flowcell detail tab-specific table contrast hardening */
+html[data-theme="hailmary"] .flowcell-detail-page #tab-basecalled-data .bc-card-header,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-basecalled-data .bc-card-body,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-summary-data .summary-card-header,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-summary-data .summary-card-body,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-notifications .notif-card-header,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-notifications .notif-card-body,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-reads .rt-card-header,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-reads .rt-card-body,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-tasks .task-card-header,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-tasks .task-card-body,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-sharing .sharing-card-header,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-sharing .sharing-card-body {
+    background: #0b1322 !important;
+    border-color: rgba(32, 216, 255, 0.3) !important;
+}
+
+html[data-theme="hailmary"] .flowcell-detail-page #tab-summary-data .summary-card-title,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-notifications .notif-card-title,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-reads .rt-card-title,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-tasks .task-card-title,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-sharing .sharing-card-title,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-sharing .sharing-card-title__text {
+    color: #c2ff7a !important;
+}
+
+html[data-theme="hailmary"] .flowcell-detail-page #tab-basecalled-data .bc-data-table thead th,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-summary-data .summary-data-table thead th,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-notifications .notif-data-table thead th,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-reads table.dataTable thead th,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-tasks .task-history-table thead th,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-sharing .sharing-data-table thead th {
+    background: #081120 !important;
+    color: #9de8ff !important;
+    border-bottom-color: rgba(32, 216, 255, 0.42) !important;
+}
+
+html[data-theme="hailmary"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody td,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody th,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody td,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody th,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-summary-data .summary-data-table tfoot th,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-notifications .notif-data-table tbody td,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-notifications .notif-data-table tfoot th,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-reads table.dataTable tbody td,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-tasks .task-history-table tbody td,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-tasks .task-history-table tfoot th,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-sharing .sharing-data-table tbody td {
+    background: #0b1322 !important;
+    color: #eaf9ff !important;
+    border-color: rgba(32, 216, 255, 0.24) !important;
+}
+
+html[data-theme="hailmary"] .flowcell-detail-page #tab-basecalled-data .bc-row-pass td,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-basecalled-data .bc-row-pass th {
+    background: rgba(86, 240, 0, 0.12) !important;
+}
+
+html[data-theme="hailmary"] .flowcell-detail-page #tab-basecalled-data .bc-row-fail td,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-basecalled-data .bc-row-fail th {
+    background: rgba(181, 109, 255, 0.14) !important;
+}
+
+html[data-theme="hailmary"] .flowcell-detail-page #tab-summary-data .summary-data-table.table-striped tbody tr:nth-of-type(odd),
+html[data-theme="hailmary"] .flowcell-detail-page #tab-notifications .notif-data-table tbody tr.notification-row,
+html[data-theme="hailmary"] .flowcell-detail-page #tab-tasks .task-history-table.table-striped tbody tr:nth-of-type(odd),
+html[data-theme="hailmary"] .flowcell-detail-page #tab-sharing .sharing-data-table.table-striped tbody tr:nth-of-type(odd) {
+    background: rgba(20, 36, 58, 0.88) !important;
+}

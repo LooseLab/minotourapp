@@ -1,0 +1,89 @@
+/**
+ * Early 1980s Unix terminal emulator theme.
+ */
+
+html[data-theme="terminal"] {
+    color-scheme: dark;
+    background-color: #050b05;
+    --font-body: "VT323", "IBM Plex Sans", monospace;
+    --font-display: "VT323", "IBM Plex Sans", monospace;
+}
+
+html[data-theme="terminal"] body,
+html[data-theme="terminal"] body.hold-transition,
+html[data-theme="terminal"] .minotour-app-root,
+html[data-theme="terminal"] .content-wrapper,
+html[data-theme="terminal"] .private-app-shell,
+html[data-theme="terminal"] .private-main-surface,
+html[data-theme="terminal"] .flowcells-page,
+html[data-theme="terminal"] .flowcell-detail-page {
+    background-color: #050b05 !important;
+    color: #c8ffc8;
+}
+
+html[data-theme="terminal"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="terminal"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #0a140a 0%, #0f1f0f 60%, #132613 100%) !important;
+    border-bottom: 1px solid rgba(51, 255, 102, 0.34);
+}
+
+html[data-theme="terminal"] nav#tn .navbar-brand,
+html[data-theme="terminal"] nav#tn .nav-link,
+html[data-theme="terminal"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #7fe27f !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+html[data-theme="terminal"] .obsidian-card,
+html[data-theme="terminal"] .card.card-primary.card-outline,
+html[data-theme="terminal"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="terminal"] .flowcells-page .flowcells-card {
+    background: #0a140a !important;
+    border-color: rgba(51, 255, 102, 0.3) !important;
+    box-shadow: 0 0 0 1px rgba(51, 255, 102, 0.12), 0 10px 22px rgba(0, 0, 0, 0.58);
+}
+
+html[data-theme="terminal"] .card-title,
+html[data-theme="terminal"] .flowcells-page__title,
+html[data-theme="terminal"] .flowcell-detail-page .flowcells-page__title {
+    color: #33ff66 !important;
+}
+
+html[data-theme="terminal"] .btn-primary,
+html[data-theme="terminal"] .flowcells-btn--primary {
+    background: linear-gradient(180deg, #33ff66 0%, #24c74d 100%) !important;
+    border-color: #99ff33 !important;
+    color: #061006 !important;
+}
+
+html[data-theme="terminal"] .form-control,
+html[data-theme="terminal"] select.form-control,
+html[data-theme="terminal"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="terminal"] .dataTables_wrapper .dataTables_length select {
+    background: #0a140a !important;
+    border-color: rgba(51, 255, 102, 0.42) !important;
+    color: #c8ffc8 !important;
+}
+
+html[data-theme="terminal"] .table thead th,
+html[data-theme="terminal"] table.dataTable thead th,
+html[data-theme="terminal"] table.dataTable tfoot th {
+    background: #0a140a !important;
+    color: #7fe27f !important;
+    border-bottom-color: rgba(51, 255, 102, 0.45) !important;
+}
+
+html[data-theme="terminal"] .table,
+html[data-theme="terminal"] .table td,
+html[data-theme="terminal"] .table th,
+html[data-theme="terminal"] table.dataTable tbody td {
+    color: #c8ffc8;
+    border-color: rgba(51, 255, 102, 0.24) !important;
+}
+
+html[data-theme="terminal"] .flowcells-page .fc-name,
+html[data-theme="terminal"] .flowcells-page td.fc-col-name {
+    color: #99ff33 !important;
+    font-weight: 700;
+}

@@ -1,7 +1,21 @@
 {% load static %}
 <!doctype html>
-<html lang="en" style="height: auto">
+<html lang="en" style="height: auto" data-theme="light">
 <head>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('minotour-theme');
+          if (t === 'dark' || t === 'light' || t === 'hacienda' || t === 'sf1950s' || t === 'paris1940s' || t === 'hailmary' || t === 'stoneage' || t === 'disney' || t === 'pixar' || t === 'telextext' || t === 'flowerpower1960s' || t === 'marblegold' || t === 'rusticwood' || t === 'scifi1950s' || t === 'drwho' || t === 'playschool' || t === 'tron' || t === 'starwarsanh' || t === 'academic' || t === 'mutedscientist' || t === 'terminal' || t === 'kimiko' || t === 'londoncalling' || t === 'grumpychemist' || t === 'oxford' || t === 'cambridge') {
+            document.documentElement.setAttribute('data-theme', t);
+            /* Must match DARK_UI_THEMES in minotour-theme.js — enables Tailwind tw-dark: in settings drawer. */
+            var darkUi = { dark: 1, hacienda: 1, hailmary: 1, telextext: 1, scifi1950s: 1, drwho: 1, tron: 1, starwarsanh: 1, terminal: 1, grumpychemist: 1, londoncalling: 1 };
+            if (darkUi[t]) document.documentElement.classList.add('dark');
+            else document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>minoTour | v1.0 | real time minION analysis</title>
@@ -13,6 +27,10 @@
     <link rel="mask-icon" href="{% static 'web/img/minotour.svg' %}" color="yellow">
     <!-- Tell the browser to be responsive to screen width -->
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no" name="viewport">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Baloo+2:wght@500;600;700&family=Bangers&family=Barlow+Condensed:wght@400;500;600;700&family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:wght@500;600;700&family=Exo+2:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Libre+Baskerville:wght@400;700&family=Lora:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Nunito:wght@500;600;700;800&family=Orbitron:wght@500;600;700&family=Pacifico&family=Source+Sans+3:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
     <script src="{% static 'web/libraries/jquery-3.5.1.min.js' %}"></script>
     <script src="{% static 'web/libraries/popper.js' %}"></script>
     <script src="{% static 'web/libraries/bootstrap-4.5.0-dist/js/bootstrap.min.js' %}"></script>
@@ -22,6 +40,7 @@
     <link rel="stylesheet" href="{% static 'web/libraries/DataTables/Buttons-1.6.2/css/buttons.dataTables.min.css' %}">
     <link rel="stylesheet" href="{% static 'web/libraries/DataTables/datatables.min.css' %}">
     <link rel="stylesheet" href="{% static 'web/css/minotour.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-chrome.css' %}">
     <link rel="stylesheet" href="{% static 'web/css/loader.css' %}">
     <script src="{% static 'web/libraries/axios/axios.min.js' %}"></script>
 
@@ -80,7 +99,37 @@
     <script src="{% static 'web/libraries/DataTables/pdfmake-0.1.36/vfs_fonts.js' %}"></script>
     <script src="{% static 'web/libraries/DataTables/Buttons-1.6.2/js/buttons.html5.min.js' %}"></script>
     <script src="{% static 'web/libraries/AdminLTE-3.0.4/dist/js/adminlte.min.js' %}"></script>
+    <script src="{% static 'web/js/minotour-settings-sidebar.js' %}"></script>
+    <script src="{% static 'web/js/minotour-theme.js' %}"></script>
 
+    {% block extra_head %}{% endblock %}
+    {# Dark theme must load after page-scoped CSS (obsidian-private-pages, obsidian-flowcells, …) so overrides win. #}
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-dark.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-hacienda.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-sf1950s.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-paris1940s.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-hailmary.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-stoneage.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-disney.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-pixar.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-telextext.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-flowerpower1960s.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-marblegold.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-rusticwood.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-scifi1950s.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-drwho.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-playschool.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-tron.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-starwarsanh.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-academic.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-mutedscientist.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-terminal.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-kimiko.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-londoncalling.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-grumpychemist.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-oxford.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-cambridge.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-theme-compat.css' %}">
 
 </head>
 
@@ -88,7 +137,7 @@
     <body class="hold-transition layout-top-nav sidebar-collapse" style="">
 {% endblock %}
 
-<div>
+<div class="minotour-app-root">
     <!-- Main Header -->
     {% block header %}
     {% endblock %}
@@ -102,34 +151,22 @@
 
         </div>
 
-    <!-- Main Footer -->
-    <footer class="footer bg-light" id="sticky-footer" style="z-index: 11">
-        <!-- To the right -->
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-md-11"
-                     style=" display: flex; justify-content: center; align-content: center; flex-direction: column;">
-                    <div class="pull-left hidden-xs" style="text-align: left">
-                        &copy; Loose Lab {% now 'Y' %} <a href="https://www.nottingham.ac.uk">University
-                            of
-                            Nottingham</a>.
-                        Contact @mattloose for more information.
-                    </div>
-                </div>
-                <div class="col-md-1">
-                    <div class="pull-right hidden-xs" style="max-width: 100px">
-                        <img style="max-width:100px;" src="{% static 'web/img/minotourlogo.png' %}" alt="Minotour logo">
-                    </div>
-                </div>
+    <!-- Main Footer — styled in obsidian-chrome.css (Obsidian & Ether) -->
+    <footer class="footer site-footer obsidian-footer" id="sticky-footer" style="z-index: 11">
+        <div class="container-fluid obsidian-page-inner">
+            <div class="site-footer__inner">
+                <p class="site-footer__copy">
+                    &copy; Loose Lab {% now 'Y' %}
+                    <a href="https://www.nottingham.ac.uk">University of Nottingham</a>.
+                    Contact @mattloose for more information.
+                </p>
             </div>
         </div>
-
-        <!-- Default to the left -->
-
-
     </footer>
 
 </div>
+{# Settings drawer must be outside .minotour-app-root so z-index:1040 competes with body-level backdrop (1035); inside the root it loses to backdrop when root has a stacking context (e.g. themed z-index:1). #}
+{% block settings_sidebar %}{% endblock %}
 <!-- Block to run javascript in -->
 {% block javascript %}
 {% endblock %}

@@ -1,0 +1,413 @@
+/**
+ * Theme compatibility guardrails.
+ * Loaded after all theme files to guarantee tab/card/table contrast.
+ */
+
+/* Defaults for light-ish themes */
+html[data-theme] .flowcell-detail-page {
+    --mtc-surface: #ffffff;
+    --mtc-surface-alt: #f8fafc;
+    --mtc-header: #f1f5f9;
+    --mtc-text: #1f2937;
+    --mtc-muted: #475569;
+    --mtc-border: #cbd5e1;
+    --mtc-pass: rgba(16, 185, 129, 0.12);
+    --mtc-fail: rgba(239, 68, 68, 0.1);
+}
+
+/* Dark themes */
+html[data-theme="dark"] .flowcell-detail-page,
+html[data-theme="hacienda"] .flowcell-detail-page,
+html[data-theme="hailmary"] .flowcell-detail-page,
+html[data-theme="telextext"] .flowcell-detail-page,
+html[data-theme="scifi1950s"] .flowcell-detail-page,
+html[data-theme="drwho"] .flowcell-detail-page,
+html[data-theme="tron"] .flowcell-detail-page,
+html[data-theme="starwarsanh"] .flowcell-detail-page,
+html[data-theme="terminal"] .flowcell-detail-page,
+html[data-theme="grumpychemist"] .flowcell-detail-page,
+html[data-theme="londoncalling"] .flowcell-detail-page {
+    --mtc-surface: #12161d;
+    --mtc-surface-alt: #171c24;
+    --mtc-header: #0f141b;
+    --mtc-text: #e6edf5;
+    --mtc-muted: #b7c2d0;
+    --mtc-border: rgba(168, 184, 204, 0.28);
+    --mtc-pass: rgba(34, 197, 94, 0.12);
+    --mtc-fail: rgba(248, 113, 113, 0.14);
+}
+
+/* Theme-specific tuning */
+html[data-theme="londoncalling"] .flowcell-detail-page {
+    --mtc-surface: #14161a;
+    --mtc-surface-alt: #1a1d23;
+    --mtc-header: #16181c;
+    --mtc-text: #f2f0e8;
+    --mtc-muted: #cfd4da;
+    --mtc-border: rgba(242, 240, 232, 0.22);
+    --mtc-pass: rgba(128, 247, 154, 0.14);
+    --mtc-fail: rgba(232, 63, 122, 0.18);
+}
+
+html[data-theme="grumpychemist"] .flowcell-detail-page {
+    --mtc-surface: #23282f;
+    --mtc-surface-alt: #2a3038;
+    --mtc-header: #1e242c;
+    --mtc-text: #e8e6e0;
+    --mtc-muted: #a8b0ba;
+    --mtc-border: rgba(201, 162, 39, 0.22);
+    --mtc-pass: rgba(107, 155, 122, 0.16);
+    --mtc-fail: rgba(196, 93, 74, 0.18);
+}
+
+html[data-theme="oxford"] .flowcell-detail-page {
+    --mtc-surface: #faf6ef;
+    --mtc-surface-alt: #f0ebe0;
+    --mtc-header: #e8e0d4;
+    --mtc-text: #1c1b18;
+    --mtc-muted: #4a4840;
+    --mtc-border: rgba(0, 33, 71, 0.35);
+    --mtc-pass: rgba(0, 33, 71, 0.1);
+    --mtc-fail: rgba(139, 105, 20, 0.18);
+}
+
+html[data-theme="cambridge"] .flowcell-detail-page {
+    --mtc-surface: rgba(255, 255, 255, 0.95);
+    --mtc-surface-alt: rgba(240, 249, 255, 0.92);
+    --mtc-header: rgba(224, 242, 254, 0.95);
+    --mtc-text: #0c4a6e;
+    --mtc-muted: #475569;
+    --mtc-border: rgba(56, 189, 248, 0.35);
+    --mtc-pass: rgba(14, 165, 233, 0.12);
+    --mtc-fail: rgba(239, 68, 68, 0.1);
+}
+
+html[data-theme="kimiko"] .flowcell-detail-page {
+    --mtc-surface: #fffaf3;
+    --mtc-surface-alt: #f7f4ee;
+    --mtc-header: #efe7dc;
+    --mtc-text: #1f2b37;
+    --mtc-muted: #5f4b3a;
+    --mtc-border: #c1b2a2;
+    --mtc-pass: rgba(22, 163, 74, 0.1);
+    --mtc-fail: rgba(154, 31, 40, 0.12);
+}
+
+html[data-theme="academic"] .flowcell-detail-page,
+html[data-theme="mutedscientist"] .flowcell-detail-page,
+html[data-theme="marblegold"] .flowcell-detail-page,
+html[data-theme="rusticwood"] .flowcell-detail-page,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page,
+html[data-theme="disney"] .flowcell-detail-page,
+html[data-theme="pixar"] .flowcell-detail-page,
+html[data-theme="playschool"] .flowcell-detail-page,
+html[data-theme="stoneage"] .flowcell-detail-page,
+html[data-theme="sf1950s"] .flowcell-detail-page,
+html[data-theme="paris1940s"] .flowcell-detail-page {
+    --mtc-border: rgba(117, 130, 146, 0.3);
+}
+
+/* Card shell contrast across data tabs */
+html[data-theme] .flowcell-detail-page #tab-basecalled-data .bc-card-header,
+html[data-theme] .flowcell-detail-page #tab-basecalled-data .bc-card-body,
+html[data-theme] .flowcell-detail-page #tab-summary-data .summary-card-header,
+html[data-theme] .flowcell-detail-page #tab-summary-data .summary-card-body,
+html[data-theme] .flowcell-detail-page #tab-notifications .notif-card-header,
+html[data-theme] .flowcell-detail-page #tab-notifications .notif-card-body,
+html[data-theme] .flowcell-detail-page #tab-reads .rt-card-header,
+html[data-theme] .flowcell-detail-page #tab-reads .rt-card-body,
+html[data-theme] .flowcell-detail-page #tab-tasks .task-card-header,
+html[data-theme] .flowcell-detail-page #tab-tasks .task-card-body,
+html[data-theme] .flowcell-detail-page #tab-sharing .sharing-card-header,
+html[data-theme] .flowcell-detail-page #tab-sharing .sharing-card-body {
+    background: var(--mtc-surface) !important;
+    border-color: var(--mtc-border) !important;
+    color: var(--mtc-text) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-summary-data .summary-card-title,
+html[data-theme] .flowcell-detail-page #tab-notifications .notif-card-title,
+html[data-theme] .flowcell-detail-page #tab-reads .rt-card-title,
+html[data-theme] .flowcell-detail-page #tab-tasks .task-card-title,
+html[data-theme] .flowcell-detail-page #tab-sharing .sharing-card-title,
+html[data-theme] .flowcell-detail-page #tab-sharing .sharing-card-title__text,
+html[data-theme] .flowcell-detail-page #tab-notifications .notif-lead,
+html[data-theme] .flowcell-detail-page #tab-tasks .task-reactivate-help {
+    color: var(--mtc-text) !important;
+}
+
+/* Header/body table contrast */
+html[data-theme] .flowcell-detail-page #tab-basecalled-data .bc-data-table thead th,
+html[data-theme] .flowcell-detail-page #tab-summary-data .summary-data-table thead th,
+html[data-theme] .flowcell-detail-page #tab-notifications .notif-data-table thead th,
+html[data-theme] .flowcell-detail-page #tab-reads table.dataTable thead th,
+html[data-theme] .flowcell-detail-page #tab-tasks .task-history-table thead th,
+html[data-theme] .flowcell-detail-page #tab-sharing .sharing-data-table thead th {
+    background: var(--mtc-header) !important;
+    color: var(--mtc-muted) !important;
+    border-bottom-color: var(--mtc-border) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody td,
+html[data-theme] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody th,
+html[data-theme] .flowcell-detail-page #tab-summary-data .summary-data-table tbody td,
+html[data-theme] .flowcell-detail-page #tab-summary-data .summary-data-table tbody th,
+html[data-theme] .flowcell-detail-page #tab-summary-data .summary-data-table tfoot th,
+html[data-theme] .flowcell-detail-page #tab-notifications .notif-data-table tbody td,
+html[data-theme] .flowcell-detail-page #tab-notifications .notif-data-table tfoot th,
+html[data-theme] .flowcell-detail-page #tab-reads table.dataTable tbody td,
+html[data-theme] .flowcell-detail-page #tab-tasks .task-history-table tbody td,
+html[data-theme] .flowcell-detail-page #tab-tasks .task-history-table tfoot th,
+html[data-theme] .flowcell-detail-page #tab-sharing .sharing-data-table tbody td {
+    background: var(--mtc-surface) !important;
+    color: var(--mtc-text) !important;
+    border-color: var(--mtc-border) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-basecalled-data .bc-row-pass td,
+html[data-theme] .flowcell-detail-page #tab-basecalled-data .bc-row-pass th {
+    background: var(--mtc-pass) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-basecalled-data .bc-row-fail td,
+html[data-theme] .flowcell-detail-page #tab-basecalled-data .bc-row-fail th {
+    background: var(--mtc-fail) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-summary-data .summary-data-table.table-striped tbody tr:nth-of-type(odd),
+html[data-theme] .flowcell-detail-page #tab-notifications .notif-data-table tbody tr.notification-row,
+html[data-theme] .flowcell-detail-page #tab-tasks .task-history-table.table-striped tbody tr:nth-of-type(odd),
+html[data-theme] .flowcell-detail-page #tab-sharing .sharing-data-table.table-striped tbody tr:nth-of-type(odd) {
+    background: var(--mtc-surface-alt) !important;
+}
+
+/* DataTables controls in tabs */
+html[data-theme] .flowcell-detail-page .dataTables_wrapper .dataTables_length,
+html[data-theme] .flowcell-detail-page .dataTables_wrapper .dataTables_filter,
+html[data-theme] .flowcell-detail-page .dataTables_wrapper .dataTables_info,
+html[data-theme] .flowcell-detail-page .dataTables_wrapper .dataTables_paginate {
+    color: var(--mtc-muted) !important;
+}
+
+html[data-theme] .flowcell-detail-page .dataTables_wrapper .dataTables_filter input,
+html[data-theme] .flowcell-detail-page .dataTables_wrapper .dataTables_length select {
+    background: var(--mtc-surface) !important;
+    color: var(--mtc-text) !important;
+    border-color: var(--mtc-border) !important;
+}
+
+/* Sequencing mapping tab (minimap2): same guardrails as core tabs. */
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .card.card-primary.card-outline,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .card-header,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .card-body,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .card-footer {
+    background: var(--mtc-surface) !important;
+    color: var(--mtc-text) !important;
+    border-color: var(--mtc-border) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .card-title,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping label,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .control-label,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .form-group,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .highcharts {
+    color: var(--mtc-text) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .mapping-table thead th,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping #sv-table thead th,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping table.dataTable thead th,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping table.dataTable tfoot th {
+    background: var(--mtc-header) !important;
+    color: var(--mtc-muted) !important;
+    border-bottom-color: var(--mtc-border) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .mapping-table tbody td,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .mapping-table tbody th,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping #sv-table tbody td,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping #sv-table tbody th,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping table.dataTable tbody td,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping table.dataTable tbody th {
+    background: var(--mtc-surface) !important;
+    color: var(--mtc-text) !important;
+    border-color: var(--mtc-border) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .mapping-table.table-striped tbody tr:nth-of-type(odd),
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping table.table-striped tbody tr:nth-of-type(odd) {
+    background: var(--mtc-surface-alt) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .custom-select,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping select.form-control,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .form-control,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping input[type="number"] {
+    background: var(--mtc-surface) !important;
+    color: var(--mtc-text) !important;
+    border-color: var(--mtc-border) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping #reset-chart-zoom.btn,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping #reset-chart-zoom.btn.btn-light {
+    background: var(--mtc-header) !important;
+    color: var(--mtc-text) !important;
+    border-color: var(--mtc-border) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .highcharts-title,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .highcharts-subtitle,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .highcharts-axis-title {
+    fill: var(--mtc-text) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .highcharts-axis-labels text,
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .highcharts-legend-item text {
+    fill: var(--mtc-muted) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-sequence-mapping .highcharts-grid-line {
+    stroke: var(--mtc-border) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Flowcell detail page shell (obsidian-flowcell-detail.css): section + main tab
+   card default to white and full-bleed, hiding themed html::before backgrounds.
+   Tie outer shell to --mtc-* tokens; gutters so patterns read at viewport edges.
+   -------------------------------------------------------------------------- */
+
+/*
+ * Beat per-theme rules like html[data-theme="x"] section.flowcell-detail-page { ... !important; }
+ * (higher specificity than html[data-theme] .flowcell-detail-page alone).
+ */
+html[data-theme] .private-app-shell > section.flowcell-detail-page {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/*
+ * Theme files often set .private-app-shell to a solid fill; that layer sits above
+ * .minotour-app-root and hides radial/html::before at the viewport edges on this route.
+ */
+html[data-theme] .private-app-shell:has(> section.flowcell-detail-page) {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+html[data-theme] .flowcell-detail-page .obsidian-page-inner {
+    padding-left: clamp(1.25rem, 4.5vw, 3.5rem);
+    padding-right: clamp(1.25rem, 4.5vw, 3.5rem);
+}
+
+/*
+ * Use .private-app-shell in the chain so these beat obsidian-flowcell-detail.css
+ * (loaded in extra_head before themes) and per-theme .nav-link.flowcell-tab rules
+ * that use light text with !important for dark chrome.
+ */
+html[data-theme] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: var(--mtc-header) !important;
+    border-bottom-color: var(--mtc-border) !important;
+}
+
+html[data-theme] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .card-body {
+    background: var(--mtc-surface) !important;
+}
+
+html[data-theme] .private-app-shell .flowcell-detail-page .obsidian-card.flowcell-detail-tab-card {
+    background: var(--mtc-surface) !important;
+    border-color: var(--mtc-border) !important;
+}
+
+/* Pane tabs: always follow --mtc-* so contrast matches --mtc-header (Tron/telextext/etc. neon tab colors lose here). */
+html[data-theme] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab {
+    color: var(--mtc-muted) !important;
+    text-shadow: none !important;
+}
+
+html[data-theme] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab:hover {
+    color: var(--mtc-text) !important;
+    background: color-mix(in srgb, var(--mtc-text) 10%, transparent) !important;
+}
+
+html[data-theme] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab.active {
+    color: var(--mtc-text) !important;
+    border-bottom-color: var(--mtc-border) !important;
+    text-shadow: none !important;
+}
+
+/* Slight translucency on dark themes only — shows html::before through the tab shell */
+html[data-theme="dark"] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .card-body,
+html[data-theme="hacienda"] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .card-body,
+html[data-theme="hailmary"] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .card-body,
+html[data-theme="telextext"] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .card-body,
+html[data-theme="scifi1950s"] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .card-body,
+html[data-theme="drwho"] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .card-body,
+html[data-theme="tron"] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .card-body,
+html[data-theme="starwarsanh"] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .card-body,
+html[data-theme="terminal"] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .card-body,
+html[data-theme="grumpychemist"] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .card-body,
+html[data-theme="londoncalling"] .private-app-shell .flowcell-detail-page .flowcell-detail-tab-card .card-body {
+    background: color-mix(in srgb, var(--mtc-surface) 82%, transparent) !important;
+}
+
+html[data-theme="dark"] .private-app-shell .flowcell-detail-page .obsidian-card.flowcell-detail-tab-card,
+html[data-theme="hacienda"] .private-app-shell .flowcell-detail-page .obsidian-card.flowcell-detail-tab-card,
+html[data-theme="hailmary"] .private-app-shell .flowcell-detail-page .obsidian-card.flowcell-detail-tab-card,
+html[data-theme="telextext"] .private-app-shell .flowcell-detail-page .obsidian-card.flowcell-detail-tab-card,
+html[data-theme="scifi1950s"] .private-app-shell .flowcell-detail-page .obsidian-card.flowcell-detail-tab-card,
+html[data-theme="drwho"] .private-app-shell .flowcell-detail-page .obsidian-card.flowcell-detail-tab-card,
+html[data-theme="tron"] .private-app-shell .flowcell-detail-page .obsidian-card.flowcell-detail-tab-card,
+html[data-theme="starwarsanh"] .private-app-shell .flowcell-detail-page .obsidian-card.flowcell-detail-tab-card,
+html[data-theme="terminal"] .private-app-shell .flowcell-detail-page .obsidian-card.flowcell-detail-tab-card,
+html[data-theme="grumpychemist"] .private-app-shell .flowcell-detail-page .obsidian-card.flowcell-detail-tab-card,
+html[data-theme="londoncalling"] .private-app-shell .flowcell-detail-page .obsidian-card.flowcell-detail-tab-card {
+    background: color-mix(in srgb, var(--mtc-surface) 88%, transparent) !important;
+}
+
+/*
+ * Dark / neon themes: soften full-viewport veil on .minotour-app-root so decorative
+ * backgrounds show at left/right/bottom edges (same idea as Tron radial).
+ */
+html[data-theme="dark"] .minotour-app-root,
+html[data-theme="hacienda"] .minotour-app-root,
+html[data-theme="hailmary"] .minotour-app-root,
+html[data-theme="telextext"] .minotour-app-root,
+html[data-theme="scifi1950s"] .minotour-app-root,
+html[data-theme="drwho"] .minotour-app-root,
+html[data-theme="starwarsanh"] .minotour-app-root,
+html[data-theme="terminal"] .minotour-app-root,
+html[data-theme="grumpychemist"] .minotour-app-root,
+html[data-theme="londoncalling"] .minotour-app-root {
+    background: radial-gradient(
+        ellipse 95% 88% at 50% 45%,
+        rgba(0, 0, 0, 0.38) 0%,
+        rgba(0, 0, 0, 0.16) 52%,
+        rgba(0, 0, 0, 0) 100%
+    ) !important;
+}
+
+html[data-theme="tron"] .minotour-app-root {
+    background: radial-gradient(
+        ellipse 95% 85% at 50% 42%,
+        rgba(2, 5, 10, 0.82) 0%,
+        rgba(2, 6, 14, 0.55) 48%,
+        rgba(2, 5, 8, 0.18) 78%,
+        rgba(2, 5, 8, 0) 100%
+    ) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Settings drawer (all themes): Tailwind tw-dark: only worked for
+   data-theme="dark" before; html.dark is set for every dark UI theme in
+   minotour-theme.js so the panel matches Obsidian Dark chrome. Light themes
+   keep obsidian-chrome defaults (white drawer, slate dimmer).
+   -------------------------------------------------------------------------- */
+html.dark aside.obsidian-settings-sidebar.control-sidebar {
+    background: #0f172a !important;
+    border-left-color: rgba(148, 163, 184, 0.25) !important;
+    box-shadow: -4px 0 28px rgba(0, 0, 0, 0.45);
+}
+
+html.dark aside.obsidian-settings-sidebar.control-sidebar > div {
+    background-color: #020617 !important;
+}

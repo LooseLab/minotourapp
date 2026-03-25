@@ -2,39 +2,41 @@
 
     {% if forloop.first %}
 
-        <div class='table-responsive'>
-        <table class="table table-striped table-sm table-hover">
+        <div class="obsidian-table-wrap">
+        <table class="table table-hover table-sm summary-data-table">
         <thead>
-        <td align="right"><strong>Run</strong></td>
-        <th>Runid</th>
-        <td align="right"><strong>Run Start Time</strong></td>
-        <td align="right"><strong>Computer Name</strong></td>
-        <td align="right"><strong>MinION ID</strong></td>
-        <td align="right"><strong>ASIC ID</strong></td>
-        <td align="right"><strong>Sequencing Kit</strong></td>
-        <td align="right"><strong>Purpose</strong></td>
-        <td align="right"><strong>minKNOW version</strong></td>
-        <td align="right"><strong>Flowcell Type</strong></td>
-        <td align="right"><strong>Flowcell ID</strong></td>
-        <th>Sample Name</th>
-        <th>Experiment Name</th>
+        <tr>
+        <th scope="col" class="text-right">Run</th>
+        <th scope="col">Runid</th>
+        <th scope="col" class="text-right">Run start time</th>
+        <th scope="col" class="text-right">Computer name</th>
+        <th scope="col" class="text-right">MinION ID</th>
+        <th scope="col" class="text-right">ASIC ID</th>
+        <th scope="col" class="text-right">Sequencing kit</th>
+        <th scope="col" class="text-right">Purpose</th>
+        <th scope="col" class="text-right">minKNOW version</th>
+        <th scope="col" class="text-right">Flowcell type</th>
+        <th scope="col" class="text-right">Flowcell ID</th>
+        <th scope="col">Sample name</th>
+        <th scope="col">Experiment name</th>
+        </tr>
         </thead>
         <tbody>
 
     {% endif %}
 
     <tr>
-        <td align="right">{{ forloop.counter }}</td>
+        <td class="text-right">{{ forloop.counter }}</td>
         <td>{{ record.runid }}</td>
-        <td align="right">{{ record.run_start_time }}</td>
-        <td align="right">{{ record.minknow_computer_name }}</td>
-        <td align="right">{{ record.minion_id }}</td>
-        <td align="right">{{ record.asic_id }}</td>
-        <td align="right">{{ record.sequencing_kit }}</td>
-        <td align="right">{{ record.purpose }}</td>
-        <td align="right">{{ record.minknow_version }}</td>
-        <td align="right">{{ record.flowcell_type }}</td>
-        <td align="right">{{ record.flowcell_id }}</td>
+        <td class="text-right">{{ record.run_start_time }}</td>
+        <td class="text-right">{{ record.minknow_computer_name }}</td>
+        <td class="text-right">{{ record.minion_id }}</td>
+        <td class="text-right">{{ record.asic_id }}</td>
+        <td class="text-right">{{ record.sequencing_kit }}</td>
+        <td class="text-right">{{ record.purpose }}</td>
+        <td class="text-right">{{ record.minknow_version }}</td>
+        <td class="text-right">{{ record.flowcell_type }}</td>
+        <td class="text-right">{{ record.flowcell_id }}</td>
         <td>{{ record.sample_name }}</td>
         <td>{{ record.experiment_name }}</td>
     </tr>
@@ -49,6 +51,6 @@
 
 {% empty %}
 
-No information available.
+<p class="summary-empty">No information available.</p>
 
 {% endfor %}

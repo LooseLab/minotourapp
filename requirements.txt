@@ -11,7 +11,7 @@ django_redis
 django_extensions
 pandas
 ete3
-django-guardian
+django-guardian==2.4.0
 pylint-django
 ipython
 ptpython

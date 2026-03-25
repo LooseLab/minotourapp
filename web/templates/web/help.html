@@ -1,32 +1,214 @@
 {% extends "web/template_private.html" %}
 
-{% block content %}
-    <div class="content-wrapper" style="background-color: white">
-
-        <!-- Content Header (Page header) -->
-        <section class="content-header">
-        </section>
-
-        <!-- Main content -->
+{% block private_main %}
+    <div>
         <section class="content">
-            <div class="container-fluid">
+            <div class="container-fluid obsidian-page-inner">
 
-                <div class="card">
-                    <h2 class="card-header">Help</h2>
+                <div class="card card-primary card-outline mb-3">
+                    <div class="card-header">
+                        <h4 class="card-title mb-0">Help</h4>
+                    </div>
                     <div class="card-body">
-                        <h3 class="card-title">Links</h3>
-                        <p class="card-text">We will shortly provide a series of tutorial videos that will help users work with minoTour.<br>
-                            These will be hosted on YouTube and so if your local version of minoTour is run offline, you will need to look for the links there.</p>
-
+                        <p class="lead mb-3">
+                            This page summarizes how to move around minoTour, connect the <strong>minFQ</strong> upload
+                            client, and where to find full installation and administrator documentation.
+                        </p>
                     </div>
                 </div>
+
+                <div class="card card-primary card-outline mb-3">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Top navigation</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0 pl-3">
+                            <li class="mb-2">
+                                <strong><a href="{% url 'flowcells' %}">Flowcells</a></strong> — List and open your
+                                sequencing runs. Select a flow cell to view live metrics, reads, tasks, and analyses
+                                tied to that run.
+                            </li>
+                            <li class="mb-2">
+                                <strong><a href="{% url 'remote-control' %}">MinKnow Control</a></strong> — Interact with
+                                MinKNOW where remote control is available (depends on your environment and permissions).
+                            </li>
+                            <li class="mb-2">
+                                <strong><a href="{% url 'minfq' %}">Client</a></strong> — Information about the minFQ
+                                client used to stream basecalled data and MinKNOW metrics to this server. Use your
+                                account API key from <a href="{% url 'profile' %}">Profile details</a> when
+                                configuring minFQ.
+                            </li>
+                            <li class="mb-2">
+                                <strong><a href="{% url 'messages' %}">Messages</a></strong> — Notifications and
+                                messages associated with your account or runs (for example alerts from MinKNOW or
+                                minoTour).
+                            </li>
+                            <li class="mb-2">
+                                <strong><a href="{% url 'flowcell-manager' %}">Flowcell Split</a></strong> —
+                                Flowcell splitting management: pick a flow cell to split its run data (see the on-page
+                                table and actions).
+                            </li>
+                            <li class="mb-2">
+                                <strong><a href="{% url 'private-index' %}">About</a></strong> — What minoTour is, project
+                                links, and status.
+                            </li>
+                            <li>
+                                <strong><a href="{% url 'tutorial' %}">Help</a></strong> — This guide.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card card-primary card-outline mb-3">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Settings (gear icon)</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">
+                            Open the gear icon next to your username to reach account tools:
+                        </p>
+                        <ul class="mb-0 pl-3">
+                            <li class="mb-2">
+                                <strong><a href="{% url 'reference-manager' %}">Manage references</a></strong> — Upload or
+                                select reference genomes for alignment and related analyses. You can add references
+                                privately (only your account) or as shared references, depending on how your site is
+                                configured.
+                            </li>
+                            <li class="mb-2">
+                                <strong><a href="{% url 'primers-manager' %}">Manage primer schemes</a></strong> — Manage
+                                primer scheme definitions used by supported workflows.
+                            </li>
+                            <li class="mb-2">
+                                <strong><a href="{% url 'profile' %}">Profile details</a></strong> — Update contact
+                                preferences and copy your <strong>API key</strong>. The API key is required for minFQ
+                                and for command-line tools such as bulk reference import (see below).
+                            </li>
+                            <li>
+                                <strong><a href="{% url 'password_change' %}">Change password</a></strong> — Update your
+                                login password.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card card-primary card-outline mb-3">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Uploading data with minFQ</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Sequencing data and MinKNOW metrics are sent to minoTour using the separate client
+                            <strong>minFQ</strong> (Python 3; install from PyPI with <code>pip install minFQ</code>).
+                            Source and detailed usage:
+                            <a href="https://github.com/LooseLab/minotourcli" target="_blank"
+                                rel="noopener noreferrer">github.com/LooseLab/minotourcli</a>.
+                        </p>
+                        <p class="mb-2">
+                            Typical steps:
+                        </p>
+                        <ol class="mb-3 pl-3">
+                            <li class="mb-1">Create a dedicated virtual environment if you do not already use one.</li>
+                            <li class="mb-1">Install the client: <code>pip install minFQ</code> (or install from a clone of the repo for development).</li>
+                            <li class="mb-1">In minoTour, open <a href="{% url 'profile' %}">Profile details</a> and copy your API key.</li>
+                            <li>
+                                Run <code>minFQ -h</code> for options. You will point minFQ at your watch directory,
+                                minoTour host/port, MinKNOW address, flow cell label, and pass your API key. Example
+                                shape (your paths and ports will differ):
+                                <pre class="bg-light p-2 rounded small mt-2 mb-0"><code>minFQ -w /path/to/fastq_directory -n &lt;flowcell_name&gt; -k &lt;api_key&gt; -hn &lt;minotour_host&gt; -ip &lt;minknow_host&gt; -p &lt;port&gt;</code></pre>
+                            </li>
+                        </ol>
+                        <p class="text-muted small mb-0">
+                            minFQ can recurse under the watch directory. A config file in the working directory can hold
+                            defaults for host, port, and keys; see the minFQ repository for examples.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card card-primary card-outline mb-3">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">References and larger genomes</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Alignments and several analyses need reference sequences added under
+                            <a href="{% url 'reference-manager' %}">Manage references</a>. The in-browser upload is
+                            limited to <strong>256&nbsp;MB</strong> per file; for larger references, use the management
+                            command on the server with your API key, for example:
+                        </p>
+                        <pre class="bg-light p-2 rounded small"><code>python manage.py add_references -k &lt;your_api_key&gt; /path/to/reference.fa</code></pre>
+                        <p class="mb-0">
+                            Run <code>python manage.py add_references -h</code> on the server for full options. If an
+                            identical reference already exists, minoTour will tell you which entry to use.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card card-primary card-outline mb-3">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Administrator and advanced setup</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Hosting minoTour requires MySQL, Redis, Celery workers, and environment configuration
+                            (<code>envs.sh</code>). Metagenomics (Centrifuge), Artic-related conda environments, and
+                            optional integrations such as Twitter notifications are described in the project README.
+                        </p>
+                        <p class="mb-2">
+                            For a containerized deployment, see the Docker Compose project:
+                            <a href="https://github.com/LooseLab/minotour-docker" target="_blank"
+                                rel="noopener noreferrer">github.com/LooseLab/minotour-docker</a>.
+                        </p>
+                        <p class="text-muted small mb-0">
+                            If you are logged in as a Django <strong>superuser</strong>, minoTour shows a warning: use a
+                            non-admin account for routine sequencing and analysis work.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card card-primary card-outline mb-3">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Experimental features</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">
+                            Some capabilities—especially parts of <strong>metagenomics</strong> and real-time
+                            <strong>SV/CNV</strong> analysis—are still experimental. Treat results as provisional and
+                            validate critical findings with independent methods.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card card-primary card-outline mb-3">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Documentation, issues, and videos</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-3 pl-3">
+                            <li class="mb-2">
+                                <strong>Repository &amp; full README:</strong>
+                                <a href="https://github.com/LooseLab/minotourapp" target="_blank"
+                                    rel="noopener noreferrer">github.com/LooseLab/minotourapp</a> — installation,
+                                services (Redis, Celery, Flower), reference to metagenomics indexes, and more.
+                            </li>
+                            <li class="mb-2">
+                                <strong>Bug reports &amp; feature requests:</strong> use GitHub Issues on the same
+                                repository.
+                            </li>
+                            <li>
+                                <strong>Video tutorials:</strong> step-by-step screencasts are planned; when published they
+                                will typically appear on YouTube. If you run minoTour fully offline, open those links on
+                                a machine with internet access or refer to this Help page and the README instead.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
             </div>
-        </section><!-- /.content -->
-    </div><!-- /.content-wrapper -->
+        </section>
+    </div>
 {% endblock %}
 
 {% block javascript %}
-
     <script>
         setActiveNavbarItem(6);
     </script>

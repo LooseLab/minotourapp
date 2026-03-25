@@ -1,127 +1,125 @@
-<div class="row">
-    <div id="messageView" class="col-md-12" style="display: none"></div>
+<div class="tasks-tab-content">
+    <div class="row tasks-tab-row">
+        <div id="messageView" class="col-md-12 tasks-message-view" style="display: none"></div>
 
-    <div class="col-md-3">
-        <div class="card card-primary card-outline" style="min-height: 25rem">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-thumbtack"></i>
-                    Create a new analysis task
-                </h3>
-            </div>
+        <div class="col-md-3">
+            <div class="card obsidian-card task-panel-card task-panel-card--create">
+                <div class="card-header task-card-header">
+                    <h3 class="card-title task-card-title">
+                        <i class="fas fa-thumbtack" aria-hidden="true"></i>
+                        Create a new analysis task
+                    </h3>
+                </div>
 
-            <div class="card-body">
-
-                <form method="post" id="post-form-task-create">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label for="job-type-select">Task type</label>
-                        {% if flowcell.archived %}
-                            <select class="form-control" name="job-type" id="job-type-select" disabled></select>
-                        {% else %}
-                            <select class="form-control" name="job-type" id="job-type-select"></select>
-                        {% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label id="select-label" for="reference-select">Reference</label>
-                        <select class="form-control" name="reference" id="reference-select" disabled></select>
-                    </div>
-                    <div class="form-group" style="display: none" id="primer-scheme-select">
-                        <label for="primer-select">Primer Scheme</label>
-                        <select class="form-control" name="reference" id="primer-select" disabled></select>
-                    </div>
-                    <div class="form-check form-check-inline" style="display: none" id="run-from-database">
-                        <label class="form-check-label" id="checkbox-label" for="from-database">Run from
-                            database
-                            <span data-tooltip="Run task with reads already in the database. Leave unchecked to use reads being uploaded to flowcell."
-                                  data-flow="top"><i style="padding-right: 3px" class="fas fa-question-circle"
-                                                     id="run-from-database"></i></span>
-                        </label>
-                        <input class="form-check-input" name="from-database" id="from-database" type="checkbox">
-                    </div>
-
-                    <input type="submit" value="Create" class="btn btn-primary" id="btn_task_create">
-                </form>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-9">
-        <div class="card card-primary card-outline" style="min-height: 25rem">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-tasks"></i>
-                    Tasks
-                </h3>
-            </div>
-
-            <div class="card-body">
-                <table class="table table-hover tasktable display" style="width: 100%;">
-                    <thead>
-                    <tr>
-                        <th>Id</th>
-                        <th>Task type</th>
-                        <th>Read count</th>
-                        <th>Running</th>
-                        <th>Complete</th>
-                        <th>Reference</th>
-                        <th>Automatic</th>
-                        <th>From Database</th>
-                        <th>Actions</th>
-                    </tr>
-                    </thead>
-                    <tfoot>
-                    <tr>
-                        <th>Id</th>
-                        <th>Task type</th>
-                        <th>Read count</th>
-                        <th>Running</th>
-                        <th>Complete</th>
-                        <th>Reference</th>
-                        <th>Automatic</th>
-                        <th>From Database</th>
-                        <th>Actions</th>
-                    </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-
-</div>
-
-<div class="row">
-    <div class="col-md-12">
-        <div class="card card-warning card-outline">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-redo-alt"></i>
-                    Reactivate flowcell
-                </h3>
-            </div>
-
-            <div class="card-body">
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-md-12" id="messageViewReactivate"></div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-2"
-                             style="display: flex; justify-content: center; align-content: center; flex-direction: column;">
-                            <button name="reactivate_flowcell" id="reactivate_flowcell" class="btn btn-warning">
-                                Reactivate flowcell
-                            </button>
+                <div class="card-body task-card-body">
+                    <form method="post" id="post-form-task-create">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="job-type-select">Task type</label>
+                            {% if flowcell.archived %}
+                                <select class="form-control task-form-control" name="job-type" id="job-type-select" disabled></select>
+                            {% else %}
+                                <select class="form-control task-form-control" name="job-type" id="job-type-select"></select>
+                            {% endif %}
                         </div>
-                        <div class="col-md-10">
-                            <p>We don't expect manually reactivating a flowcell to be necessary, as starting a task
-                                should
-                                reactivate an inactivated flowcell.
-                                However if for some reason you need to reactivate a flowcell to start a task running
-                                again, hit this
-                                button.</p>
+                        <div class="form-group">
+                            <label id="select-label" for="reference-select">Reference</label>
+                            <select class="form-control task-form-control" name="reference" id="reference-select" disabled></select>
+                        </div>
+                        <div class="form-group" style="display: none" id="primer-scheme-select">
+                            <label for="primer-select">Primer scheme</label>
+                            <select class="form-control task-form-control" name="reference" id="primer-select" disabled></select>
+                        </div>
+                        <div class="form-check form-check-inline" style="display: none" id="run-from-database">
+                            <label class="form-check-label" id="checkbox-label" for="from-database">Run from
+                                database
+                                <span data-tooltip="Run task with reads already in the database. Leave unchecked to use reads being uploaded to flowcell."
+                                      data-flow="top"><i style="padding-right: 3px" class="fas fa-question-circle"
+                                                         id="run-from-database"></i></span>
+                            </label>
+                            <input class="form-check-input" name="from-database" id="from-database" type="checkbox">
+                        </div>
+
+                        <input type="submit" value="Create" class="btn btn-primary task-btn-primary" id="btn_task_create">
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="card obsidian-card task-panel-card task-panel-card--list">
+                <div class="card-header task-card-header">
+                    <h3 class="card-title task-card-title">
+                        <i class="fas fa-tasks" aria-hidden="true"></i>
+                        Tasks
+                    </h3>
+                </div>
+
+                <div class="card-body task-card-body">
+                    <div class="obsidian-table-wrap task-table-wrap">
+                        <table class="table table-hover tasktable display task-history-table" style="width: 100%;">
+                            <thead>
+                            <tr>
+                                <th scope="col">Id</th>
+                                <th scope="col">Task type</th>
+                                <th scope="col">Read count</th>
+                                <th scope="col">Running</th>
+                                <th scope="col">Complete</th>
+                                <th scope="col">Reference</th>
+                                <th scope="col">Automatic</th>
+                                <th scope="col">From database</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                            </thead>
+                            <tfoot>
+                            <tr>
+                                <th scope="col">Id</th>
+                                <th scope="col">Task type</th>
+                                <th scope="col">Read count</th>
+                                <th scope="col">Running</th>
+                                <th scope="col">Complete</th>
+                                <th scope="col">Reference</th>
+                                <th scope="col">Automatic</th>
+                                <th scope="col">From database</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row tasks-tab-row tasks-tab-row--reactivate">
+        <div class="col-md-12">
+            <div class="card obsidian-card task-panel-card task-panel-card--reactivate">
+                <div class="card-header task-card-header">
+                    <h3 class="card-title task-card-title">
+                        <i class="fas fa-redo-alt" aria-hidden="true"></i>
+                        Reactivate flowcell
+                    </h3>
+                </div>
+
+                <div class="card-body task-card-body">
+                    <div class="container-fluid task-reactivate-inner">
+                        <div class="row">
+                            <div class="col-md-12" id="messageViewReactivate"></div>
+                        </div>
+
+                        <div class="row task-reactivate-actions">
+                            <div class="col-md-2 task-reactivate-btn-wrap">
+                                <button type="button" name="reactivate_flowcell" id="reactivate_flowcell" class="btn task-btn-warn">
+                                    Reactivate flowcell
+                                </button>
+                            </div>
+                            <div class="col-md-10">
+                                <p class="task-reactivate-help">We don't expect manually reactivating a flowcell to be necessary, as starting a task
+                                    should
+                                    reactivate an inactivated flowcell.
+                                    However if for some reason you need to reactivate a flowcell to start a task running
+                                    again, use this
+                                    button.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -130,44 +128,42 @@
     </div>
 </div>
 
-<div class="modal fade" id="confirm-submit" tabindex="-1" role="dialog"
+<div class="modal fade task-modal" id="confirm-submit" tabindex="-1" role="dialog"
      aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div style="border-radius: 25px" class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title" id="exampleModalLabel">Confirm Delete?
-                </h4>
+        <div class="modal-content task-modal-content">
+            <div class="modal-header task-modal-header">
+                <h4 class="modal-title task-modal-title" id="exampleModalLabel">Confirm delete?</h4>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body task-modal-body">
                 <p>Are you sure you wish to delete this
                     flowcell?</p>
                 <label for="flowcell-name">Please enter flowcell name as confirmation.</label>
-                <input type="text" id="flowcell-name"> <i class="fab fa-galactic-republic disallowed"></i>
+                <input type="text" id="flowcell-name" class="form-control task-form-control task-modal-input"> <i class="fab fa-galactic-republic disallowed"></i>
             </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                <button href="#" id="submit-task-delete" class="btn btn-success success" disabled>Submit</button>
+            <div class="modal-footer task-modal-footer">
+                <button type="button" class="btn btn-default task-btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" id="submit-task-delete" class="btn btn-success task-btn-confirm" disabled>Submit</button>
             </div>
         </div>
     </div>
 </div>
-<div class="modal fade" id="set-artic-fire" tabindex="-1" role="dialog"
+<div class="modal fade task-modal" id="set-artic-fire" tabindex="-1" role="dialog"
      aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div style="border-radius: 25px" class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title" id="exampleModalLabel">Artic Fire conditions
-                </h4>
+        <div class="modal-content task-modal-content">
+            <div class="modal-header task-modal-header">
+                <h4 class="modal-title task-modal-title" id="exampleModalLabel">Artic fire conditions</h4>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <form class="form" id="fire-conditions" method="POST"
             >
                 {% csrf_token %}
-                <div class="modal-body">
+                <div class="modal-body task-modal-body">
                     <p>Please set a condition to fire the artic pipeline. More can be created on the task page.</p>
                     <div class="form-group">
                         <div class="col-md-12 control-label" style="height: 100%; text-align: left;">
@@ -185,9 +181,9 @@
                 </div>
             </form>
 
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                <button id="submit-artic-choices" class="btn btn-success success">Submit</button>
+            <div class="modal-footer task-modal-footer">
+                <button type="button" class="btn btn-default task-btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" id="submit-artic-choices" class="btn btn-success task-btn-confirm">Submit</button>
             </div>
         </div>
     </div>

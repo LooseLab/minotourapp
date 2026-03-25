@@ -1,0 +1,127 @@
+/**
+ * White Marble and Gold theme.
+ */
+
+html[data-theme="marblegold"] {
+    color-scheme: light;
+    background-color: #f6f6f3;
+    --font-body: "Lora", "Source Sans 3", Georgia, serif;
+    --font-display: "Cinzel", "Lora", Georgia, serif;
+}
+
+html[data-theme="marblegold"] body,
+html[data-theme="marblegold"] body.hold-transition,
+html[data-theme="marblegold"] .minotour-app-root,
+html[data-theme="marblegold"] .content-wrapper,
+html[data-theme="marblegold"] .private-app-shell,
+html[data-theme="marblegold"] .private-main-surface,
+html[data-theme="marblegold"] .flowcells-page,
+html[data-theme="marblegold"] .flowcell-detail-page {
+    background-color: #f6f6f3 !important;
+    color: #2f3136;
+}
+
+html[data-theme="marblegold"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="marblegold"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #bfa56a 0%, #d4af37 58%, #e6d4a0 100%) !important;
+    border-bottom: 1px solid rgba(122, 95, 33, 0.28);
+}
+
+html[data-theme="marblegold"] nav#tn .navbar-brand,
+html[data-theme="marblegold"] nav#tn .nav-link,
+html[data-theme="marblegold"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #fffefb !important;
+}
+
+html[data-theme="marblegold"] .obsidian-card,
+html[data-theme="marblegold"] .card.card-primary.card-outline,
+html[data-theme="marblegold"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="marblegold"] .flowcells-page .flowcells-card {
+    background: linear-gradient(170deg, #ffffff 0%, #f6f6f3 60%, #f0efea 100%) !important;
+    border-color: #c8b27a !important;
+    box-shadow: 0 1px 0 rgba(159, 124, 44, 0.08), 0 10px 22px rgba(77, 79, 85, 0.12);
+}
+
+html[data-theme="marblegold"] .card-header,
+html[data-theme="marblegold"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(90deg, #f8f6f0 0%, #ffffff 100%) !important;
+    border-bottom-color: #c8b27a !important;
+}
+
+html[data-theme="marblegold"] .card-title,
+html[data-theme="marblegold"] .flowcells-page__title,
+html[data-theme="marblegold"] .flowcell-detail-page .flowcells-page__title {
+    color: #8a6a23 !important;
+}
+
+html[data-theme="marblegold"] .btn-primary,
+html[data-theme="marblegold"] .flowcells-btn--primary {
+    background: linear-gradient(180deg, #c8a24a 0%, #a98431 100%) !important;
+    border-color: #8a6a23 !important;
+    color: #fffef9 !important;
+}
+
+html[data-theme="marblegold"] .btn-primary:hover,
+html[data-theme="marblegold"] .flowcells-btn--primary:hover {
+    background: linear-gradient(180deg, #d3b160 0%, #b48f3f 100%) !important;
+}
+
+html[data-theme="marblegold"] .form-control,
+html[data-theme="marblegold"] select.form-control,
+html[data-theme="marblegold"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="marblegold"] .dataTables_wrapper .dataTables_length select {
+    background: #ffffff !important;
+    border-color: #c8b27a !important;
+    color: #2f3136 !important;
+}
+
+html[data-theme="marblegold"] .table thead th,
+html[data-theme="marblegold"] table.dataTable thead th,
+html[data-theme="marblegold"] table.dataTable tfoot th {
+    background: #f8f6f0 !important;
+    color: #6b6560 !important;
+    border-bottom-color: #c8b27a !important;
+}
+
+html[data-theme="marblegold"] .table,
+html[data-theme="marblegold"] .table td,
+html[data-theme="marblegold"] .table th,
+html[data-theme="marblegold"] table.dataTable tbody td {
+    color: #2f3136;
+    border-color: #dfd8c4 !important;
+}
+
+html[data-theme="marblegold"] .flowcells-page .fc-name,
+html[data-theme="marblegold"] .flowcells-page td.fc-col-name {
+    color: #8a6a23 !important;
+    font-weight: 700;
+}
+
+html[data-theme="marblegold"] footer#sticky-footer.obsidian-footer.site-footer {
+    background: #f2f1ec !important;
+    border-top-color: #c8b27a !important;
+}
+
+html[data-theme="marblegold"] .flowcell-detail-page #tab-basecalled-data .bc-data-table thead th,
+html[data-theme="marblegold"] .flowcell-detail-page #tab-summary-data .summary-data-table thead th,
+html[data-theme="marblegold"] .flowcell-detail-page #tab-notifications .notif-data-table thead th,
+html[data-theme="marblegold"] .flowcell-detail-page #tab-reads table.dataTable thead th,
+html[data-theme="marblegold"] .flowcell-detail-page #tab-tasks .task-history-table thead th,
+html[data-theme="marblegold"] .flowcell-detail-page #tab-sharing .sharing-data-table thead th {
+    background: #f8f6f0 !important;
+    color: #6b6560 !important;
+    border-bottom-color: #c8b27a !important;
+}
+
+html[data-theme="marblegold"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody td,
+html[data-theme="marblegold"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody th,
+html[data-theme="marblegold"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody td,
+html[data-theme="marblegold"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody th,
+html[data-theme="marblegold"] .flowcell-detail-page #tab-notifications .notif-data-table tbody td,
+html[data-theme="marblegold"] .flowcell-detail-page #tab-reads table.dataTable tbody td,
+html[data-theme="marblegold"] .flowcell-detail-page #tab-tasks .task-history-table tbody td,
+html[data-theme="marblegold"] .flowcell-detail-page #tab-sharing .sharing-data-table tbody td {
+    background: #ffffff !important;
+    color: #2f3136 !important;
+    border-color: #dfd8c4 !important;
+}

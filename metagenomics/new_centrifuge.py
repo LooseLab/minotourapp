@@ -296,7 +296,7 @@ def calculate_barcoded_values(barcode_group_df, barcode_df, classified_per_barco
         ],
         axis=1,
     )
-    barcode_df = barcode_df.append(values_df, sort=True)
+    barcode_df = pd.concat([barcode_df, values_df], sort=True)
     return barcode_df
 
 
@@ -404,7 +404,7 @@ def calculate_lineages_df(ncbi, df, tax_rank_filter, flowcell):
     lineages_df["subspecies"].fillna(lineages_df["subStrainSpecies"], inplace=True)
     unclassified_row = {key: np.NaN for key in lineages_df.keys()}
     row = pd.DataFrame(unclassified_row, index=[0])
-    lineages_df = lineages_df.append(row, sort=True)
+    lineages_df = pd.concat([lineages_df, row], sort=True)
     # delete the new subspecies column
     delete_series(["subStrainSpecies"], lineages_df)
     return lineages_df
@@ -457,7 +457,7 @@ def calculate_donut_data(df, flowcell, tax_rank_filter):
             # Set the barcode for this set of data
             temp_df["barcode_name"] = name
             # Append the reuslts to the donut_df, so we have 7 sets (the tax rank) for each barcode
-            donut_df = donut_df.append(temp_df)
+            donut_df = pd.concat([donut_df, temp_df], sort=False)
     # As it only shows top ten, trim out any with less than 2 matches, as they definitely won't be making it
     donut_df = donut_df[donut_df["num_matches"] > 2]
     # name the index as name
@@ -501,7 +501,7 @@ def process_centrifuge_barcode_data(df, barcode_df, task, tax_rank_filter):
     # Make this the results for all reads in the metagenomics output
     df["barcode_name"] = "All reads"
     # Add the barcode dataframe onto the dataframe, so now we have all reads and barcodes
-    df = df.append(barcode_df, sort=True)
+    df = pd.concat([df, barcode_df], sort=True)
     # drop all duplicated lines to keep only one for each entry, creating atomicity
     df.reset_index(inplace=True)
     df = df.set_index(["tax_id", "barcode_name"])

@@ -1,23 +1,55 @@
 {% extends "web/template_private.html" %}
 
-{% block content %}
+{% block private_main %}
     <div>
 
         <!-- Main content -->
         <section class="content">
-            <div class="container-fluid">
+            <div class="container-fluid obsidian-page-inner">
 
                 <div class="card card-primary card-outline">
                     <div class="card-header">
                         <h4 class="card-title">About</h4>
                     </div>
                     <div class="card-body">
-                        <h6 >Welcome to minoTour - a real time analysis platform for minION reads.</h6>
-                        <p id="notice">minoTour is a platform in development. We are re-releasing it now but it may
-                            contain <strong>errors</strong> and <strong>bugs</strong>.
-                            Bug reports and issues should be logged on our github project - <a
-                                    href="https://github.com/LooseLab/minotourapp" target="_blank">https://github.com/LooseLab/minotourapp</a>
-
+                        <p class="lead mb-3">
+                            <strong>minoTour</strong> is a web-based laboratory information management system (LIMS) for
+                            <strong>Oxford Nanopore Technologies (ONT)</strong> sequencers, built with
+                            <strong>Django</strong>. It is designed to run locally (for example on a laptop) or on a
+                            server so it can be accessed remotely.
+                        </p>
+                        <p>
+                            The application monitors Nanopore instruments in near real time: it integrates with ONT’s
+                            <strong>minKNOW</strong> API for live run metrics and device context, and can parse sequence
+                            files as they are produced—so you get insight into performance and run health without waiting
+                            only on fully basecalled outputs. You can track flow cell QC, review messages from MinKNOW,
+                            and (where configured) use <strong>remote control</strong> features. Downstream, minoTour
+                            supports simple analyses such as basecalling summaries, alignment, and metagenomics, in real
+                            time or after a run.
+                        </p>
+                        <p>
+                            Data upload from sequencing machines uses the companion client
+                            <strong>minFQ</strong> (PyPI / <a href="https://github.com/LooseLab/minotourcli"
+                                target="_blank" rel="noopener noreferrer">minotourcli</a> on GitHub).
+                        </p>
+                        <hr class="my-3">
+                        <p class="mb-2"><strong>Project status</strong></p>
+                        <p class="mb-2">
+                            minoTour is <strong>under active development</strong>. Features may change; you may encounter
+                            bugs or rough edges. Bug reports, feature requests, and pull requests are welcome on the
+                            open-source repository:
+                            <a href="https://github.com/LooseLab/minotourapp" target="_blank"
+                                rel="noopener noreferrer">github.com/LooseLab/minotourapp</a>.
+                        </p>
+                        <p class="mb-2">
+                            For deployment, a Docker Compose setup is maintained in the sister repository
+                            <a href="https://github.com/LooseLab/minotour-docker" target="_blank"
+                                rel="noopener noreferrer">LooseLab/minotour-docker</a>.
+                        </p>
+                        <p class="text-muted small mb-0">
+                            Some areas—especially parts of <strong>metagenomics</strong> and real-time
+                            <strong>structural variant (SV)</strong> and <strong>copy-number (CNV)</strong> detection—are
+                            experimental and may be incomplete. Treat results accordingly.
                         </p>
                     </div>
                 </div>

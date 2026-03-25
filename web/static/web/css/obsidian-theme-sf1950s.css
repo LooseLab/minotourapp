@@ -1,0 +1,199 @@
+/**
+ * 1950s San Francisco theme.
+ * Activated with html[data-theme="sf1950s"].
+ * Palette leans into warm fog, painted signage, and muted mid-century tones.
+ */
+
+html[data-theme="sf1950s"] {
+    color-scheme: light;
+    background-color: #f4ecde;
+    --font-body: "Source Sans 3", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Cormorant Garamond", "Source Sans 3", Georgia, serif;
+}
+
+html[data-theme="sf1950s"] body,
+html[data-theme="sf1950s"] body.hold-transition,
+html[data-theme="sf1950s"] .minotour-app-root,
+html[data-theme="sf1950s"] .content-wrapper,
+html[data-theme="sf1950s"] .private-app-shell,
+html[data-theme="sf1950s"] .private-main-surface,
+html[data-theme="sf1950s"] .flowcells-page,
+html[data-theme="sf1950s"] .flowcell-detail-page {
+    background-color: #f4ecde !important;
+    color: #2f2a25;
+}
+
+html[data-theme="sf1950s"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="sf1950s"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #c56046 0%, #d98452 50%, #f1c47a 100%) !important;
+    border-bottom: 1px solid rgba(77, 58, 44, 0.24);
+    box-shadow: 0 2px 0 rgba(79, 122, 120, 0.2);
+}
+
+html[data-theme="sf1950s"] nav#tn .navbar-brand,
+html[data-theme="sf1950s"] nav#tn .nav-link,
+html[data-theme="sf1950s"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #2f2a25 !important;
+    font-weight: 700;
+}
+
+html[data-theme="sf1950s"] nav#tn .nav-link:hover,
+html[data-theme="sf1950s"] nav#tn .nav-link.active {
+    background: rgba(244, 236, 222, 0.55);
+    color: #5a3527 !important;
+}
+
+html[data-theme="sf1950s"] .admin-warning .alert-danger {
+    background: #f9dfd1 !important;
+    border-color: #d59a7d !important;
+    color: #5a3527 !important;
+}
+
+html[data-theme="sf1950s"] .obsidian-card,
+html[data-theme="sf1950s"] .card.card-primary.card-outline,
+html[data-theme="sf1950s"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="sf1950s"] .flowcells-page .flowcells-card {
+    background: #f8f2e6 !important;
+    border-color: #d7c7af !important;
+    box-shadow: 0 1px 0 rgba(79, 122, 120, 0.12), 0 10px 26px rgba(117, 95, 75, 0.12);
+}
+
+html[data-theme="sf1950s"] .card-header,
+html[data-theme="sf1950s"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(90deg, #efe5d6 0%, #f8f2e6 100%) !important;
+    border-bottom-color: #d7c7af !important;
+}
+
+html[data-theme="sf1950s"] .card-title,
+html[data-theme="sf1950s"] .flowcells-page__title,
+html[data-theme="sf1950s"] .flowcell-detail-page .flowcells-page__title {
+    color: #5a3527 !important;
+}
+
+html[data-theme="sf1950s"] .flowcells-page__lead,
+html[data-theme="sf1950s"] .fc-detail-meta,
+html[data-theme="sf1950s"] .dataTables_wrapper .dataTables_info {
+    color: #6f6256 !important;
+}
+
+html[data-theme="sf1950s"] a:not(.btn):not(.nav-link) {
+    color: #3e6f6c;
+    border-bottom-color: rgba(62, 111, 108, 0.35);
+}
+
+html[data-theme="sf1950s"] a:not(.btn):not(.nav-link):hover {
+    color: #2f5b58;
+    border-bottom-color: rgba(47, 91, 88, 0.5);
+}
+
+html[data-theme="sf1950s"] .btn-primary,
+html[data-theme="sf1950s"] .flowcells-btn--primary {
+    background: #4f7a78 !important;
+    border-color: #426764 !important;
+    color: #fffdf7 !important;
+}
+
+html[data-theme="sf1950s"] .btn-primary:hover,
+html[data-theme="sf1950s"] .flowcells-btn--primary:hover {
+    background: #426764 !important;
+    border-color: #365553 !important;
+}
+
+html[data-theme="sf1950s"] .flowcells-btn--ghost {
+    border-color: #c8b79f;
+    color: #5b4d3f;
+}
+
+html[data-theme="sf1950s"] .flowcells-btn--ghost:hover {
+    background: rgba(79, 122, 120, 0.12);
+    color: #2f5b58;
+}
+
+html[data-theme="sf1950s"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab {
+    color: #7a6b5c;
+}
+
+html[data-theme="sf1950s"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab:hover {
+    color: #5a3527;
+    background: rgba(79, 122, 120, 0.12);
+}
+
+html[data-theme="sf1950s"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab.active {
+    color: #5a3527;
+    border-bottom-color: #4f7a78;
+}
+
+html[data-theme="sf1950s"] .form-control,
+html[data-theme="sf1950s"] select.form-control,
+html[data-theme="sf1950s"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="sf1950s"] .dataTables_wrapper .dataTables_length select {
+    background: #fdf9f1 !important;
+    border-color: #c8b79f !important;
+    color: #2f2a25 !important;
+}
+
+html[data-theme="sf1950s"] .table,
+html[data-theme="sf1950s"] .table td,
+html[data-theme="sf1950s"] .table th,
+html[data-theme="sf1950s"] table.dataTable tbody td {
+    color: #2f2a25;
+    border-color: #dcccb5 !important;
+}
+
+html[data-theme="sf1950s"] .table thead th,
+html[data-theme="sf1950s"] table.dataTable thead th,
+html[data-theme="sf1950s"] table.dataTable tfoot th {
+    background: #efe5d6 !important;
+    color: #6b5645 !important;
+    border-bottom-color: #c8b79f !important;
+}
+
+html[data-theme="sf1950s"] .table-striped tbody tr:nth-of-type(odd),
+html[data-theme="sf1950s"] table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(239, 229, 214, 0.72) !important;
+}
+
+html[data-theme="sf1950s"] .table-hover tbody tr:hover,
+html[data-theme="sf1950s"] table.dataTable tbody tr:hover {
+    background: rgba(79, 122, 120, 0.14) !important;
+}
+
+html[data-theme="sf1950s"] footer#sticky-footer.obsidian-footer.site-footer {
+    background: #efe5d6 !important;
+    border-top-color: #cfbea6 !important;
+}
+
+html[data-theme="sf1950s"] footer#sticky-footer .site-footer__copy {
+    color: #6f6256;
+}
+
+html[data-theme="sf1950s"] footer#sticky-footer .site-footer__copy a {
+    color: #5a3527;
+    border-bottom-color: rgba(90, 53, 39, 0.35);
+}
+
+html[data-theme="sf1950s"] .highcharts-background,
+html[data-theme="sf1950s"] .highcharts-plot-background {
+    fill: #f4ecde !important;
+}
+
+html[data-theme="sf1950s"] .highcharts-axis-line,
+html[data-theme="sf1950s"] .highcharts-tick,
+html[data-theme="sf1950s"] .highcharts-grid-line {
+    stroke: rgba(114, 132, 101, 0.28) !important;
+}
+
+html[data-theme="sf1950s"] .highcharts-title,
+html[data-theme="sf1950s"] .highcharts-subtitle {
+    fill: #5a3527 !important;
+}
+
+html[data-theme="sf1950s"] .highcharts-axis-labels text,
+html[data-theme="sf1950s"] .highcharts-legend-item text {
+    fill: #5b4d3f !important;
+}
+
+html[data-theme="sf1950s"] .highcharts-tooltip-box {
+    fill: #f6efe2 !important;
+    stroke: #c8b79f !important;
+}

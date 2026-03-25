@@ -1,139 +1,178 @@
 {% extends "web/template_private.html" %}
 {% load static %}
 
-{% block content %}
-    <!--Flowcell-index.html-->
-    <div style="background-color: white; flex: 1 0 auto;">
-        <section>
-            <div class="container-fluid">
-                {% if flowcell.archived %}
-                        <h5 class="mt-4 mb-2">Flowcell name: <strong id="name-flowcell">{{ flowcell.name }} (Archived)</strong> Sample
-                    name:
-                    <strong>{{ flowcell.sample_name }}</strong></h5>
+{% block extra_head %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-flowcells.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-flowcell-detail.css' %}">
+{% endblock %}
+
+{% block private_main %}
+    <section class="flowcell-detail-page" aria-labelledby="flowcell-detail-heading">
+        <div class="container-fluid obsidian-page-inner">
+            <nav class="flowcells-breadcrumbs" aria-label="Breadcrumb">
+                <ol class="flowcells-breadcrumbs__list">
+                    <li><a href="{% url 'flowcells' %}">Repository</a></li>
+                    <li aria-hidden="true">/</li>
+                    <li><a href="{% url 'flowcells' %}">Flowcell registry</a></li>
+                    <li aria-hidden="true">/</li>
+                    <li aria-current="page">{{ flowcell.name }}</li>
+                </ol>
+            </nav>
+
+            <div class="flowcells-page__toolbar">
+                <div class="flowcells-page__toolbar-text">
+                    <h1 id="flowcell-detail-heading" class="flowcells-page__title">
+                        <span id="name-flowcell">{{ flowcell.name }}</span>
+                    </h1>
+                    <p class="flowcells-page__lead">
+                        Runs, live metrics, basecalled summaries, and analysis tabs for this flowcell. Tabs appear based on your permissions and available data.
+                    </p>
+                    <p class="fc-detail-meta">
+                        <span>Sample <strong>{{ flowcell.sample_name|default:"—" }}</strong></span>
+                        {% if flowcell.archived %}
+                            <span class="fc-detail-badge fc-detail-badge--archived" title="This flowcell is archived">Archived</span>
                         {% else %}
-                        <h5 class="mt-4 mb-2">Flowcell name: <strong id="name-flowcell">{{ flowcell.name }}</strong> Sample
-                    name:
-                    <strong>{{ flowcell.sample_name }}</strong></h5>
+                            <span class="fc-detail-badge fc-detail-badge--active">Active</span>
                         {% endif %}
-                <div class="row">
-                    <div class="col-12">
-                        <!-- Custom Tabs -->
-                        <div class="card card-info">
-                            <div class="card-header">
-                                <ul class="nav nav-tabs card-header-tabs">
-                                    <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
-                                        id="nav-summary-data">
-                                        <a class="nav-link flowcell-tab"
-                                           onclick="flowcellController.flowcellTabController.toggleTabContent('summary-data')">Summary</a>
-                                    </li>
-                                    <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
-                                        id="nav-live-event-data">
-                                        <a class="nav-link flowcell-tab"
-                                           onclick="flowcellController.flowcellTabController.toggleTabContent('live-event-data')">Live
-                                            Event Data</a>
-                                    </li>
-                                    <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
-                                        id="nav-basecalled-data">
-                                        <a class="nav-link flowcell-tab"
-                                           onclick="flowcellController.flowcellTabController.toggleTabContent('basecalled-data')">Basecalled
-                                            Data</a>
-                                    </li>
-                                    <li role="presentation" class="nav-item hidden flowcell-tab-ctl" id="nav-reads">
-                                        <a class="nav-link flowcell-tab"
-                                           onclick="flowcellController.flowcellTabController.toggleTabContent('reads')">Read
-                                            Data</a>
-                                    </li>
-                                    <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
-                                        id="nav-sequence-mapping">
-                                        <a class="nav-link flowcell-tab"
-                                           onclick="flowcellController.flowcellTabController.toggleTabContent('sequence-mapping')">Sequence
-                                            Mapping</a>
-                                    </li>
-                                    <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
-                                        id="nav-advanced-sequence-mapping">
-                                        <a class="nav-link flowcell-tab"
-                                           onclick="flowcellController.flowcellTabController.toggleTabContent('advanced-sequence-mapping')">Advanced
-                                            Sequence Mapping</a>
-                                    </li>
-                                    <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
-                                        id="nav-sequence-assembly">
-                                        <a class="nav-link flowcell-tab"
-                                           onclick="flowcellController.flowcellTabController.toggleTabContent('sequence-assembly')">Assembly</a>
-                                    </li>
-                                    <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
-                                        id="nav-metagenomics">
-                                        <a class="nav-link flowcell-tab"
-                                           onclick="flowcellController.flowcellTabController.toggleTabContent('metagenomics')">Metagenomics</a>
-                                    </li>
-                                    <li role="presentation" class="nav-item hidden flowcell-tab-ctl" id="nav-tasks">
-                                        <a class="nav-link flowcell-tab"
-                                           onclick="flowcellController.flowcellTabController.toggleTabContent('tasks')">Tasks</a>
-                                    </li>
-                                    <li role="presentation" class="nav-item hidden flowcell-tab-ctl" id="nav-sharing">
-                                        <a class="nav-link flowcell-tab"
-                                           onclick="flowcellController.flowcellTabController.toggleTabContent('sharing')">Sharing</a>
-                                    </li>
-                                    <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
-                                        id="nav-notifications">
-                                        <a class="nav-link flowcell-tab"
-                                           onclick="flowcellController.flowcellTabController.toggleTabContent('notifications')">Notifications</a>
-                                    </li>
-                                    <li role="presentation" class="nav-item hidden flowcell-tab-ctl" id="nav-artic">
-                                        <a class="nav-link flowcell-tab"
-                                           onclick="flowcellController.flowcellTabController.toggleTabContent('artic')">Artic
-                                            Pipeline</a>
-                                    </li>
-                                </ul>
-                            </div><!-- /.card-header -->
-                            <div class="card-body">
-                                <div class="tab-content">
-                                    <div id="tab-summary-data" class="tab-pane flowcell-tab-ctl">
-                                        {% include "web/flowcell/summary-tab.html" %}
-                                    </div>
-                                    <div id="tab-live-event-data" class="tab-pane flowcell-tab-ctl">
-                                        {% include "web/flowcell/live-tab.html" %}
-                                    </div>
-                                    <div id="tab-reads" class="tab-pane flowcell-tab-ctl">
-                                        {% include "web/flowcell/tab-reads.html" %}
-                                    </div>
-                                    <div id="tab-basecalled-data" class="tab-pane flowcell-tab-ctl">
-                                        {% include "web/flowcell/basecalled-tab.html" %}
-                                    </div>
-                                    <div id="tab-sequence-mapping" class="tab-pane flowcell-tab-ctl">
-                                        {% include "web/flowcell/mapping-tab.html" %}
-                                    </div>
-                                    <div id="tab-sequence-assembly" class="tab-pane flowcell-tab-ctl">
-                                        {% include "web/flowcell/assembly-tab.html" %}
-                                    </div>
-                                    <div id="tab-tasks" class="tab-pane flowcell-tab-ctl">
-                                        {% include "web/flowcell/tasks-tab.html" %}
-                                    </div>
-                                    <div id="tab-metagenomics" class="tab-pane flowcell-tab-ctl">
-                                        {% include "web/flowcell/metagenomics.html" %}
-                                    </div>
-                                    <div id="tab-sharing" class="tab-pane flowcell-tab-ctl">
-                                        {% include "web/flowcell/sharing.html" %}
-                                    </div>
-                                    <div id="tab-notifications" class="tab-pane flowcell-tab-ctl">
-                                        {% include "web/flowcell/notification-manager.html" %}
-                                    </div>
-                                    <div id="tab-artic" class="tab-pane flowcell-tab-ctl">
-                                        {% include "web/flowcell/artic.html" %}
-                                    </div>
-                                    <!-- /.tab-pane -->
-                                </div>
-                                <!-- /.tab-content -->
-                            </div><!-- /.card-body -->
-                        </div>
-                        <!-- ./card -->
-                    </div>
-                    <!-- /.col -->
+                    </p>
+                </div>
+                <div class="flowcells-page__actions">
+                    <a href="{% url 'flowcells' %}" class="flowcells-btn flowcells-btn--ghost">
+                        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                        Back to registry
+                    </a>
+                    <a href="{% url 'minfq' %}" class="flowcells-btn flowcells-btn--primary">
+                        <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
+                        Client
+                    </a>
                 </div>
             </div>
-        </section>
+
+            <div id="flowcell-detail-hint" class="flowcells-status-banner flowcell-detail-hint" role="status">
+                <div class="flowcells-status-banner__icon" aria-hidden="true">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="flowcells-status-banner__body">
+                    <strong class="flowcells-status-banner__title">Flowcell workspace</strong>
+                    <p class="flowcells-status-banner__text">Use the tabs below to move between summary, live data, basecalling, reads, mapping, tasks, and sharing. Hidden tabs will appear when the relevant pipeline is available.</p>
+                </div>
+                <button type="button" class="flowcells-status-banner__close" aria-label="Dismiss notification">&times;</button>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card obsidian-card flowcell-detail-tab-card">
+                        <div class="card-header">
+                            <ul class="nav nav-tabs card-header-tabs">
+                                <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
+                                    id="nav-summary-data">
+                                    <a class="nav-link flowcell-tab"
+                                       onclick="flowcellController.flowcellTabController.toggleTabContent('summary-data')">Summary</a>
+                                </li>
+                                <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
+                                    id="nav-live-event-data">
+                                    <a class="nav-link flowcell-tab"
+                                       onclick="flowcellController.flowcellTabController.toggleTabContent('live-event-data')">Live
+                                        Event Data</a>
+                                </li>
+                                <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
+                                    id="nav-basecalled-data">
+                                    <a class="nav-link flowcell-tab"
+                                       onclick="flowcellController.flowcellTabController.toggleTabContent('basecalled-data')">Basecalled
+                                        Data</a>
+                                </li>
+                                <li role="presentation" class="nav-item hidden flowcell-tab-ctl" id="nav-reads">
+                                    <a class="nav-link flowcell-tab"
+                                       onclick="flowcellController.flowcellTabController.toggleTabContent('reads')">Read
+                                        Data</a>
+                                </li>
+                                <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
+                                    id="nav-sequence-mapping">
+                                    <a class="nav-link flowcell-tab"
+                                       onclick="flowcellController.flowcellTabController.toggleTabContent('sequence-mapping')">Sequence
+                                        Mapping</a>
+                                </li>
+                                <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
+                                    id="nav-advanced-sequence-mapping">
+                                    <a class="nav-link flowcell-tab"
+                                       onclick="flowcellController.flowcellTabController.toggleTabContent('advanced-sequence-mapping')">Advanced
+                                        Sequence Mapping</a>
+                                </li>
+                                <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
+                                    id="nav-sequence-assembly">
+                                    <a class="nav-link flowcell-tab"
+                                       onclick="flowcellController.flowcellTabController.toggleTabContent('sequence-assembly')">Assembly</a>
+                                </li>
+                                <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
+                                    id="nav-metagenomics">
+                                    <a class="nav-link flowcell-tab"
+                                       onclick="flowcellController.flowcellTabController.toggleTabContent('metagenomics')">Metagenomics</a>
+                                </li>
+                                <li role="presentation" class="nav-item hidden flowcell-tab-ctl" id="nav-tasks">
+                                    <a class="nav-link flowcell-tab"
+                                       onclick="flowcellController.flowcellTabController.toggleTabContent('tasks')">Tasks</a>
+                                </li>
+                                <li role="presentation" class="nav-item hidden flowcell-tab-ctl" id="nav-sharing">
+                                    <a class="nav-link flowcell-tab"
+                                       onclick="flowcellController.flowcellTabController.toggleTabContent('sharing')">Sharing</a>
+                                </li>
+                                <li role="presentation" class="nav-item hidden flowcell-tab-ctl"
+                                    id="nav-notifications">
+                                    <a class="nav-link flowcell-tab"
+                                       onclick="flowcellController.flowcellTabController.toggleTabContent('notifications')">Notifications</a>
+                                </li>
+                                <li role="presentation" class="nav-item hidden flowcell-tab-ctl" id="nav-artic">
+                                    <a class="nav-link flowcell-tab"
+                                       onclick="flowcellController.flowcellTabController.toggleTabContent('artic')">Artic
+                                        Pipeline</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-body">
+                            <div class="tab-content">
+                                <div id="tab-summary-data" class="tab-pane flowcell-tab-ctl">
+                                    {% include "web/flowcell/summary-tab.html" %}
+                                </div>
+                                <div id="tab-live-event-data" class="tab-pane flowcell-tab-ctl">
+                                    {% include "web/flowcell/live-tab.html" %}
+                                </div>
+                                <div id="tab-reads" class="tab-pane flowcell-tab-ctl">
+                                    {% include "web/flowcell/tab-reads.html" %}
+                                </div>
+                                <div id="tab-basecalled-data" class="tab-pane flowcell-tab-ctl">
+                                    {% include "web/flowcell/basecalled-tab.html" %}
+                                </div>
+                                <div id="tab-sequence-mapping" class="tab-pane flowcell-tab-ctl">
+                                    {% include "web/flowcell/mapping-tab.html" %}
+                                </div>
+                                <div id="tab-sequence-assembly" class="tab-pane flowcell-tab-ctl">
+                                    {% include "web/flowcell/assembly-tab.html" %}
+                                </div>
+                                <div id="tab-tasks" class="tab-pane flowcell-tab-ctl">
+                                    {% include "web/flowcell/tasks-tab.html" %}
+                                </div>
+                                <div id="tab-metagenomics" class="tab-pane flowcell-tab-ctl">
+                                    {% include "web/flowcell/metagenomics.html" %}
+                                </div>
+                                <div id="tab-sharing" class="tab-pane flowcell-tab-ctl">
+                                    {% include "web/flowcell/sharing.html" %}
+                                </div>
+                                <div id="tab-notifications" class="tab-pane flowcell-tab-ctl">
+                                    {% include "web/flowcell/notification-manager.html" %}
+                                </div>
+                                <div id="tab-artic" class="tab-pane flowcell-tab-ctl">
+                                    {% include "web/flowcell/artic.html" %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="content">
-            <div class="container-fluid">
-                <!-- Modal -->
+            <div class="container-fluid obsidian-page-inner">
                 <div class="modal fade" id="eastermodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
                      aria-hidden="true">
                     <div class="modal-dialog">
@@ -146,7 +185,6 @@
                             </div>
                             <div class="modal-body">
                                 <h3>Welcome to the #1MbReadClub. If this is your first time - nice job....</h3>
-                                <!---<p><iframe src="https://giphy.com/embed/ZFGtOflRCro88" width="480" height="198" frameBorder="0" class="giphy-embed" allowFullScreen></iframe></p>-->
                                 <h4>Just remember though... length is vanity - mapping is sanity!</h4>
                             </div>
                             <div class="modal-footer">
@@ -156,12 +194,27 @@
                     </div>
                 </div>
             </div>
-        </div><!-- /.content -->
-    </div><!-- /.content-wrapper -->
+        </div>
+    </section>
 {% endblock %}
 
 {% block javascript %}
     <script>
+        (function () {
+            var banner = document.getElementById('flowcell-detail-hint');
+            if (!banner) return;
+            try {
+                if (localStorage.getItem('flowcellDetailHint') === 'dismissed') {
+                    banner.hidden = true;
+                    return;
+                }
+            } catch (e) {}
+            var btn = banner.querySelector('.flowcells-status-banner__close');
+            if (btn) btn.addEventListener('click', function () {
+                banner.hidden = true;
+                try { localStorage.setItem('flowcellDetailHint', 'dismissed'); } catch (e) {}
+            });
+        })();
         const flowcellId = {{ flowcell.id }}
         setSelectedFlowcell({{ flowcell.id }})
         const app = FlowcellPageApp;

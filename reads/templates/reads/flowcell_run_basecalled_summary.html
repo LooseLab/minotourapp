@@ -1,17 +1,19 @@
 {% load humanize %}
 {% if result_basecalled_summary %}
-<div class='table-responsive'>
-    <table class="table table-striped table-sm table-hover">
+<div class="obsidian-table-wrap">
+    <table class="table table-hover table-sm summary-data-table">
         <thead>
-        <th>Run</th>
-        <th>Runid</th>
-        <th>First Read</th>
-        <th>Last Read</th>
-        <th>Read Count</th>
-        <th>Yield</th>
-        <th>Min Read Length</th>
-        <th>Avg Read Length</th>
-        <th>Max Read Length</th>
+        <tr>
+        <th scope="col">Run</th>
+        <th scope="col">Runid</th>
+        <th scope="col">First read</th>
+        <th scope="col">Last read</th>
+        <th scope="col">Read count</th>
+        <th scope="col">Yield</th>
+        <th scope="col">Min read length</th>
+        <th scope="col">Avg read length</th>
+        <th scope="col">Max read length</th>
+        </tr>
         </thead>
         <tbody>
 
@@ -37,6 +39,5 @@
 </div>
 {% else %}
 
-No information available.
+<p class="summary-empty">No information available.</p>
 {% endif %}
-

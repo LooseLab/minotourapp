@@ -1,0 +1,264 @@
+/**
+ * Telextext theme.
+ * Retro teletext terminal palette and chunky monospace UI.
+ */
+
+html[data-theme="telextext"] {
+    color-scheme: dark;
+    background-color: #030b14;
+    --font-body: "VT323", "IBM Plex Sans", monospace;
+    --font-display: "VT323", "IBM Plex Sans", monospace;
+}
+
+html[data-theme="telextext"] body,
+html[data-theme="telextext"] body.hold-transition,
+html[data-theme="telextext"] .minotour-app-root,
+html[data-theme="telextext"] .content-wrapper,
+html[data-theme="telextext"] .private-app-shell,
+html[data-theme="telextext"] .private-main-surface,
+html[data-theme="telextext"] .flowcells-page,
+html[data-theme="telextext"] .flowcell-detail-page {
+    background-color: #030b14 !important;
+    color: #e8faff;
+}
+
+html[data-theme="telextext"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="telextext"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #05101c 0%, #0b1f32 60%, #12314c 100%) !important;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.35);
+}
+
+html[data-theme="telextext"] nav#tn .navbar-brand,
+html[data-theme="telextext"] nav#tn .nav-link,
+html[data-theme="telextext"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #00ffff !important;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+html[data-theme="telextext"] nav#tn .nav-link:hover,
+html[data-theme="telextext"] nav#tn .nav-link.active {
+    background: rgba(0, 255, 255, 0.16);
+    color: #ffff00 !important;
+}
+
+html[data-theme="telextext"] .obsidian-card,
+html[data-theme="telextext"] .card.card-primary.card-outline,
+html[data-theme="telextext"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="telextext"] .flowcells-page .flowcells-card {
+    background: #05101c !important;
+    border-color: rgba(0, 255, 255, 0.35) !important;
+    box-shadow: 0 0 0 1px rgba(0, 255, 255, 0.12), 0 10px 24px rgba(0, 0, 0, 0.58);
+}
+
+html[data-theme="telextext"] .card-header,
+html[data-theme="telextext"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: #0a1a2d !important;
+    border-bottom-color: rgba(0, 255, 255, 0.35) !important;
+}
+
+html[data-theme="telextext"] .card-title,
+html[data-theme="telextext"] .flowcells-page__title,
+html[data-theme="telextext"] .flowcell-detail-page .flowcells-page__title {
+    color: #ffff00 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+html[data-theme="telextext"] .flowcells-page__lead,
+html[data-theme="telextext"] .fc-detail-meta,
+html[data-theme="telextext"] .dataTables_wrapper .dataTables_info,
+html[data-theme="telextext"] .text-muted,
+html[data-theme="telextext"] small,
+html[data-theme="telextext"] .small {
+    color: #8adfff !important;
+}
+
+html[data-theme="telextext"] a:not(.btn):not(.nav-link) {
+    color: #00ff7f;
+    border-bottom-color: rgba(0, 255, 127, 0.4);
+}
+
+html[data-theme="telextext"] a:not(.btn):not(.nav-link):hover {
+    color: #ffff00;
+    border-bottom-color: rgba(255, 255, 0, 0.5);
+}
+
+html[data-theme="telextext"] .btn-primary,
+html[data-theme="telextext"] .flowcells-btn--primary {
+    background: #00a0ff !important;
+    border-color: #00d5ff !important;
+    color: #02101c !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+html[data-theme="telextext"] .btn-primary:hover,
+html[data-theme="telextext"] .flowcells-btn--primary:hover {
+    background: #00c2ff !important;
+}
+
+html[data-theme="telextext"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab {
+    color: #a7eeff;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+html[data-theme="telextext"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab:hover {
+    color: #ffff00;
+    background: rgba(0, 255, 255, 0.12);
+}
+
+html[data-theme="telextext"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab.active {
+    color: #ffff00;
+    border-bottom-color: #00ffff;
+    background: linear-gradient(180deg, rgba(0, 255, 255, 0.18) 0%, rgba(0, 255, 255, 0) 95%);
+}
+
+html[data-theme="telextext"] .form-control,
+html[data-theme="telextext"] select.form-control,
+html[data-theme="telextext"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="telextext"] .dataTables_wrapper .dataTables_length select {
+    background: #05101c !important;
+    border-color: rgba(0, 255, 255, 0.4) !important;
+    color: #e8faff !important;
+}
+
+html[data-theme="telextext"] .table thead th,
+html[data-theme="telextext"] table.dataTable thead th,
+html[data-theme="telextext"] table.dataTable tfoot th {
+    background: #0a1a2d !important;
+    color: #00ffff !important;
+    border-bottom-color: rgba(0, 255, 255, 0.45) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+html[data-theme="telextext"] .table,
+html[data-theme="telextext"] .table td,
+html[data-theme="telextext"] .table th,
+html[data-theme="telextext"] table.dataTable tbody td {
+    color: #e8faff;
+    border-color: rgba(0, 255, 255, 0.24) !important;
+}
+
+html[data-theme="telextext"] .table-striped tbody tr:nth-of-type(odd),
+html[data-theme="telextext"] table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(12, 30, 47, 0.88) !important;
+}
+
+html[data-theme="telextext"] .flowcells-page .fc-name,
+html[data-theme="telextext"] .flowcells-page td.fc-col-name {
+    color: #ffff00 !important;
+    font-weight: 700;
+}
+
+html[data-theme="telextext"] footer#sticky-footer.obsidian-footer.site-footer {
+    background: #05101c !important;
+    border-top-color: rgba(0, 255, 255, 0.32) !important;
+}
+
+html[data-theme="telextext"] footer#sticky-footer .site-footer__copy {
+    color: #8adfff;
+}
+
+html[data-theme="telextext"] footer#sticky-footer .site-footer__copy a {
+    color: #00ffff;
+    border-bottom-color: rgba(0, 255, 255, 0.4);
+}
+
+html[data-theme="telextext"] .highcharts-background,
+html[data-theme="telextext"] .highcharts-plot-background {
+    fill: #05101c !important;
+}
+
+html[data-theme="telextext"] .highcharts-axis-line,
+html[data-theme="telextext"] .highcharts-tick,
+html[data-theme="telextext"] .highcharts-grid-line {
+    stroke: rgba(0, 255, 255, 0.25) !important;
+}
+
+html[data-theme="telextext"] .highcharts-title,
+html[data-theme="telextext"] .highcharts-subtitle {
+    fill: #ffff00 !important;
+}
+
+html[data-theme="telextext"] .highcharts-axis-labels text,
+html[data-theme="telextext"] .highcharts-legend-item text {
+    fill: #a7eeff !important;
+}
+
+html[data-theme="telextext"] .highcharts-tooltip-box {
+    fill: #05101c !important;
+    stroke: #00ffff !important;
+}
+
+/* Flowcell detail tab-specific table contrast hardening */
+html[data-theme="telextext"] .flowcell-detail-page #tab-basecalled-data .bc-card-header,
+html[data-theme="telextext"] .flowcell-detail-page #tab-basecalled-data .bc-card-body,
+html[data-theme="telextext"] .flowcell-detail-page #tab-summary-data .summary-card-header,
+html[data-theme="telextext"] .flowcell-detail-page #tab-summary-data .summary-card-body,
+html[data-theme="telextext"] .flowcell-detail-page #tab-notifications .notif-card-header,
+html[data-theme="telextext"] .flowcell-detail-page #tab-notifications .notif-card-body,
+html[data-theme="telextext"] .flowcell-detail-page #tab-reads .rt-card-header,
+html[data-theme="telextext"] .flowcell-detail-page #tab-reads .rt-card-body,
+html[data-theme="telextext"] .flowcell-detail-page #tab-tasks .task-card-header,
+html[data-theme="telextext"] .flowcell-detail-page #tab-tasks .task-card-body,
+html[data-theme="telextext"] .flowcell-detail-page #tab-sharing .sharing-card-header,
+html[data-theme="telextext"] .flowcell-detail-page #tab-sharing .sharing-card-body {
+    background: #05101c !important;
+    border-color: rgba(0, 255, 255, 0.34) !important;
+}
+
+html[data-theme="telextext"] .flowcell-detail-page #tab-summary-data .summary-card-title,
+html[data-theme="telextext"] .flowcell-detail-page #tab-notifications .notif-card-title,
+html[data-theme="telextext"] .flowcell-detail-page #tab-reads .rt-card-title,
+html[data-theme="telextext"] .flowcell-detail-page #tab-tasks .task-card-title,
+html[data-theme="telextext"] .flowcell-detail-page #tab-sharing .sharing-card-title,
+html[data-theme="telextext"] .flowcell-detail-page #tab-sharing .sharing-card-title__text {
+    color: #ffff00 !important;
+}
+
+html[data-theme="telextext"] .flowcell-detail-page #tab-basecalled-data .bc-data-table thead th,
+html[data-theme="telextext"] .flowcell-detail-page #tab-summary-data .summary-data-table thead th,
+html[data-theme="telextext"] .flowcell-detail-page #tab-notifications .notif-data-table thead th,
+html[data-theme="telextext"] .flowcell-detail-page #tab-reads table.dataTable thead th,
+html[data-theme="telextext"] .flowcell-detail-page #tab-tasks .task-history-table thead th,
+html[data-theme="telextext"] .flowcell-detail-page #tab-sharing .sharing-data-table thead th {
+    background: #0a1a2d !important;
+    color: #00ffff !important;
+    border-bottom-color: rgba(0, 255, 255, 0.45) !important;
+}
+
+html[data-theme="telextext"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody td,
+html[data-theme="telextext"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody th,
+html[data-theme="telextext"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody td,
+html[data-theme="telextext"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody th,
+html[data-theme="telextext"] .flowcell-detail-page #tab-summary-data .summary-data-table tfoot th,
+html[data-theme="telextext"] .flowcell-detail-page #tab-notifications .notif-data-table tbody td,
+html[data-theme="telextext"] .flowcell-detail-page #tab-notifications .notif-data-table tfoot th,
+html[data-theme="telextext"] .flowcell-detail-page #tab-reads table.dataTable tbody td,
+html[data-theme="telextext"] .flowcell-detail-page #tab-tasks .task-history-table tbody td,
+html[data-theme="telextext"] .flowcell-detail-page #tab-tasks .task-history-table tfoot th,
+html[data-theme="telextext"] .flowcell-detail-page #tab-sharing .sharing-data-table tbody td {
+    background: #05101c !important;
+    color: #e8faff !important;
+    border-color: rgba(0, 255, 255, 0.24) !important;
+}
+
+html[data-theme="telextext"] .flowcell-detail-page #tab-basecalled-data .bc-row-pass td,
+html[data-theme="telextext"] .flowcell-detail-page #tab-basecalled-data .bc-row-pass th {
+    background: rgba(0, 255, 127, 0.13) !important;
+}
+
+html[data-theme="telextext"] .flowcell-detail-page #tab-basecalled-data .bc-row-fail td,
+html[data-theme="telextext"] .flowcell-detail-page #tab-basecalled-data .bc-row-fail th {
+    background: rgba(255, 0, 255, 0.14) !important;
+}
+
+html[data-theme="telextext"] .flowcell-detail-page #tab-summary-data .summary-data-table.table-striped tbody tr:nth-of-type(odd),
+html[data-theme="telextext"] .flowcell-detail-page #tab-notifications .notif-data-table tbody tr.notification-row,
+html[data-theme="telextext"] .flowcell-detail-page #tab-tasks .task-history-table.table-striped tbody tr:nth-of-type(odd),
+html[data-theme="telextext"] .flowcell-detail-page #tab-sharing .sharing-data-table.table-striped tbody tr:nth-of-type(odd) {
+    background: rgba(12, 30, 47, 0.88) !important;
+}

@@ -1,0 +1,164 @@
+/**
+ * 1950s SciFi theme.
+ * Atomic-age retro futurism: chrome navy, neon cyan, sunset orange.
+ */
+
+html[data-theme="scifi1950s"] {
+    color-scheme: dark;
+    background-color: #0d172a;
+    --font-body: "Exo 2", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Orbitron", "Exo 2", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-theme="scifi1950s"] body,
+html[data-theme="scifi1950s"] body.hold-transition,
+html[data-theme="scifi1950s"] .minotour-app-root,
+html[data-theme="scifi1950s"] .content-wrapper,
+html[data-theme="scifi1950s"] .private-app-shell,
+html[data-theme="scifi1950s"] .private-main-surface,
+html[data-theme="scifi1950s"] .flowcells-page,
+html[data-theme="scifi1950s"] .flowcell-detail-page {
+    background-color: #0d172a !important;
+    color: #e9fbff;
+}
+
+html[data-theme="scifi1950s"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(circle at 14% 14%, rgba(86, 240, 255, 0.16) 0%, rgba(86, 240, 255, 0) 42%),
+        radial-gradient(circle at 86% 82%, rgba(255, 122, 0, 0.14) 0%, rgba(255, 122, 0, 0) 40%);
+}
+
+html[data-theme="scifi1950s"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="scifi1950s"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #121e34 0%, #1e3658 52%, #2a5472 100%) !important;
+    border-bottom: 1px solid rgba(86, 240, 255, 0.34);
+}
+
+html[data-theme="scifi1950s"] nav#tn .navbar-brand,
+html[data-theme="scifi1950s"] nav#tn .nav-link,
+html[data-theme="scifi1950s"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #8fdfff !important;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+html[data-theme="scifi1950s"] nav#tn .nav-link:hover,
+html[data-theme="scifi1950s"] nav#tn .nav-link.active {
+    background: rgba(86, 240, 255, 0.16);
+    color: #ffbe5c !important;
+}
+
+html[data-theme="scifi1950s"] .obsidian-card,
+html[data-theme="scifi1950s"] .card.card-primary.card-outline,
+html[data-theme="scifi1950s"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="scifi1950s"] .flowcells-page .flowcells-card {
+    background: linear-gradient(165deg, #121e34 0%, #0f1a2d 62%, #0c1628 100%) !important;
+    border-color: rgba(86, 240, 255, 0.32) !important;
+    box-shadow: 0 0 0 1px rgba(86, 240, 255, 0.12), 0 12px 26px rgba(0, 0, 0, 0.56);
+}
+
+html[data-theme="scifi1950s"] .card-header,
+html[data-theme="scifi1950s"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(90deg, rgba(86, 240, 255, 0.15) 0%, rgba(18, 30, 52, 0.98) 100%) !important;
+    border-bottom-color: rgba(86, 240, 255, 0.35) !important;
+}
+
+html[data-theme="scifi1950s"] .card-title,
+html[data-theme="scifi1950s"] .flowcells-page__title,
+html[data-theme="scifi1950s"] .flowcell-detail-page .flowcells-page__title {
+    color: #ffbe5c !important;
+}
+
+html[data-theme="scifi1950s"] .btn-primary,
+html[data-theme="scifi1950s"] .flowcells-btn--primary {
+    background: linear-gradient(180deg, #ff8e2b 0%, #ff7a00 100%) !important;
+    border-color: #ffbe5c !important;
+    color: #111a2d !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+html[data-theme="scifi1950s"] .btn-primary:hover,
+html[data-theme="scifi1950s"] .flowcells-btn--primary:hover {
+    background: linear-gradient(180deg, #ffa74f 0%, #ff8e2b 100%) !important;
+}
+
+html[data-theme="scifi1950s"] .form-control,
+html[data-theme="scifi1950s"] select.form-control,
+html[data-theme="scifi1950s"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="scifi1950s"] .dataTables_wrapper .dataTables_length select {
+    background: #121e34 !important;
+    border-color: rgba(86, 240, 255, 0.42) !important;
+    color: #e9fbff !important;
+}
+
+html[data-theme="scifi1950s"] .table thead th,
+html[data-theme="scifi1950s"] table.dataTable thead th,
+html[data-theme="scifi1950s"] table.dataTable tfoot th {
+    background: #121e34 !important;
+    color: #8fdfff !important;
+    border-bottom-color: rgba(86, 240, 255, 0.45) !important;
+}
+
+html[data-theme="scifi1950s"] .table,
+html[data-theme="scifi1950s"] .table td,
+html[data-theme="scifi1950s"] .table th,
+html[data-theme="scifi1950s"] table.dataTable tbody td {
+    color: #e9fbff;
+    border-color: rgba(86, 240, 255, 0.24) !important;
+}
+
+html[data-theme="scifi1950s"] .table-striped tbody tr:nth-of-type(odd),
+html[data-theme="scifi1950s"] table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(20, 38, 61, 0.9) !important;
+}
+
+html[data-theme="scifi1950s"] .flowcells-page .fc-name,
+html[data-theme="scifi1950s"] .flowcells-page td.fc-col-name {
+    color: #ffbe5c !important;
+    font-weight: 700;
+}
+
+html[data-theme="scifi1950s"] footer#sticky-footer.obsidian-footer.site-footer {
+    background: #121e34 !important;
+    border-top-color: rgba(86, 240, 255, 0.32) !important;
+}
+
+html[data-theme="scifi1950s"] footer#sticky-footer .site-footer__copy {
+    color: #8fdfff;
+}
+
+html[data-theme="scifi1950s"] footer#sticky-footer .site-footer__copy a {
+    color: #ffbe5c;
+    border-bottom-color: rgba(255, 190, 92, 0.4);
+}
+
+/* Flowcell detail tab-specific table readability */
+html[data-theme="scifi1950s"] .flowcell-detail-page #tab-basecalled-data .bc-data-table thead th,
+html[data-theme="scifi1950s"] .flowcell-detail-page #tab-summary-data .summary-data-table thead th,
+html[data-theme="scifi1950s"] .flowcell-detail-page #tab-notifications .notif-data-table thead th,
+html[data-theme="scifi1950s"] .flowcell-detail-page #tab-reads table.dataTable thead th,
+html[data-theme="scifi1950s"] .flowcell-detail-page #tab-tasks .task-history-table thead th,
+html[data-theme="scifi1950s"] .flowcell-detail-page #tab-sharing .sharing-data-table thead th {
+    background: #121e34 !important;
+    color: #8fdfff !important;
+    border-bottom-color: rgba(86, 240, 255, 0.45) !important;
+}
+
+html[data-theme="scifi1950s"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody td,
+html[data-theme="scifi1950s"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody th,
+html[data-theme="scifi1950s"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody td,
+html[data-theme="scifi1950s"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody th,
+html[data-theme="scifi1950s"] .flowcell-detail-page #tab-notifications .notif-data-table tbody td,
+html[data-theme="scifi1950s"] .flowcell-detail-page #tab-reads table.dataTable tbody td,
+html[data-theme="scifi1950s"] .flowcell-detail-page #tab-tasks .task-history-table tbody td,
+html[data-theme="scifi1950s"] .flowcell-detail-page #tab-sharing .sharing-data-table tbody td {
+    background: #121e34 !important;
+    color: #e9fbff !important;
+    border-color: rgba(86, 240, 255, 0.24) !important;
+}

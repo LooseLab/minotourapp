@@ -1,10 +1,41 @@
 {% extends "web/template_base.html" %}
 {% load static %}
 
+{% block extra_head %}
+    {# Tailwind for settings drawer only — preflight off so Bootstrap/AdminLTE stay intact (design.md). #}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        /* Prefix avoids emitting bare `.collapse` etc., which breaks Bootstrap `.navbar-collapse` (same class name). */
+        prefix: 'tw-',
+        /* Synced with html.dark from minotour-theme.js for all dark UI themes (not only data-theme="dark"). */
+        darkMode: 'class',
+        corePlugins: { preflight: false },
+        theme: {
+          extend: {
+            colors: {
+              obsidian: { DEFAULT: '#004B44', dark: '#00322d', hover: '#00322d' },
+            },
+            fontFamily: {
+              sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            },
+            borderRadius: { brand: '4px' },
+            boxShadow: {
+              settings: '0 0 0 1px rgba(226, 232, 240, 0.9), -8px 0 32px rgba(15, 23, 42, 0.08)',
+            },
+          },
+        },
+      }
+    </script>
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-private-pages.css' %}">
+{% endblock %}
+
 {% block header %}
     {#    <header class="main-header" style=" width: 100%">#}
-    <nav class="navbar navbar-expand-md navbar-dark topnav-primary fixed-top" id="tn">
-        <a class="navbar-brand" href="{% url 'flowcells' %}"> minoTour </a>
+    <nav class="navbar navbar-expand-md navbar-dark topnav-primary fixed-top obsidian-site-nav" id="tn" role="navigation" aria-label="Main">
+        <a class="navbar-brand d-flex align-items-center" href="{% url 'flowcells' %}">
+            <span>minoTour</span>
+        </a>
         <!-- Brand and toggle get grouped for better mobile display -->
         <div class="mobile">
                     <a class="collapsed" data-toggle="collapse"
@@ -56,10 +87,17 @@
                 </li>
              </ul>
             <!-- Right hand buttons -->
-            <ul class="navbar-nav ml-auto">
+            <ul class="navbar-nav ml-auto align-items-center">
+                <li class="nav-item mr-1 mr-md-2">
+                    {# Hardcoded path: avoids NoReverseMatch if reads.urls name is unavailable; must match reads/urls.py #}
+                    <span class="nav-link py-1 obsidian-queue-indicator obsidian-queue-indicator--loading" id="minotour-queue-indicator" role="status" aria-live="polite" title="Read processing queue" data-queue-url="/api/v1/reads/processing-queue/">
+                        <i class="fas fa-layer-group fa-fw obsidian-queue-indicator__icon" aria-hidden="true"></i>
+                        <span class="obsidian-queue-indicator__text">…</span>
+                    </span>
+                </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-widget="control-sidebar" data-slide="true" href="#" role="button"><i
-                            class="fas fa-th-large"></i> <strong>{{ request.user }}</strong></a>
+                    <a class="nav-link obsidian-nav-user" data-widget="control-sidebar" data-slide="true" href="#" role="button" title="Account and settings"><i
+                            class="fas fa-cog" aria-hidden="true"></i> <span class="obsidian-nav-user__name">{{ request.user }}</span></a>
                 </li>
             </ul>
         </div><!-- /.navbar-collapse -->
@@ -73,17 +111,109 @@
             </div>
         </div>
     {% endif %}
-    <aside class="control-sidebar control-sidebar-light" style="display: none; position: fixed">
-        <!-- Control sidebar content goes here -->
-        <div class="p-3">
-            <h5>Settings</h5>
-            <a class="dropdown-item" href="{% url 'reference-manager' %}">Manage References</a>
-            <a class="dropdown-item" href="{% url 'primers-manager' %}">Manage Primer Schemes</a>
-            <a class="dropdown-item" href="{% url 'password_change' %}">Change Password</a>
-            <a class="dropdown-item" href="{% url 'profile' %}">Profile Details</a>
-            <a class="dropdown-item" href="{% url 'logout' %}">Sign out</a></div>
+{% endblock %}
+
+{% block settings_sidebar %}
+    <aside class="control-sidebar control-sidebar-light obsidian-settings-sidebar" aria-label="Settings">
+        <div class="tw-flex tw-h-full tw-min-h-0 tw-w-full tw-flex-col tw-bg-white tw-font-sans tw-antialiased tw-dark:tw-bg-slate-950">
+            <header class="tw-shrink-0 tw-border-b tw-border-slate-200/90 tw-px-5 tw-pb-4 tw-pt-6 tw-dark:tw-border-slate-700">
+                <div class="tw-flex tw-items-start tw-justify-between tw-gap-3">
+                    <div class="tw-min-w-0 tw-flex-1">
+                        <h2 class="tw-text-lg tw-font-extrabold tw-tracking-tight tw-text-obsidian-dark tw-dark:tw-text-emerald-100">Settings</h2>
+                        <p class="tw-mt-1.5 tw-truncate tw-text-sm tw-font-medium tw-text-slate-500 tw-dark:tw-text-slate-400" title="{{ request.user }}">{{ request.user }}</p>
+                    </div>
+                    <button type="button" id="minotour-settings-close" class="-tw-mr-1 -tw-mt-1 tw-inline-flex tw-h-9 tw-w-9 tw-shrink-0 tw-items-center tw-justify-center tw-rounded-brand tw-text-slate-500 tw-transition-colors hover:tw-bg-slate-100 hover:tw-text-slate-800 tw-dark:tw-text-slate-400 tw-dark:hover:tw-bg-slate-800 tw-dark:hover:tw-text-slate-100" title="Close settings" aria-label="Close settings">
+                        <i class="fas fa-times tw-text-[1rem]" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </header>
+            <div class="tw-shrink-0 tw-border-b tw-border-slate-200/90 tw-px-5 tw-py-4 tw-dark:tw-border-slate-700">
+                <div class="tw-flex tw-items-center tw-justify-between tw-gap-3">
+                    <div class="tw-min-w-0 tw-pr-2">
+                        <p class="tw-text-sm tw-font-semibold tw-text-slate-800 tw-dark:tw-text-slate-100">Appearance</p>
+                        <p class="tw-mt-1 tw-text-xs tw-leading-snug tw-text-slate-500 tw-dark:tw-text-slate-400">Choose a theme for the whole app. Saved in this browser only.</p>
+                    </div>
+                    <label for="minotour-theme-select" class="tw-sr-only">Theme</label>
+                    <select id="minotour-theme-select" class="tw-h-9 tw-min-w-40 tw-shrink-0 tw-rounded-md tw-border tw-border-slate-200/90 tw-bg-slate-100 tw-px-2 tw-text-xs tw-font-bold tw-text-slate-700 tw-transition-colors focus:tw-border-obsidian focus:tw-outline-none tw-dark:tw-border-slate-600 tw-dark:tw-bg-slate-800 tw-dark:tw-text-slate-200" title="Select site theme">
+                        <option value="light">Default</option>
+                        <option value="dark">Obsidian Dark</option>
+                        <option value="hacienda">Hacienda 90s</option>
+                        <option value="sf1950s">1950s San Francisco</option>
+                        <option value="paris1940s">1940s Paris</option>
+                        <option value="hailmary">Project Hail Mary</option>
+                        <option value="stoneage">Stoneage Flintstones</option>
+                        <option value="disney">Disney</option>
+                        <option value="pixar">Pixar</option>
+                        <option value="telextext">Telextext</option>
+                        <option value="flowerpower1960s">1960s Flower Power</option>
+                        <option value="marblegold">White Marble and Gold</option>
+                        <option value="rusticwood">Natural Wood / Rustic</option>
+                        <option value="scifi1950s">1950s SciFi</option>
+                        <option value="drwho">Dr Who</option>
+                        <option value="playschool">PlaySchool</option>
+                        <option value="tron">Tron</option>
+                        <option value="starwarsanh">Star Wars: A New Hope</option>
+                        <option value="academic">Standard Academic</option>
+                        <option value="mutedscientist">Muted Scientist</option>
+                        <option value="terminal">Terminal (Early 1980s Unix)</option>
+                        <option value="kimiko">Kimiko Japanese</option>
+                        <option value="londoncalling">London Calling</option>
+                        <option value="grumpychemist">Grumpy Chemist</option>
+                        <option value="oxford">Oxford (Formal)</option>
+                        <option value="cambridge">Cambridge (Modern)</option>
+                    </select>
+                </div>
+            </div>
+            <nav class="tw-flex tw-flex-1 tw-flex-col tw-gap-1 tw-overflow-y-auto tw-px-3 tw-py-4" aria-label="Account settings">
+                <a class="tw-group tw-flex tw-items-center tw-gap-3 tw-rounded-brand tw-px-3 tw-py-2.5 tw-text-sm tw-font-semibold tw-no-underline tw-transition-colors hover:tw-bg-emerald-50/90 tw-dark:hover:tw-bg-slate-800/90 tw-text-slate-700 tw-dark:tw-text-slate-200 hover:tw-text-obsidian-dark tw-dark:hover:tw-text-emerald-100"
+                   href="{% url 'reference-manager' %}">
+                    <span class="tw-flex tw-h-9 tw-w-9 tw-shrink-0 tw-items-center tw-justify-center tw-rounded-brand tw-bg-slate-100 tw-text-slate-600 tw-transition-colors group-hover:tw-bg-emerald-100 group-hover:tw-text-obsidian tw-dark:tw-bg-slate-800 tw-dark:tw-text-slate-400 tw-dark:group-hover:tw-bg-slate-700 tw-dark:group-hover:tw-text-emerald-300">
+                        <i class="fas fa-dna tw-text-[0.85rem]" aria-hidden="true"></i>
+                    </span>
+                    <span class="tw-min-w-0 tw-flex-1 tw-leading-snug">Manage references</span>
+                </a>
+                <a class="tw-group tw-flex tw-items-center tw-gap-3 tw-rounded-brand tw-px-3 tw-py-2.5 tw-text-sm tw-font-semibold tw-no-underline tw-transition-colors hover:tw-bg-emerald-50/90 tw-dark:hover:tw-bg-slate-800/90 tw-text-slate-700 tw-dark:tw-text-slate-200 hover:tw-text-obsidian-dark tw-dark:hover:tw-text-emerald-100"
+                   href="{% url 'primers-manager' %}">
+                    <span class="tw-flex tw-h-9 tw-w-9 tw-shrink-0 tw-items-center tw-justify-center tw-rounded-brand tw-bg-slate-100 tw-text-slate-600 tw-transition-colors group-hover:tw-bg-emerald-100 group-hover:tw-text-obsidian tw-dark:tw-bg-slate-800 tw-dark:tw-text-slate-400 tw-dark:group-hover:tw-bg-slate-700 tw-dark:group-hover:tw-text-emerald-300">
+                        <i class="fas fa-project-diagram tw-text-[0.85rem]" aria-hidden="true"></i>
+                    </span>
+                    <span class="tw-min-w-0 tw-flex-1 tw-leading-snug">Manage primer schemes</span>
+                </a>
+                <a class="tw-group tw-flex tw-items-center tw-gap-3 tw-rounded-brand tw-px-3 tw-py-2.5 tw-text-sm tw-font-semibold tw-no-underline tw-transition-colors hover:tw-bg-emerald-50/90 tw-dark:hover:tw-bg-slate-800/90 tw-text-slate-700 tw-dark:tw-text-slate-200 hover:tw-text-obsidian-dark tw-dark:hover:tw-text-emerald-100"
+                   href="{% url 'password_change' %}">
+                    <span class="tw-flex tw-h-9 tw-w-9 tw-shrink-0 tw-items-center tw-justify-center tw-rounded-brand tw-bg-slate-100 tw-text-slate-600 tw-transition-colors group-hover:tw-bg-emerald-100 group-hover:tw-text-obsidian tw-dark:tw-bg-slate-800 tw-dark:tw-text-slate-400 tw-dark:group-hover:tw-bg-slate-700 tw-dark:group-hover:tw-text-emerald-300">
+                        <i class="fas fa-key tw-text-[0.85rem]" aria-hidden="true"></i>
+                    </span>
+                    <span class="tw-min-w-0 tw-flex-1 tw-leading-snug">Change password</span>
+                </a>
+                <a class="tw-group tw-flex tw-items-center tw-gap-3 tw-rounded-brand tw-px-3 tw-py-2.5 tw-text-sm tw-font-semibold tw-no-underline tw-transition-colors hover:tw-bg-emerald-50/90 tw-dark:hover:tw-bg-slate-800/90 tw-text-slate-700 tw-dark:tw-text-slate-200 hover:tw-text-obsidian-dark tw-dark:hover:tw-text-emerald-100"
+                   href="{% url 'profile' %}">
+                    <span class="tw-flex tw-h-9 tw-w-9 tw-shrink-0 tw-items-center tw-justify-center tw-rounded-brand tw-bg-slate-100 tw-text-slate-600 tw-transition-colors group-hover:tw-bg-emerald-100 group-hover:tw-text-obsidian tw-dark:tw-bg-slate-800 tw-dark:tw-text-slate-400 tw-dark:group-hover:tw-bg-slate-700 tw-dark:group-hover:tw-text-emerald-300">
+                        <i class="fas fa-id-card tw-text-[0.85rem]" aria-hidden="true"></i>
+                    </span>
+                    <span class="tw-min-w-0 tw-flex-1 tw-leading-snug">Profile details</span>
+                </a>
+                <div class="tw-my-3 tw-border-t tw-border-slate-200/90 tw-dark:tw-border-slate-700" role="presentation"></div>
+                <a class="tw-group tw-flex tw-items-center tw-gap-3 tw-rounded-brand tw-px-3 tw-py-2.5 tw-text-sm tw-font-semibold tw-no-underline tw-transition-colors hover:tw-bg-amber-50 tw-dark:hover:tw-bg-amber-950/40 tw-text-amber-800 tw-dark:tw-text-amber-200 hover:tw-text-amber-900 tw-dark:hover:tw-text-amber-100"
+                   href="{% url 'logout' %}">
+                    <span class="tw-flex tw-h-9 tw-w-9 tw-shrink-0 tw-items-center tw-justify-center tw-rounded-brand tw-bg-amber-50 tw-text-amber-700 tw-transition-colors group-hover:tw-bg-amber-100 tw-dark:tw-bg-amber-950/50 tw-dark:tw-text-amber-300 tw-dark:group-hover:tw-bg-amber-900/60">
+                        <i class="fas fa-sign-out-alt tw-text-[0.85rem]" aria-hidden="true"></i>
+                    </span>
+                    <span class="tw-min-w-0 tw-flex-1 tw-leading-snug">Sign out</span>
+                </a>
+            </nav>
+        </div>
     </aside>
 {% endblock %}
+
+{# Wraps logged-in page content (Obsidian and Ether). Child templates define block private_main. #}
+{% block content %}
+    <div class="private-app-shell">
+        {% block private_main %}
+        {% endblock %}
+    </div>
+{% endblock %}
+
 {% block adjustment %}
     <script>
     // data-toggle="modal" data-target="#add-reference"
@@ -94,7 +224,15 @@
       $("body").css({ "padding-top": heightNavBar, "padding-bottom": heightFooter, "min-height": `${windowHeight}px` })
 
     </script>
-
-
+    <script src="{% static 'web/js/minotour-queue-indicator.js' %}"></script>
+    <script>
+      (function () {
+        var el = document.getElementById('minotour-queue-indicator')
+        if (el && window.MinoTourQueueIndicator) {
+          var u = el.getAttribute('data-queue-url')
+          window.MinoTourQueueIndicator.init({ url: u, intervalMs: 5000 })
+        }
+      })()
+    </script>
 
 {% endblock %}

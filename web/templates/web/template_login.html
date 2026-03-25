@@ -1,0 +1,66 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{% block title %}Sign in | minoTour{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'web/img/minitour.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        obsidian: {
+                            DEFAULT: '#004B44',
+                            dark: '#00322d',
+                            hover: '#00322d',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        brand: '4px',
+                    },
+                    boxShadow: {
+                        card: '0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06)',
+                    },
+                },
+            },
+        };
+    </script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="flex min-h-full flex-col bg-gradient-to-br from-slate-100 via-white to-emerald-50/40 font-sans antialiased text-slate-800">
+    <a href="#login-main" class="absolute left-[-9999px] z-[100] rounded-md bg-[#004B44] px-4 py-2 text-sm font-semibold text-white focus:left-4 focus:top-4 focus:outline-none focus:ring-2 focus:ring-[#004B44]/40 focus:ring-offset-2">Skip to sign in</a>
+
+    <header class="border-b border-slate-200/60 bg-white/80 backdrop-blur-sm">
+        <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+            <a href="{% url 'login' %}" class="flex items-center gap-3 transition-opacity hover:opacity-90">
+                <img src="{% static 'web/img/minotourlogo.png' %}" alt="" class="h-9 w-auto" width="120" height="36">
+                <span class="text-lg font-extrabold tracking-tight text-obsidian-dark">minoTour</span>
+            </a>
+            <p class="hidden text-sm text-slate-500 sm:block">Real-time laboratory intelligence for nanopore sequencing</p>
+        </div>
+    </header>
+
+    <main id="login-main" class="flex-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="mt-auto border-t border-slate-200/60 bg-white/60 py-6 text-center text-sm text-slate-500 backdrop-blur-sm">
+        <div class="mx-auto max-w-6xl px-4">
+            &copy; Loose Lab {% now 'Y' %}
+            <a href="https://www.nottingham.ac.uk" class="font-medium text-obsidian underline decoration-obsidian/30 underline-offset-2 transition-colors hover:text-obsidian-dark">University of Nottingham</a>.
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

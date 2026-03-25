@@ -150,7 +150,7 @@ function makeColumnChart (divId, chartTitle, yAxisTitle) {
       plotLines: [{
         value: 0,
         width: 1,
-        color: `#808080`
+        color: `#cbd5e1`
       }]
     },
     lang: {
@@ -199,7 +199,7 @@ function makeSplineChart (divId, chartTitle, yAxisTitle) {
       plotLines: [{
         value: 0,
         width: 1,
-        color: `#808080`
+        color: `#cbd5e1`
       }]
     },
     legend: {
@@ -249,7 +249,7 @@ function makeSplineChartNonDatetime (divName, chartTitle, yAxisTitle, xAxisTitle
       plotLines: [{
         value: 0,
         width: 1,
-        color: `#808080`
+        color: `#cbd5e1`
       }]
     },
     legend: {
@@ -451,7 +451,7 @@ function makeLiveChart (divId, chartTitle, yAxisTitle) {
       plotLines: [{
         value: 0,
         width: 1,
-        color: `#808080`
+        color: `#cbd5e1`
       }]
       // min: 0,
     },
@@ -469,20 +469,191 @@ function makeLiveChart (divId, chartTitle, yAxisTitle) {
  * @return {*}
  */
 function makeHeatmapChart (divName, chartTitle) {
+  var theme = document.documentElement.getAttribute('data-theme') || 'light'
+  var isDark = theme === 'dark'
+  var isHacienda = theme === 'hacienda'
+  var isSF1950s = theme === 'sf1950s'
+  var isParis1940s = theme === 'paris1940s'
+  var isHailMary = theme === 'hailmary'
+  var isStoneage = theme === 'stoneage'
+  var isDisney = theme === 'disney'
+  var isPixar = theme === 'pixar'
+  var isTelextext = theme === 'telextext'
+  var isFlowerPower1960s = theme === 'flowerpower1960s'
+  var isMarbleGold = theme === 'marblegold'
+  var isRusticWood = theme === 'rusticwood'
+  var isScifi1950s = theme === 'scifi1950s'
+  var isDrWho = theme === 'drwho'
+  var isPlaySchool = theme === 'playschool'
+  var isTron = theme === 'tron'
+  var isStarWarsANH = theme === 'starwarsanh'
+  var isAcademic = theme === 'academic'
+  var isMutedScientist = theme === 'mutedscientist'
+  var isTerminal = theme === 'terminal'
+  var isKimiko = theme === 'kimiko'
+  var isLondonCalling = theme === 'londoncalling'
+  var isGrumpyChemist = theme === 'grumpychemist'
+  var isOxford = theme === 'oxford'
+  var isCambridge = theme === 'cambridge'
+  var plotBg = isDark ? '#0f172a' : (isHacienda ? '#1a0d26' : (isSF1950s ? '#f4ecde' : (isParis1940s ? '#efe1cb' : (isHailMary ? '#0b1322' : (isStoneage ? '#efe0c4' : (isDisney ? '#eaf5ff' : (isPixar ? '#edf7ff' : (isTelextext ? '#05101c' : (isFlowerPower1960s ? '#fff6d6' : (isMarbleGold ? '#f6f6f3' : (isRusticWood ? '#f3e1c8' : '#ffffff')))))))))))
+  var minColor = isDark ? '#0f172a' : (isHacienda ? '#1a0d26' : (isSF1950s ? '#f4ecde' : (isParis1940s ? '#efe1cb' : (isHailMary ? '#0b1322' : (isStoneage ? '#efe0c4' : (isDisney ? '#eaf5ff' : (isPixar ? '#edf7ff' : (isTelextext ? '#05101c' : (isFlowerPower1960s ? '#fff6d6' : (isMarbleGold ? '#f6f6f3' : (isRusticWood ? '#f3e1c8' : '#FFFFFF')))))))))))
+  var maxColor = isDark ? '#5eead4' : (isHacienda ? '#ff3b8d' : (isSF1950s ? '#4f7a78' : (isParis1940s ? '#7a4f2f' : (isHailMary ? '#20d8ff' : (isStoneage ? '#b3532e' : (isDisney ? '#1e6fd9' : (isPixar ? '#0b5fff' : (isTelextext ? '#00ffff' : (isFlowerPower1960s ? '#ff4fa1' : (isMarbleGold ? '#c8a24a' : (isRusticWood ? '#8c5a3c' : '#004B44')))))))))))
+  var nullColor = isDark ? '#1f2937' : (isHacienda ? '#2f1841' : (isSF1950s ? '#d9cfbf' : (isParis1940s ? '#d4c4ab' : (isHailMary ? '#14243a' : (isStoneage ? '#d9c3a0' : (isDisney ? '#cfe6fb' : (isPixar ? '#d8ecff' : (isTelextext ? '#0c1e2f' : (isFlowerPower1960s ? '#f8e1ff' : (isMarbleGold ? '#e7e6e1' : (isRusticWood ? '#e4ccb0' : '#EFEFEF')))))))))))
+  var borderColor = isDark ? 'rgba(148, 163, 184, 0.22)' : (isHacienda ? 'rgba(255, 127, 17, 0.35)' : (isSF1950s ? '#c8b79f' : (isParis1940s ? '#bba78c' : (isHailMary ? 'rgba(125, 249, 255, 0.25)' : (isStoneage ? '#c79c64' : (isDisney ? '#9fc8f8' : (isPixar ? '#8bc5ff' : (isTelextext ? 'rgba(0, 255, 255, 0.25)' : (isFlowerPower1960s ? '#d77bff' : (isMarbleGold ? '#c8b27a' : (isRusticWood ? '#b78f68' : '#e2e8f0')))))))))))
+  var titleColor = isDark ? '#ecfdf5' : (isHacienda ? '#fff46b' : (isSF1950s ? '#5a3527' : (isParis1940s ? '#3f2f22' : (isHailMary ? '#c2ff7a' : (isStoneage ? '#4b2f1c' : (isDisney ? '#1e4f9e' : (isPixar ? '#0b5fff' : (isTelextext ? '#ffff00' : (isFlowerPower1960s ? '#9b2fc9' : (isMarbleGold ? '#8a6a23' : (isRusticWood ? '#6f4327' : '#0f172a')))))))))))
+  var legendColor = isDark ? '#94a3b8' : (isHacienda ? '#ffb3d7' : (isSF1950s ? '#6f6256' : (isParis1940s ? '#6a5b4c' : (isHailMary ? '#88d6ff' : (isStoneage ? '#6d5845' : (isDisney ? '#3f6ea8' : (isPixar ? '#2f4f78' : (isTelextext ? '#8adfff' : (isFlowerPower1960s ? '#5d3a8f' : (isMarbleGold ? '#6b6560' : (isRusticWood ? '#66503c' : '#64748b')))))))))))
+  var axisLineColor = isDark ? '#334155' : (isHacienda ? '#5a2a67' : (isSF1950s ? '#b9a78e' : (isParis1940s ? '#b3a48f' : (isHailMary ? '#2b4f6a' : (isStoneage ? '#b99873' : (isDisney ? '#9fc8f8' : (isPixar ? '#8bc5ff' : (isTelextext ? '#00ffff' : (isFlowerPower1960s ? '#c58cff' : (isMarbleGold ? '#c8b27a' : (isRusticWood ? '#b78f68' : '#cbd5e1')))))))))))
+  if (isScifi1950s) {
+    plotBg = '#121e34'
+    minColor = '#121e34'
+    maxColor = '#56f0ff'
+    nullColor = '#1d2b45'
+    borderColor = 'rgba(86, 240, 255, 0.25)'
+    titleColor = '#ffbe5c'
+    legendColor = '#8fdfff'
+    axisLineColor = '#3eb6d6'
+  }
+  if (isDrWho) {
+    plotBg = '#101b33'
+    minColor = '#101b33'
+    maxColor = '#4aa8ff'
+    nullColor = '#1b2742'
+    borderColor = 'rgba(74, 168, 255, 0.25)'
+    titleColor = '#7ecbff'
+    legendColor = '#a8c8ff'
+    axisLineColor = '#4aa8ff'
+  }
+  if (isPlaySchool) {
+    plotBg = '#f2f8ff'
+    minColor = '#f2f8ff'
+    maxColor = '#4aa8ff'
+    nullColor = '#dfeeff'
+    borderColor = '#8eb8ff'
+    titleColor = '#2f5fb8'
+    legendColor = '#4c6492'
+    axisLineColor = '#8eb8ff'
+  }
+  if (isTron) {
+    plotBg = '#050a12'
+    minColor = '#050a12'
+    maxColor = '#00f0ff'
+    nullColor = '#0a1828'
+    borderColor = 'rgba(0, 240, 255, 0.4)'
+    titleColor = '#00f0ff'
+    legendColor = '#a8f7ff'
+    axisLineColor = '#00f0ff'
+  }
+  if (isStarWarsANH) {
+    plotBg = '#15120b'
+    minColor = '#15120b'
+    maxColor = '#ffe066'
+    nullColor = '#2a2417'
+    borderColor = 'rgba(210, 179, 74, 0.28)'
+    titleColor = '#ffe066'
+    legendColor = '#d9c98b'
+    axisLineColor = '#d2b34a'
+  }
+  if (isAcademic) {
+    plotBg = '#f6f9fc'
+    minColor = '#f6f9fc'
+    maxColor = '#1f4e79'
+    nullColor = '#e7eef5'
+    borderColor = '#9db4c8'
+    titleColor = '#1f4e79'
+    legendColor = '#4b6072'
+    axisLineColor = '#9db4c8'
+  }
+  if (isMutedScientist) {
+    plotBg = '#f1f5f6'
+    minColor = '#f1f5f6'
+    maxColor = '#496b7a'
+    nullColor = '#e2e9ec'
+    borderColor = '#b7c4c9'
+    titleColor = '#496b7a'
+    legendColor = '#5f6f75'
+    axisLineColor = '#b7c4c9'
+  }
+  if (isTerminal) {
+    plotBg = '#0a140a'
+    minColor = '#0a140a'
+    maxColor = '#33ff66'
+    nullColor = '#132613'
+    borderColor = 'rgba(51, 255, 102, 0.25)'
+    titleColor = '#33ff66'
+    legendColor = '#7fe27f'
+    axisLineColor = '#33ff66'
+  }
+  if (isKimiko) {
+    plotBg = '#f7f7f4'
+    minColor = '#f7f7f4'
+    maxColor = '#d9292f'
+    nullColor = '#e6e7e5'
+    borderColor = '#8ea1b2'
+    titleColor = '#0f2a44'
+    legendColor = '#4c5f72'
+    axisLineColor = '#8ea1b2'
+  }
+  if (isLondonCalling) {
+    plotBg = '#121315'
+    minColor = '#121315'
+    maxColor = '#e83f7a'
+    nullColor = '#1d1f23'
+    borderColor = 'rgba(242, 240, 232, 0.22)'
+    titleColor = '#e83f7a'
+    legendColor = '#cfd4da'
+    axisLineColor = '#7f8994'
+  }
+  if (isGrumpyChemist) {
+    plotBg = '#1e2329'
+    minColor = '#1e2329'
+    maxColor = '#c9a227'
+    nullColor = '#2a3038'
+    borderColor = 'rgba(201, 162, 39, 0.25)'
+    titleColor = '#d4b44a'
+    legendColor = '#a8b0ba'
+    axisLineColor = '#5c6570'
+  }
+  if (isOxford) {
+    plotBg = '#f4f0e6'
+    minColor = '#f4f0e6'
+    maxColor = '#002147'
+    nullColor = '#e0d8cc'
+    borderColor = 'rgba(0, 33, 71, 0.35)'
+    titleColor = '#002147'
+    legendColor = '#3d3d36'
+    axisLineColor = '#002147'
+  }
+  if (isCambridge) {
+    plotBg = '#f0f9ff'
+    minColor = '#f0f9ff'
+    maxColor = '#0284c7'
+    nullColor = '#e0f2fe'
+    borderColor = 'rgba(56, 189, 248, 0.35)'
+    titleColor = '#0369a1'
+    legendColor = '#475569'
+    axisLineColor = '#7dd3fc'
+  }
   return Highcharts.chart(divName, {
     chart: {
-      type: `heatmap`
+      type: `heatmap`,
+      backgroundColor: 'transparent',
+      plotBackgroundColor: plotBg
     },
     title: {
-      text: chartTitle
+      text: chartTitle,
+      style: {
+        color: titleColor
+      }
     },
     colorAxis: {
       min: 0,
-      minColor: `#FFFFFF`,
-      maxColor: Highcharts.getOptions().colors[0]
+      minColor: minColor,
+      maxColor: maxColor
     },
     xAxis: {
       title: null,
+      lineColor: axisLineColor,
+      tickColor: axisLineColor,
       labels: {
         enabled: false
       }
@@ -490,19 +661,87 @@ function makeHeatmapChart (divName, chartTitle) {
     },
     yAxis: {
       title: null,
+      lineColor: axisLineColor,
+      tickColor: axisLineColor,
       labels: {
         enabled: false
       }
 
     },
     legend: {
-      layout: `horizontal`
+      layout: `horizontal`,
+      itemStyle: {
+        color: legendColor
+      }
     },
     exporting: {
       enabled: true
     },
+    tooltip: (function () {
+      let tooltipBg = '#ffffff'
+      let tooltipBorder = '#cbd5e1'
+      let tooltipText = '#0f172a'
+      if (isDark) {
+        tooltipBg = '#1e293b'; tooltipBorder = '#334155'; tooltipText = '#f1f5f9'
+      } else if (isLondonCalling) {
+        tooltipBg = '#121315'; tooltipBorder = '#e83f7a'; tooltipText = '#f2f0e8'
+      } else if (isGrumpyChemist) {
+        tooltipBg = '#1e2329'; tooltipBorder = '#c9a227'; tooltipText = '#e8e6e0'
+      } else if (isOxford) {
+        tooltipBg = '#faf6ef'; tooltipBorder = '#002147'; tooltipText = '#1c1b18'
+      } else if (isCambridge) {
+        tooltipBg = '#ffffff'; tooltipBorder = '#38bdf8'; tooltipText = '#0c4a6e'
+      } else if (isKimiko) {
+        tooltipBg = '#f7f7f4'; tooltipBorder = '#8ea1b2'; tooltipText = '#1f2b37'
+      } else if (isTerminal) {
+        tooltipBg = '#0a140a'; tooltipBorder = '#33ff66'; tooltipText = '#c8ffc8'
+      } else if (isAcademic) {
+        tooltipBg = '#f6f9fc'; tooltipBorder = '#9db4c8'; tooltipText = '#223243'
+      } else if (isMutedScientist) {
+        tooltipBg = '#f1f5f6'; tooltipBorder = '#b7c4c9'; tooltipText = '#2a3438'
+      } else if (isStarWarsANH) {
+        tooltipBg = '#15120b'; tooltipBorder = '#d2b34a'; tooltipText = '#f6e8b1'
+      } else if (isTron) {
+        tooltipBg = '#050a12'; tooltipBorder = '#ff2fd0'; tooltipText = '#e8fdff'
+      } else if (isDrWho) {
+        tooltipBg = '#101b33'; tooltipBorder = '#4aa8ff'; tooltipText = '#eef7ff'
+      } else if (isPlaySchool) {
+        tooltipBg = '#f5f9ff'; tooltipBorder = '#8eb8ff'; tooltipText = '#28385a'
+      } else if (isScifi1950s) {
+        tooltipBg = '#121e34'; tooltipBorder = '#56f0ff'; tooltipText = '#e9fbff'
+      } else if (isHacienda) {
+        tooltipBg = '#2b1333'; tooltipBorder = '#ff3b8d'; tooltipText = '#fff0f8'
+      } else if (isSF1950s) {
+        tooltipBg = '#f6efe2'; tooltipBorder = '#c8b79f'; tooltipText = '#2e2a25'
+      } else if (isParis1940s) {
+        tooltipBg = '#f2e6d2'; tooltipBorder = '#c8b79f'; tooltipText = '#2f2923'
+      } else if (isHailMary) {
+        tooltipBg = '#0b1322'; tooltipBorder = '#20d8ff'; tooltipText = '#e7fbff'
+      } else if (isStoneage) {
+        tooltipBg = '#f5e4c4'; tooltipBorder = '#c79c64'; tooltipText = '#2b2218'
+      } else if (isDisney) {
+        tooltipBg = '#e8f4ff'; tooltipBorder = '#9fc8f8'; tooltipText = '#173055'
+      } else if (isPixar) {
+        tooltipBg = '#eef7ff'; tooltipBorder = '#8bc5ff'; tooltipText = '#10243f'
+      } else if (isTelextext) {
+        tooltipBg = '#05101c'; tooltipBorder = '#00ffff'; tooltipText = '#e8faff'
+      } else if (isFlowerPower1960s) {
+        tooltipBg = '#fff2ff'; tooltipBorder = '#d77bff'; tooltipText = '#3b235a'
+      } else if (isMarbleGold) {
+        tooltipBg = '#f7f6f2'; tooltipBorder = '#c8b27a'; tooltipText = '#2f3136'
+      } else if (isRusticWood) {
+        tooltipBg = '#f5e7d2'; tooltipBorder = '#b78f68'; tooltipText = '#2e2218'
+      }
+      return {
+        backgroundColor: tooltipBg,
+        borderColor: tooltipBorder,
+        style: { color: tooltipText }
+      }
+    })(),
     series: {
-      nullColor: `#EFEFEF`,
+      nullColor: nullColor,
+      borderColor: borderColor,
+      borderWidth: 1,
       type: `heatmap`
     }
 

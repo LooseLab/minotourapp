@@ -50,7 +50,7 @@ def calculate_sankey_values(lineages_df, flowcell, tax_rank_filter, metagenomics
     sankey_lineages_df = lineages_df[columns]
     # Backfill the dataframe nas with the lowest common entry, if family is missing, and genus
     #  isn't, family NaN becomes the genus entry
-    sankey_lineages_df = sankey_lineages_df.fillna(axis=1, method="bfill")
+    sankey_lineages_df = sankey_lineages_df.bfill(axis=1)
     sankey_lineages_df = sankey_lineages_df.sort_values("num_matches", ascending=False)
     # Rank lineages to flow through
     sankey_lineages_df["path"] = np.arange(0, sankey_lineages_df.shape[0], 1)
@@ -72,22 +72,31 @@ def calculate_sankey_values(lineages_df, flowcell, tax_rank_filter, metagenomics
             # The target taxonomic rank
             target_tax_rank = tax_rank_filter[shifted_index]
             # Create a source series, append it to the bottom of the existing source series
-            source = source.append(sankey_lineages_df[source_tax_rank])
+            source = pd.concat([source, sankey_lineages_df[source_tax_rank]])
             # Create a target series, append it to the bottom of the existing target series
-            target = target.append(sankey_lineages_df[target_tax_rank])
+            target = pd.concat([target, sankey_lineages_df[target_tax_rank]])
             # Create a values series, append it to the bottom of the existing value series,
             # contains the number of matches
-            value = value.append(sankey_lineages_df["num_matches"])
+            value = pd.concat([value, sankey_lineages_df["num_matches"]])
             # Create a tax_id series, append it to the bottom of the existing tax_id series
-            tax_id = tax_id.append(pd.Series(sankey_lineages_df.index.values, index=sankey_lineages_df.index))
+            tax_id = pd.concat(
+                [
+                    tax_id,
+                    pd.Series(
+                        sankey_lineages_df.index.values, index=sankey_lineages_df.index
+                    ),
+                ]
+            )
             # Create a barcode series, append it to the bottom of the existing barcode series
-            barcode = barcode.append(sankey_lineages_df["barcode_name"])
+            barcode = pd.concat([barcode, sankey_lineages_df["barcode_name"]])
             # Create a target tax level series, by broadcasting the value down the dataframe,
             # add it to the bottom of the existing series
             # Contains the taxonomic rank of the links target, useful for ordering later
             sankey_lineages_df["target_tax_level"] = target_tax_rank
-            target_tax_level = target_tax_level.append(sankey_lineages_df["target_tax_level"])
-            path = path.append(sankey_lineages_df["path"])
+            target_tax_level = pd.concat(
+                [target_tax_level, sankey_lineages_df["target_tax_level"]]
+            )
+            path = pd.concat([path, sankey_lineages_df["path"]])
     # Create a DataFrame of links
     source_target_df = pd.concat([source, target, value, tax_id, target_tax_level, barcode, path], axis=1)
     # Rename the columns

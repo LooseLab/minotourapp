@@ -1,48 +1,48 @@
-<div class="row">
+<div class="reads-tab-content">
+    <div class="row reads-tab-row">
+        <div class="col-md-12">
+            <div class="reads-tab-hint" role="status">
+                <span class="reads-tab-hint__text">To populate the table, click a column header. Sorting can take a moment — a lot of data is processed in the background.</span>
+            </div>
 
-    <div class="col-md-12">
-
-        <div class="alert alert-warning text-center" role="alert">To populate the table, please click on a column header. Be patient, a lot of data is being sorted in the
-                background!</div>
-
-        <div class="card card-warning card-outline">
-    <div class="card-header">
-            <h3 class="card-title">
-                <i class="far fa-comment-alt"></i>
-                Reads
-            </h3>
-          </div>
-
-            <div class='cards-body'>
-
-                <table id="example" class="display" style="width:100%">
-                    <thead>
-                    <tr>
-                        <th>Read ID</th>
-                        <th>Read</th>
-                        <th>Channel</th>
-                        <th>Sequence Length</th>
-                        <th>RunID</th>
-                        <th>Barcode</th>
-                        <th>Command</th>
-                    </tr>
-                    </thead>
-                    <tfoot>
-                    <tr>
-                        <th>Read ID</th>
-                        <th>Read</th>
-                        <th>Channel</th>
-                        <th>Sequence Length</th>
-                        <th>RunID</th>
-                        <th>Barcode</th>
-                        <th>Command</th>
-                    </tr>
-                    </tfoot>
-                </table>
+            <div class="card obsidian-card rt-panel-card">
+                <div class="card-header rt-card-header">
+                    <h3 class="card-title rt-card-title">
+                        <i class="far fa-comment-alt" aria-hidden="true"></i>
+                        Reads
+                    </h3>
+                </div>
+                <div class="card-body rt-card-body">
+                    <div class="obsidian-table-wrap rt-table-wrap">
+                        <table id="example" class="display rt-reads-table" style="width:100%">
+                            <thead>
+                            <tr>
+                                <th scope="col">Read ID</th>
+                                <th scope="col">Read</th>
+                                <th scope="col">Channel</th>
+                                <th scope="col">Sequence length</th>
+                                <th scope="col">RunID</th>
+                                <th scope="col">Barcode</th>
+                                <th scope="col">Command</th>
+                            </tr>
+                            </thead>
+                            <tfoot>
+                            <tr>
+                                <th scope="col">Read ID</th>
+                                <th scope="col">Read</th>
+                                <th scope="col">Channel</th>
+                                <th scope="col">Sequence length</th>
+                                <th scope="col">RunID</th>
+                                <th scope="col">Barcode</th>
+                                <th scope="col">Command</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
 </div>
 
 <script>

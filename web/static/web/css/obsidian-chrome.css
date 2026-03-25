@@ -1,0 +1,299 @@
+/**
+ * Obsidian & Ether — global site chrome (navbar + footer)
+ * Loaded after minotour.css in template_base.html
+ * Targets #tn (nav) and #sticky-footer; complements design.md
+ */
+
+:root {
+    --obsidian: #004b44;
+    --obsidian-dark: #00322d;
+    --obsidian-mid: #003d37;
+    --ether-bg: #f8fafc;
+    --ether-border: rgba(226, 232, 240, 0.95);
+    --radius-brand: 4px;
+    --font-body: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/**
+ * Main content width — flowcell registry, flowcell detail, and other app pages
+ * use this with .container-fluid for consistent side margins.
+ * Pair with Bootstrap .container-fluid where full-width gutters are desired.
+ */
+.obsidian-page-inner {
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+    .obsidian-page-inner {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+}
+
+/* App shell typography (Manrope loaded in template_base) */
+body.hold-transition {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: #1e293b;
+}
+
+nav#tn .navbar-brand,
+h1, h2, h3, h4, h5, h6,
+.card-title,
+.btn {
+    font-family: var(--font-display);
+}
+
+html[data-theme="light"] {
+    --font-body: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ----- Top navigation (#tn) ----- */
+nav#tn.obsidian-site-nav.navbar,
+nav#tn.topnav-primary {
+    background: linear-gradient(180deg, var(--obsidian) 0%, var(--obsidian-mid) 100%) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+nav#tn .navbar-brand {
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #fff !important;
+    font-size: 1.25rem;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+}
+
+nav#tn .navbar-brand:hover {
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+nav#tn .navbar-brand img {
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
+}
+
+nav#tn .navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.92) !important;
+    border-radius: var(--radius-brand);
+    padding: 0.45rem 0.75rem;
+    margin: 0 0.1rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+nav#tn .navbar-nav .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff !important;
+}
+
+nav#tn .navbar-nav .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.14);
+    color: #fff !important;
+    font-weight: 700;
+    box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.85);
+}
+
+nav#tn .navbar-nav .nav-link i {
+    opacity: 0.9;
+}
+
+/* Read processing queue (navbar, template_private) */
+nav#tn .obsidian-queue-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.88) !important;
+    cursor: default;
+    border-radius: var(--radius-brand);
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    max-width: min(220px, 42vw);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+nav#tn .obsidian-queue-indicator__icon {
+    opacity: 0.85;
+    flex-shrink: 0;
+}
+
+nav#tn .obsidian-queue-indicator--idle {
+    opacity: 0.72;
+}
+
+nav#tn .obsidian-queue-indicator--busy {
+    background: rgba(251, 191, 36, 0.2);
+    box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.35);
+    color: #fffbeb !important;
+}
+
+nav#tn .obsidian-queue-indicator--loading {
+    opacity: 0.75;
+}
+
+nav#tn .obsidian-queue-indicator--error {
+    opacity: 0.8;
+    color: rgba(254, 202, 202, 0.95) !important;
+}
+
+/*
+ * Tailwind CDN can emit a bare `.collapse` utility (visibility: collapse) that clashes with
+ * Bootstrap’s `.collapse` on `#navbar-minotour-content`. Re-assert Bootstrap navbar-expand-md.
+ */
+@media (min-width: 768px) {
+    .navbar-expand-md #navbar-minotour-content.navbar-collapse {
+        display: flex !important;
+        flex-basis: auto !important;
+        flex-grow: 1;
+        align-items: center;
+        visibility: visible !important;
+        height: auto !important;
+    }
+}
+
+/* Mobile menu toggle icon */
+nav#tn .mobile a {
+    color: rgba(255, 255, 255, 0.95) !important;
+    padding: 0.35rem 0.5rem;
+    border-radius: var(--radius-brand);
+    transition: background-color 0.15s ease;
+}
+
+nav#tn .mobile a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Superuser banner */
+.admin-warning {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.admin-warning .alert-danger {
+    border-radius: var(--radius-brand);
+    border: 1px solid #fecaca;
+    border-left: 4px solid var(--obsidian);
+    background: #fef2f2;
+    color: #7f1d1d;
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+/* Settings drawer — shell only. AdminLTE expects .wrapper + .main-header; we pin to viewport (nav is #tn). */
+aside.obsidian-settings-sidebar.control-sidebar {
+    background: #fff !important;
+    border-left: 1px solid var(--ether-border) !important;
+    box-shadow: -4px 0 28px rgba(15, 23, 42, 0.1);
+    overflow: hidden;
+    z-index: 1040;
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    max-width: min(280px, 100vw);
+    right: -280px !important;
+    transition: right 0.3s ease-in-out;
+    /* Off-canvas but still z-index 1040 above the navbar (1030); must not eat clicks on the top bar. */
+    pointer-events: none;
+}
+
+body.control-sidebar-slide-open aside.obsidian-settings-sidebar.control-sidebar,
+body.control-sidebar-open aside.obsidian-settings-sidebar.control-sidebar {
+    right: 0 !important;
+    pointer-events: auto !important;
+}
+
+aside.obsidian-settings-sidebar.control-sidebar > div {
+    height: 100%;
+    min-height: 0;
+}
+
+/* Dim page when settings are open (click to dismiss) */
+.obsidian-settings-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1035;
+    background: rgba(15, 23, 42, 0.4);
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+/* When open, keep drawer content interactive (backdrop is 1035; drawer 1040). */
+body.control-sidebar-slide-open aside.obsidian-settings-sidebar.control-sidebar,
+body.control-sidebar-open aside.obsidian-settings-sidebar.control-sidebar,
+body.control-sidebar-slide-open aside.obsidian-settings-sidebar.control-sidebar *,
+body.control-sidebar-open aside.obsidian-settings-sidebar.control-sidebar *,
+body.control-sidebar-slide-open aside.obsidian-settings-sidebar.control-sidebar::before,
+body.control-sidebar-open aside.obsidian-settings-sidebar.control-sidebar::after {
+    pointer-events: auto !important;
+}
+
+html.dark .obsidian-settings-backdrop {
+    background: rgba(0, 0, 0, 0.55);
+}
+
+/* Navbar: account / settings trigger */
+nav#tn .nav-link.obsidian-nav-user {
+    font-weight: 600;
+}
+
+nav#tn .nav-link.obsidian-nav-user .fa-cog {
+    opacity: 0.95;
+}
+
+nav#tn .obsidian-nav-user__name {
+    font-weight: 700;
+}
+
+/* ----- Footer ----- */
+footer#sticky-footer.obsidian-footer.site-footer {
+    background: #fff !important;
+    border-top: 1px solid var(--ether-border) !important;
+    box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.03);
+    padding: 1rem 0 1.25rem;
+    z-index: 11;
+}
+
+footer#sticky-footer .site-footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+footer#sticky-footer .site-footer__copy {
+    flex: 1 1 280px;
+    text-align: left;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #64748b;
+    margin: 0;
+}
+
+footer#sticky-footer .site-footer__copy a {
+    color: var(--obsidian);
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(0, 75, 68, 0.25);
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+footer#sticky-footer .site-footer__copy a:hover {
+    color: var(--obsidian-dark);
+    border-bottom-color: var(--obsidian-dark);
+}

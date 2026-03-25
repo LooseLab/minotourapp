@@ -1,0 +1,160 @@
+/**
+ * Oxford — official #002147 blue, parchment, brass seal accents; deliberately stiff & dated.
+ */
+
+html[data-theme="oxford"] {
+    color-scheme: light;
+    background-color: #f2ebe0;
+    --font-body: "EB Garamond", "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    --font-display: "Cinzel", "Libre Baskerville", Georgia, serif;
+}
+
+html[data-theme="oxford"] body,
+html[data-theme="oxford"] body.hold-transition,
+html[data-theme="oxford"] .minotour-app-root,
+html[data-theme="oxford"] .content-wrapper,
+html[data-theme="oxford"] .private-app-shell,
+html[data-theme="oxford"] .private-main-surface,
+html[data-theme="oxford"] .flowcells-page,
+html[data-theme="oxford"] .flowcell-detail-page {
+    background-color: #f2ebe0 !important;
+    color: #1c1b18;
+}
+
+html[data-theme="oxford"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            rgba(0, 33, 71, 0.03) 0,
+            rgba(0, 33, 71, 0.03) 1px,
+            rgba(0, 0, 0, 0) 1px,
+            rgba(0, 0, 0, 0) 24px
+        ),
+        linear-gradient(180deg, #faf6ef 0%, #ebe3d4 100%);
+}
+
+html[data-theme="oxford"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="oxford"] nav#tn.topnav-primary {
+    background: #002147 !important;
+    border-bottom: 4px double #8b6914 !important;
+    box-shadow: inset 0 -1px 0 rgba(139, 105, 20, 0.35);
+}
+
+html[data-theme="oxford"] nav#tn .navbar-brand,
+html[data-theme="oxford"] nav#tn .nav-link,
+html[data-theme="oxford"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #f5f0e6 !important;
+    font-family: var(--font-display);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+html[data-theme="oxford"] nav#tn .nav-link:hover,
+html[data-theme="oxford"] nav#tn .nav-link.active {
+    background: rgba(139, 105, 20, 0.22) !important;
+    color: #fffef8 !important;
+}
+
+html[data-theme="oxford"] .obsidian-card,
+html[data-theme="oxford"] .card.card-primary.card-outline,
+html[data-theme="oxford"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="oxford"] .flowcells-page .flowcells-card {
+    background: #faf6ef !important;
+    border: 3px double #002147 !important;
+    box-shadow:
+        2px 2px 0 rgba(0, 33, 71, 0.08),
+        inset 0 0 0 1px rgba(139, 105, 20, 0.15);
+}
+
+html[data-theme="oxford"] .card-header,
+html[data-theme="oxford"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(180deg, #e8e0d4 0%, #ddd4c4 100%) !important;
+    border-bottom: 2px solid #002147 !important;
+}
+
+html[data-theme="oxford"] .card-title,
+html[data-theme="oxford"] .flowcells-page__title,
+html[data-theme="oxford"] .flowcell-detail-page .flowcells-page__title {
+    color: #002147 !important;
+    font-family: var(--font-display);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+html[data-theme="oxford"] a:not(.btn):not(.nav-link) {
+    color: #003875;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+html[data-theme="oxford"] a:not(.btn):not(.nav-link):hover {
+    color: #001f42;
+}
+
+html[data-theme="oxford"] .btn-primary,
+html[data-theme="oxford"] .flowcells-btn--primary {
+    background: #002147 !important;
+    border: 2px solid #00152d !important;
+    color: #f5f0e6 !important;
+    font-family: var(--font-display);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    border-radius: 2px !important;
+}
+
+html[data-theme="oxford"] .btn-primary:hover,
+html[data-theme="oxford"] .flowcells-btn--primary:hover {
+    background: #003065 !important;
+}
+
+html[data-theme="oxford"] .form-control,
+html[data-theme="oxford"] select.form-control,
+html[data-theme="oxford"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="oxford"] .dataTables_wrapper .dataTables_length select {
+    background: #fffef9 !important;
+    border: 2px solid #002147 !important;
+    color: #1c1b18 !important;
+    border-radius: 2px !important;
+    font-family: var(--font-body);
+}
+
+html[data-theme="oxford"] .table thead th,
+html[data-theme="oxford"] table.dataTable thead th,
+html[data-theme="oxford"] table.dataTable tfoot th {
+    background: #e4dcd0 !important;
+    color: #002147 !important;
+    border: 1px solid #002147 !important;
+    font-family: var(--font-display);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+}
+
+html[data-theme="oxford"] .table,
+html[data-theme="oxford"] .table td,
+html[data-theme="oxford"] .table th,
+html[data-theme="oxford"] table.dataTable tbody td {
+    color: #1c1b18;
+    border-color: #002147 !important;
+}
+
+html[data-theme="oxford"] .table-striped tbody tr:nth-of-type(odd),
+html[data-theme="oxford"] table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 33, 71, 0.06) !important;
+}
+
+html[data-theme="oxford"] .flowcells-page .fc-name,
+html[data-theme="oxford"] td.fc-col-name {
+    color: #002147 !important;
+    font-weight: 600;
+}

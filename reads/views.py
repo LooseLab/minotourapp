@@ -52,6 +52,7 @@ from reads.serializers import (
     JobMasterSerializer,
     JobMasterInsertSerializer,
 )
+from minotourapp.redis import redis_instance
 from reads.tasks.redis_tasks_functions import save_reads_bulk
 from reads.tasks.task_delete_flowcell import clear_artic_data
 from reads.utils import (
@@ -67,6 +68,15 @@ from web.delete_tasks import (
 )
 
 logger = logging.getLogger("django")
+
+
+def _forward_fill_zero_bins(values):
+    """
+    Forward-fill zeros in a histogram bin series. Replaces removed
+    Series.replace(to_replace=0, method='ffill') for pandas 3+.
+    """
+    ser = pd.Series(values)
+    return ser.mask(ser.eq(0)).ffill().fillna(0)
 
 
 @api_view(["GET"])
@@ -138,7 +148,7 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
         no_fail_pass_df["data"] = 0
         # append new entries with 0
         # Get the barcode rows that have a fail status and no corresponding pass data
-        df = df.append(no_fail_pass_df)
+        df = pd.concat([df, no_fail_pass_df], sort=False)
         no_pass_fail_df = df[
             (df["status"] == "Fail")
             & (
@@ -149,7 +159,7 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
             ]
         no_pass_fail_df["status"] = "Pass"
         no_pass_fail_df["data"] = 0
-        df = df.append(no_pass_fail_df)
+        df = pd.concat([df, no_pass_fail_df], sort=False)
         df = df.sort_values("barcode_name")
         # Get the proportion unclassified for pie chart
         df["is_unclassified"] = np.where(
@@ -769,13 +779,15 @@ def flowcell_statistics(request, pk):
     df2["read_type"] = "All"
     df2 = df2.reset_index()
     df3 = pd.concat([df, df2], ignore_index=True, sort=True)
-    # TODO np.cumsum()
-    df3["cumulative_read_count"] = df3.groupby(
-        ["barcode_name", "read_type_name", "read_type", "rejection_status"]
-    )["read_count"].apply(lambda x: x.cumsum())
-    df3["cumulative_bases"] = df3.groupby(
-        ["barcode_name", "read_type_name", "read_type", "rejection_status"]
-    )["total_length"].apply(lambda x: x.cumsum())
+    # transform("cumsum") aligns 1:1 with df3 index; groupby().apply(cumsum) breaks on pandas 3.x
+    # (MultiIndex / reindex mismatch on column assignment).
+    gcols = ["barcode_name", "read_type_name", "read_type", "rejection_status"]
+    df3["cumulative_read_count"] = df3.groupby(gcols, sort=False)["read_count"].transform(
+        "cumsum"
+    )
+    df3["cumulative_bases"] = df3.groupby(gcols, sort=False)["total_length"].transform(
+        "cumsum"
+    )
     df3["key"] = (
         df3["barcode_name"].astype("str")
         + " - "
@@ -791,7 +803,10 @@ def flowcell_statistics(request, pk):
     df3["average_quality"] = df3["average_quality"].astype("float")
     df3["average_length"] = df3["total_length"].div(df3["read_count"]).round(decimals=0)
     df3["sequence_rate"] = df3["total_length"].div(60).round(decimals=0)
-    df3["corrected_time"] = df3["sample_time"].astype(np.int64) // 10 ** 6
+    # Highcharts datetime axis expects ms since Unix epoch. pandas int64 units follow
+    # datetime64 resolution (ns vs µs vs ms); normalize to ns before // 10**6.
+    _st = pd.to_datetime(df3["sample_time"], utc=True)
+    df3["corrected_time"] = _st.astype("datetime64[ns, UTC]").astype(np.int64) // 10**6
     if barcode_name != "All reads":
         df3 = df3.drop(
             df3.index[(df3.barcode_name == "All reads") & (df3.read_type != "All")]
@@ -809,7 +824,7 @@ def flowcell_statistics(request, pk):
                 "sequence_rate",
             ]
         ].values.tolist()
-        for k in df3.key.unique()
+        for k in data_keys
     }
     run_data = []
     for run in run_list:
@@ -937,33 +952,15 @@ def flowcell_histogram_summary(request, pk):
                     seriesbin_index
                 ] = seriescollect_read_length_sum
 
+            count_filled = _forward_fill_zero_bins(result_collect_read_count_sum)
             result_collect_read_count_sum = (
-                    -pd.concat(
-                        [
-                            pd.Series([0]),
-                            pd.Series(result_collect_read_count_sum).replace(
-                                to_replace=0, method="ffill"
-                            ),
-                        ]
-                    )
-                    + pd.Series(result_collect_read_count_sum)
-                    .replace(to_replace=0, method="ffill")
-                    .max()
-                ) / total_reads_count * 100
+                -pd.concat([pd.Series([0]), count_filled]) + count_filled.max()
+            ) / total_reads_count * 100
 
+            length_filled = _forward_fill_zero_bins(result_collect_read_length_sum)
             result_collect_read_length_sum = (
-                    -pd.concat(
-                        [
-                            pd.Series([0]),
-                            pd.Series(result_collect_read_length_sum).replace(
-                                to_replace=0, method="ffill"
-                            )
-                        ]
-                    )
-                    + pd.Series(result_collect_read_length_sum)
-                    .replace(to_replace=0, method="ffill")
-                    .max()
-                ) / total_reads_length * 100
+                -pd.concat([pd.Series([0]), length_filled]) + length_filled.max()
+            ) / total_reads_length * 100
             result_collect_read_length_sum = result_collect_read_length_sum[result_collect_read_length_sum != 0]
             result_collect_read_count_sum = result_collect_read_count_sum[result_collect_read_count_sum != 0]
             chart_data["read_count"].append(
@@ -1652,3 +1649,42 @@ def read_type_list(request):
         queryset, many=True, context={"request": request}
     )
     return Response(serializer.data)
+
+
+@api_view(["GET"])
+def processing_queue_status(request):
+    """
+    Expose Redis read-harvest backlog for the UI: members of set ``reads`` are JSON
+    batches of reads awaiting ``harvest_reads``; ``harvesting`` is a coarse lock flag.
+    """
+    try:
+        batches = int(redis_instance.scard("reads"))
+        reads_queued = 0
+        if batches > 0:
+            for m in redis_instance.smembers("reads"):
+                try:
+                    chunk = json.loads(m)
+                    if isinstance(chunk, list):
+                        reads_queued += len(chunk)
+                except (json.JSONDecodeError, TypeError, ValueError):
+                    pass
+        hv = redis_instance.get("harvesting")
+        harvesting_active = str(hv) == "1"
+    except Exception as exc:
+        logger.warning("processing_queue_status: redis error: %s", exc)
+        return Response(
+            {
+                "error": "redis_unavailable",
+                "read_batches_queued": None,
+                "reads_queued": None,
+                "harvesting_active": None,
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    return Response(
+        {
+            "read_batches_queued": batches,
+            "reads_queued": reads_queued,
+            "harvesting_active": harvesting_active,
+        }
+    )

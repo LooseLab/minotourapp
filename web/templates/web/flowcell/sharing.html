@@ -1,54 +1,58 @@
-<div class="row">
-    <div class="col-md-12">
-        <div class="card card-primary card-outline">
-    <div class="card-header">
-            <h3 class="card-title">
-                <i class="fas fa-users"></i>
-                Current users with access to this flowcell. Admin users will be able to see your flowcells, as a result of django guardian defaults.
-            </h3>
-          </div>
-            <div class="card-body">
-                <table id="sharing_table" class="table table-hover display" style="width: 100%;">
-                    <thead>
-                    <tr>
-                        <th>Username</th>
-                        <th>Permission</th>
-                        <th>Actions</th>
-                    </tr>
-                    </thead>
-                </table>
+<div class="sharing-tab-content">
+    <div class="row sharing-tab-row">
+        <div class="col-md-12">
+            <div class="card obsidian-card sharing-panel-card sharing-panel-card--users">
+                <div class="card-header sharing-card-header">
+                    <h3 class="card-title sharing-card-title">
+                        <i class="fas fa-users" aria-hidden="true"></i>
+                        <span class="sharing-card-title__text">Users with access to this flowcell. Admin users can see your flowcells via Django Guardian defaults.</span>
+                    </h3>
+                </div>
+                <div class="card-body sharing-card-body">
+                    <div class="obsidian-table-wrap sharing-table-wrap">
+                        <table id="sharing_table" class="table table-hover display sharing-data-table" style="width: 100%;">
+                            <thead>
+                            <tr>
+                                <th scope="col">Username</th>
+                                <th scope="col">Permission</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<div class="row">
-    <div id="sharing-messages" class="col-md-12"></div>
-    <div class="col-md-12">
-        <div class="card card-warning card-outline">
-    <div class="card-header">
-            <h3 class="card-title">
-                <i class="far fa-share-square"></i>
-                Share flowcell
-            </h3>
-          </div>
-            <div class="card-body">
-                <form method="post" id="post-form-task-create" onsubmit="mSharingController.create(event)">
-                    {% csrf_token %}
-                    <input type="hidden" name="flowcell" value="{{ flowcell.id }}"/>
-                    <div class="form-group">
-                        <label for="id_username">Username</label>
-                        <input type="text" class="form-control" name="username" id="id_username"/>
-                    </div>
-                    <div class="form-group">
-                        <label id="select-label" for="id_permission">Permission</label>
-                        <select class="form-control" name="permission" id="id_permission">
-                            <option value="VIEW_DATA">VIEW DATA</option>
-                            <option value="RUN_ANALYSIS">RUN ANALYSIS</option>
-                        </select>
-                    </div>
+    <div class="row sharing-tab-row">
+        <div id="sharing-messages" class="col-md-12"></div>
+        <div class="col-md-12">
+            <div class="card obsidian-card sharing-panel-card sharing-panel-card--share">
+                <div class="card-header sharing-card-header">
+                    <h3 class="card-title sharing-card-title">
+                        <i class="far fa-share-square" aria-hidden="true"></i>
+                        Share flowcell
+                    </h3>
+                </div>
+                <div class="card-body sharing-card-body">
+                    <form method="post" id="post-form-task-create" class="sharing-create-form" onsubmit="mSharingController.create(event)">
+                        {% csrf_token %}
+                        <input type="hidden" name="flowcell" value="{{ flowcell.id }}"/>
+                        <div class="form-group">
+                            <label for="id_username">Username</label>
+                            <input type="text" class="form-control sharing-form-control" name="username" id="id_username"/>
+                        </div>
+                        <div class="form-group">
+                            <label id="select-label" for="id_permission">Permission</label>
+                            <select class="form-control sharing-form-control" name="permission" id="id_permission">
+                                <option value="VIEW_DATA">VIEW DATA</option>
+                                <option value="RUN_ANALYSIS">RUN ANALYSIS</option>
+                            </select>
+                        </div>
 
-                    <input type="submit" value="Create" class="btn btn-primary">
-                </form>
+                        <input type="submit" value="Create" class="btn btn-primary sharing-btn-primary">
+                    </form>
+                </div>
             </div>
         </div>
     </div>

@@ -125,6 +125,39 @@ class AlignmentController {
     })
   }
 
+  _extractOptionLabel (optionHtml) {
+    const match = optionHtml.match(/>([^<]*)</)
+    return match ? match[1].trim() : ``
+  }
+
+  _contigSortKey (label) {
+    const raw = label.replace(/^chr/i, ``).trim()
+    const lower = raw.toLowerCase()
+    if (/^\d+$/.test(raw)) return [0, parseInt(raw, 10), ``]
+    const special = { x: 23, y: 24, m: 25, mt: 25 }
+    if (Object.prototype.hasOwnProperty.call(special, lower)) return [1, special[lower], ``]
+    const numericPrefix = raw.match(/^(\d+)(.*)$/)
+    if (numericPrefix) return [2, parseInt(numericPrefix[1], 10), numericPrefix[2].toLowerCase()]
+    return [3, Number.MAX_SAFE_INTEGER, lower]
+  }
+
+  _sortOptionHtml (options, base) {
+    return options.sort((a, b) => {
+      const labelA = this._extractOptionLabel(a)
+      const labelB = this._extractOptionLabel(b)
+      if (labelA === `Please Choose`) return -1
+      if (labelB === `Please Choose`) return 1
+      if (base === `chromosome`) {
+        const [rankA, numA, tailA] = this._contigSortKey(labelA)
+        const [rankB, numB, tailB] = this._contigSortKey(labelB)
+        if (rankA !== rankB) return rankA - rankB
+        if (numA !== numB) return numA - numB
+        return tailA.localeCompare(tailB, undefined, { numeric: true, sensitivity: `base` })
+      }
+      return labelA.localeCompare(labelB, undefined, { numeric: true, sensitivity: `base` })
+    })
+  }
+
   /**
    * Request the chromosomes that have reads mapped to using minimap2
    * and update the select box on tab Mapping
@@ -150,19 +183,37 @@ class AlignmentController {
       const base = selectId.substring(0, selectId.length - 6)
       const id = `${base}Id`
       const name = `${base}Name`
-      let appropriateOptionExists = false
-      const options = new Set(filteredData.map(el => {
-        if (el[id] === parseInt(currentSelection) || (base === `barcode` && el[id] === currentSelection)) {
-          appropriateOptionExists = true
-          return `<option value="${el[id]}" selected>${el[name]}</option>`
-        } else {
-          return `<option value="${el[id]}">${el[name]}</option>`
+      const uniqueByValue = new Map()
+      filteredData.forEach(el => {
+        const value = String(el[id])
+        if (!uniqueByValue.has(value)) {
+          uniqueByValue.set(value, { value: value, label: String(el[name]) })
         }
-      }))
+      })
+      const sortedOptions = [...uniqueByValue.values()].sort((a, b) => {
+        if (base === `chromosome`) {
+          const [rankA, numA, tailA] = this._contigSortKey(a.label)
+          const [rankB, numB, tailB] = this._contigSortKey(b.label)
+          if (rankA !== rankB) return rankA - rankB
+          if (numA !== numB) return numA - numB
+          return tailA.localeCompare(tailB, undefined, { numeric: true, sensitivity: `base` })
+        }
+        return a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: `base` })
+      })
+
+      let appropriateOptionExists = false
+      let optionsHtml = ``
+      sortedOptions.forEach(opt => {
+        const numericMatch = String(parseInt(currentSelection, 10)) === opt.value
+        const stringMatch = String(currentSelection) === opt.value
+        const isSelected = numericMatch || stringMatch
+        if (isSelected) appropriateOptionExists = true
+        optionsHtml += `<option value="${opt.value}"${isSelected ? ` selected` : ``}>${opt.label}</option>`
+      })
       if (!appropriateOptionExists) {
-        options.add(`<option value="-1" id="${base}Placeholder" selected>Please Choose</option>`)
+        optionsHtml = `<option value="-1" id="${base}Placeholder" selected>Please Choose</option>${optionsHtml}`
       }
-      select.html([...options].sort())
+      select.html(optionsHtml)
       // if no selection has been made, we have no task id
     })
     // if we have children in every select and the selected option isn't a please choose

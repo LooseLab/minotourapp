@@ -481,7 +481,9 @@ def centrifuge_sankey(request):
 
     # Get all the nodes values from superkingdom (ex. Bacteria) to species ("E. Coli")
     # Create a series of all possible nodes
-    nodes = source_target_df["source"].append(source_target_df["target"])
+    nodes = pd.concat(
+        [source_target_df["source"], source_target_df["target"]], ignore_index=True
+    )
 
     # Remove duplicates
     nodes = pd.DataFrame({"name": nodes.unique()})
@@ -558,7 +560,7 @@ def donut_data(request):
                 .order_by("-sum_value")[0:10]
             )
         )
-        results_df = results_df.append(data_df)
+        results_df = pd.concat([results_df, data_df], sort=False)
     if results_df.empty:
         return Response("No results", status=204)
     # We only need this data

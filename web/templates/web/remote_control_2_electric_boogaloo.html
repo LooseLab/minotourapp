@@ -5,10 +5,11 @@
       setActiveNavbarItem(1);
     </script>
 {% endblock %}
-{% block content %}
+{% block private_main %}
     <link href="{% static 'web/libraries/vuetify.min.css' %}" rel="stylesheet">
-    <div class="content-wrapper" style="background-color: white">
+    <div class="content-wrapper private-main-surface">
         <section class="content">
+            <div class="container-fluid obsidian-page-inner">
             {#            <div id="app">#}
             <div id="app">
                 {% verbatim %}
@@ -346,6 +347,7 @@
                     </v-app>
                 </template>
                 {% endverbatim %}
+            </div>
             </div>
             <script src="{% static 'web/libraries/vue.min.js' %}"></script>
             <script src="{% static 'web/libraries/vuetify.min.js' %}"></script>

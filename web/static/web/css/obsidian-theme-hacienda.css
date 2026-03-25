@@ -1,0 +1,439 @@
+/**
+ * Hacienda theme — inspired by 1990s Manchester club/record-label visuals.
+ * Activated with html[data-theme="hacienda"].
+ */
+
+html[data-theme="hacienda"] {
+    color-scheme: dark;
+    background-color: #0b0711;
+    --font-body: "Barlow Condensed", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Archivo Black", "Barlow Condensed", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-theme="hacienda"] body {
+    background-color: #0b0711 !important;
+}
+
+/* Club flyer grain + subtle magenta wash */
+html[data-theme="hacienda"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(circle at 8% 16%, rgba(255, 0, 110, 0.2) 0%, rgba(255, 0, 110, 0) 46%),
+        radial-gradient(circle at 88% 82%, rgba(68, 215, 255, 0.16) 0%, rgba(68, 215, 255, 0) 52%),
+        repeating-linear-gradient(
+            0deg,
+            rgba(255, 255, 255, 0.02) 0,
+            rgba(255, 255, 255, 0.02) 1px,
+            rgba(0, 0, 0, 0) 1px,
+            rgba(0, 0, 0, 0) 4px
+        );
+}
+
+html[data-theme="hacienda"] body.hold-transition,
+html[data-theme="hacienda"] .minotour-app-root,
+html[data-theme="hacienda"] .content-wrapper,
+html[data-theme="hacienda"] .private-app-shell {
+    background-color: #0b0711 !important;
+    color: #fff4fb;
+}
+
+html[data-theme="hacienda"] .minotour-app-root {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+html[data-theme="hacienda"] section.flowcells-page,
+html[data-theme="hacienda"] .flowcells-page,
+html[data-theme="hacienda"] section.flowcell-detail-page,
+html[data-theme="hacienda"] .flowcell-detail-page {
+    background-color: #0b0711 !important;
+}
+
+html[data-theme="hacienda"] .private-main-surface {
+    background-color: #0b0711 !important;
+}
+
+html[data-theme="hacienda"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="hacienda"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #111 0%, #ff006e 35%, #ffd60a 100%) !important;
+    border-bottom-color: rgba(255, 214, 10, 0.45);
+}
+
+html[data-theme="hacienda"] nav#tn .navbar-brand,
+html[data-theme="hacienda"] nav#tn .nav-link,
+html[data-theme="hacienda"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #ffe66d !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+html[data-theme="hacienda"] nav#tn .nav-link:hover,
+html[data-theme="hacienda"] nav#tn .nav-link.active {
+    background: rgba(255, 214, 10, 0.18);
+    color: #fff2b0 !important;
+}
+
+/* Hacienda warning-stripe motif */
+html[data-theme="hacienda"] nav#tn::after {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6px;
+    height: 6px;
+    background: repeating-linear-gradient(
+        -45deg,
+        #111 0 9px,
+        #111 9px 11px,
+        #ffd60a 11px 21px,
+        #ffd60a 21px 23px
+    );
+    opacity: 1;
+    pointer-events: none;
+}
+
+html[data-theme="hacienda"] footer#sticky-footer.obsidian-footer.site-footer {
+    background: #190b23 !important;
+    border-top-color: rgba(255, 0, 110, 0.4) !important;
+}
+
+html[data-theme="hacienda"] footer#sticky-footer .site-footer__copy {
+    color: #ffb6de;
+}
+
+html[data-theme="hacienda"] footer#sticky-footer .site-footer__copy a {
+    color: #ffd60a;
+    border-bottom-color: rgba(255, 214, 10, 0.42);
+}
+
+html[data-theme="hacienda"] .obsidian-card,
+html[data-theme="hacienda"] .card.card-primary.card-outline,
+html[data-theme="hacienda"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="hacienda"] .flowcells-page .flowcells-card {
+    background: linear-gradient(165deg, #180d22 0%, #12081b 55%, #09050f 100%) !important;
+    border-color: rgba(255, 214, 10, 0.5) !important;
+    box-shadow: 0 0 0 1px rgba(255, 214, 10, 0.15), 0 12px 34px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="hacienda"] .card-header,
+html[data-theme="hacienda"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(90deg, rgba(255, 0, 110, 0.35) 0%, rgba(24, 13, 34, 0.98) 45%, rgba(68, 215, 255, 0.18) 100%) !important;
+    border-bottom-color: rgba(255, 214, 10, 0.42) !important;
+}
+
+html[data-theme="hacienda"] .card-title,
+html[data-theme="hacienda"] .flowcells-page__title,
+html[data-theme="hacienda"] .flowcell-detail-page .flowcells-page__title {
+    color: #ffd60a !important;
+}
+
+html[data-theme="hacienda"] .flowcells-page__lead,
+html[data-theme="hacienda"] .fc-detail-meta,
+html[data-theme="hacienda"] .site-footer__copy,
+html[data-theme="hacienda"] .dataTables_wrapper .dataTables_info {
+    color: #ffd6ec !important;
+}
+
+/* Improve legibility of long-form content inside cards/tabs. */
+html[data-theme="hacienda"] .card-body,
+html[data-theme="hacienda"] .content-wrapper p,
+html[data-theme="hacienda"] .content-wrapper li,
+html[data-theme="hacienda"] .private-app-shell p,
+html[data-theme="hacienda"] .private-app-shell li,
+html[data-theme="hacienda"] .flowcell-detail-page .tab-content,
+html[data-theme="hacienda"] .flowcells-page .dataTables_wrapper {
+    color: #fff4fb !important;
+}
+
+html[data-theme="hacienda"] .text-muted,
+html[data-theme="hacienda"] small,
+html[data-theme="hacienda"] .small {
+    color: #f3b9dc !important;
+}
+
+html[data-theme="hacienda"] a:not(.btn):not(.nav-link) {
+    color: #44d7ff;
+    border-bottom-color: rgba(68, 215, 255, 0.35);
+}
+
+html[data-theme="hacienda"] a:not(.btn):not(.nav-link):hover {
+    color: #7de7ff;
+    border-bottom-color: rgba(125, 231, 255, 0.5);
+}
+
+html[data-theme="hacienda"] .btn-primary,
+html[data-theme="hacienda"] .flowcells-btn--primary {
+    background: #ff006e !important;
+    border-color: #ff3b8d !important;
+    color: #fff7fb !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+html[data-theme="hacienda"] .btn-primary:hover,
+html[data-theme="hacienda"] .flowcells-btn--primary:hover {
+    background: #e10061 !important;
+    border-color: #ff5ea8 !important;
+}
+
+html[data-theme="hacienda"] .flowcells-btn--ghost {
+    border-color: rgba(255, 182, 222, 0.45);
+    color: #ffd0ea;
+}
+
+html[data-theme="hacienda"] .flowcells-btn--ghost:hover {
+    background: rgba(255, 0, 110, 0.2);
+    color: #fff46b;
+}
+
+html[data-theme="hacienda"] .form-control,
+html[data-theme="hacienda"] select.form-control,
+html[data-theme="hacienda"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="hacienda"] .dataTables_wrapper .dataTables_length select {
+    background: #1a0d26 !important;
+    border-color: rgba(255, 127, 17, 0.4) !important;
+    color: #fff4fb !important;
+}
+
+html[data-theme="hacienda"] .form-control::placeholder,
+html[data-theme="hacienda"] .dataTables_wrapper .dataTables_filter input::placeholder {
+    color: #f0b9dc !important;
+}
+
+html[data-theme="hacienda"] .table,
+html[data-theme="hacienda"] .table td,
+html[data-theme="hacienda"] .table th,
+html[data-theme="hacienda"] table.dataTable tbody td {
+    color: #fff6fc;
+    border-color: rgba(255, 127, 17, 0.25) !important;
+}
+
+html[data-theme="hacienda"] .table thead th,
+html[data-theme="hacienda"] table.dataTable thead th,
+html[data-theme="hacienda"] table.dataTable tfoot th {
+    background: #1a0d26 !important;
+    color: #ffdff0 !important;
+    border-bottom-color: rgba(255, 127, 17, 0.35) !important;
+}
+
+html[data-theme="hacienda"] .table-striped tbody tr:nth-of-type(odd),
+html[data-theme="hacienda"] table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(43, 19, 61, 0.85) !important;
+}
+
+html[data-theme="hacienda"] .table-hover tbody tr:hover,
+html[data-theme="hacienda"] table.dataTable tbody tr:hover {
+    background: rgba(255, 0, 110, 0.18) !important;
+}
+
+/* Flowcells registry table: force readable flowcell-name and row text */
+html[data-theme="hacienda"] .flowcells-page table.dataTable tbody td,
+html[data-theme="hacienda"] .flowcells-page table.dataTable tbody th,
+html[data-theme="hacienda"] .flowcells-page tr.stylable,
+html[data-theme="hacienda"] .flowcells-page .fc-name {
+    color: #fff6fc !important;
+}
+
+html[data-theme="hacienda"] .flowcells-page tr.stylable:hover,
+html[data-theme="hacienda"] .flowcells-page tr.stylable:focus-within {
+    color: #fff6fc !important;
+}
+
+html[data-theme="hacienda"] .flowcells-page table.dataTable tbody td.fc-col-name,
+html[data-theme="hacienda"] .flowcells-page table.dataTable tbody td.fc-col-name .fc-name {
+    color: #fff46b !important;
+    font-weight: 700;
+}
+
+html[data-theme="hacienda"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab {
+    color: #ffd0ea;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+}
+
+html[data-theme="hacienda"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab:hover {
+    color: #ffe66d;
+    background: rgba(255, 214, 10, 0.14);
+}
+
+html[data-theme="hacienda"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab.active {
+    color: #ffd60a;
+    border-bottom-color: #ffd60a;
+    background: linear-gradient(180deg, rgba(255, 214, 10, 0.16) 0%, rgba(255, 214, 10, 0) 90%);
+}
+
+html[data-theme="hacienda"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab.active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    background: linear-gradient(90deg, #ff006e 0%, #ffd60a 45%, #44d7ff 100%);
+    pointer-events: none;
+}
+
+/* Keep settings drawer/backdrop above all decorative layers. */
+html[data-theme="hacienda"] aside.obsidian-settings-sidebar.control-sidebar {
+    z-index: 1040;
+}
+
+html[data-theme="hacienda"] .obsidian-settings-backdrop {
+    z-index: 1035;
+}
+
+html[data-theme="hacienda"] .highcharts-background,
+html[data-theme="hacienda"] .highcharts-plot-background {
+    fill: #12081b !important;
+}
+
+html[data-theme="hacienda"] .highcharts-axis-line,
+html[data-theme="hacienda"] .highcharts-tick,
+html[data-theme="hacienda"] .highcharts-grid-line {
+    stroke: rgba(255, 214, 10, 0.28) !important;
+}
+
+html[data-theme="hacienda"] .highcharts-title,
+html[data-theme="hacienda"] .highcharts-subtitle {
+    fill: #ffd60a !important;
+}
+
+html[data-theme="hacienda"] .highcharts-axis-labels text,
+html[data-theme="hacienda"] .highcharts-legend-item text {
+    fill: #ffb6de !important;
+}
+
+html[data-theme="hacienda"] .highcharts-tooltip-box {
+    fill: #12081b !important;
+    stroke: #ffd60a !important;
+}
+
+html[data-theme="hacienda"] .highcharts-coloraxis .highcharts-axis-line,
+html[data-theme="hacienda"] .highcharts-coloraxis .highcharts-tick {
+    stroke: rgba(255, 214, 10, 0.5) !important;
+}
+
+/* Accent rows like club poster blocks */
+html[data-theme="hacienda"] .table-striped tbody tr:nth-of-type(even),
+html[data-theme="hacienda"] table.table-striped tbody tr:nth-of-type(even) {
+    background-color: rgba(30, 14, 43, 0.92) !important;
+}
+
+html[data-theme="hacienda"] .admin-warning .alert-danger {
+    background: linear-gradient(90deg, rgba(255, 0, 110, 0.25), rgba(255, 127, 17, 0.18)) !important;
+    border-color: rgba(255, 214, 10, 0.45) !important;
+    color: #fff3a8 !important;
+}
+
+/* ----- Flowcell detail tabs: explicit high-contrast overrides ----- */
+html[data-theme="hacienda"] .flowcell-detail-page #tab-basecalled-data .bc-card-header,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-basecalled-data .bc-card-body,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .summary-card-header,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .summary-card-body,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-notifications .notif-card-header,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-notifications .notif-card-body,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-reads .rt-card-header,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-reads .rt-card-body,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-tasks .task-card-header,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-tasks .task-card-body,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-sharing .sharing-card-header,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-sharing .sharing-card-body {
+    background: #241235 !important;
+    border-color: rgba(255, 127, 17, 0.42) !important;
+    color: #fff6fc !important;
+}
+
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .summary-card-title,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-notifications .notif-card-title,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-reads .rt-card-title,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-tasks .task-card-title,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-sharing .sharing-card-title {
+    color: #fff46b !important;
+}
+
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .summary-empty,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-notifications .notif-lead,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-tasks .task-reactivate-help,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-sharing .sharing-card-title__text {
+    color: #ffd6ec !important;
+}
+
+html[data-theme="hacienda"] .flowcell-detail-page #tab-basecalled-data .bc-data-table thead th,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .summary-data-table thead th,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-notifications .notif-data-table thead th,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-reads table.dataTable thead th,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-tasks .task-history-table thead th,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-sharing .sharing-data-table thead th {
+    background: #1a0d26 !important;
+    color: #ffe6f3 !important;
+    border-bottom-color: rgba(255, 127, 17, 0.45) !important;
+}
+
+html[data-theme="hacienda"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody td,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody th,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody td,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody th,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .summary-data-table tfoot th,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-notifications .notif-data-table tbody td,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-notifications .notif-data-table tfoot th,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-reads table.dataTable tbody td,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-tasks .task-history-table tbody td,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-tasks .task-history-table tfoot th,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-sharing .sharing-data-table tbody td {
+    background: #241235 !important;
+    color: #fff6fc !important;
+    border-color: rgba(255, 127, 17, 0.28) !important;
+}
+
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .summary-data-table.table-striped tbody tr:nth-of-type(odd),
+html[data-theme="hacienda"] .flowcell-detail-page #tab-notifications .notif-data-table tbody tr.notification-row,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-tasks .task-history-table.table-striped tbody tr:nth-of-type(odd),
+html[data-theme="hacienda"] .flowcell-detail-page #tab-sharing .sharing-data-table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(43, 19, 61, 0.9) !important;
+}
+
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_length,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_filter,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_info,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_paginate,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_length,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_filter,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_info,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_paginate,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_length,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_filter,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_info,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_paginate,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_length,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_filter,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_info,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_paginate,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_length,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_filter,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_info,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_paginate {
+    color: #ffd6ec !important;
+}
+
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_filter input,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_length select,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_filter input,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_length select,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_filter input,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_length select,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_filter input,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_length select,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_filter input,
+html[data-theme="hacienda"] .flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_length select {
+    background: #1a0d26 !important;
+    border-color: rgba(255, 127, 17, 0.42) !important;
+    color: #fff6fc !important;
+}

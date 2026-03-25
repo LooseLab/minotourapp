@@ -37,6 +37,26 @@ from web.utils import fun
 logger = get_task_logger(__name__)
 
 
+def _safe_int(value, default=0):
+    """minFQ / JSON clients may send '' or null for integer header fields."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_optional_fk_id(value):
+    """Foreign key id from client; empty string or invalid -> None where the model allows null."""
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def split_flowcell(
     existing_or_new_flowcell, from_flowcell_id, to_flowcell_id, to_flowcell_name, run_id
 ):
@@ -243,11 +263,9 @@ def update_flowcell(reads_list):
     # batch of reads to process due to the way that minFQ behaves.
     # Todo: catch problems with multiple flowcells in a single transaction
     read_df["status"] = np.where(read_df["is_pass"] == False, "Fail", "Pass")
-    read_df["start_time_round"] = np.array(
-        ### Converting to store data in 10 minute windows.
-        read_df["start_time"],
-        dtype="datetime64[m]",
-    )
+    # DataFrame(reads_list) often leaves start_time as object (e.g. ISO strings from JSON); coerce for .dt.
+    read_df["start_time"] = pd.to_datetime(read_df["start_time"], errors="coerce")
+    read_df["start_time_round"] = read_df["start_time"].dt.floor("min")
     read_df["start_time_truncate"] = read_df["start_time_round"].apply(
         lambda dt: datetime(
             dt.year,
@@ -256,27 +274,29 @@ def update_flowcell(reads_list):
             dt.hour,
             int(np.nan_to_num(10 * (dt.minute // 10))),
         )
+        if pd.notna(dt)
+        else pd.NaT
     )
     update_run_summaries(read_df)
     read_df_all_reads = read_df.copy()
     read_df_all_reads["barcode_name"] = "All reads"
-    fastq_df = read_df.append(read_df_all_reads, sort=False)
+    fastq_df = pd.concat([read_df, read_df_all_reads], sort=False)
     fastq_df["barcode_name"] = fastq_df["barcode_name"].fillna("No_barcode")
     #
     # Calculates statistics for flowcellSummaryBarcode
     #
     fastq_df_result = fastq_df.groupby(
-        ["flowcell_id", "barcode_name", "rejected_barcode_id", "type_id", "is_pass",]
+        ["flowcell_id", "barcode_name", "rejected_barcode_id", "type_id", "is_pass",],
+        as_index=False,
     ).agg(
-        {
-            "sequence_length": ["min", "max", "sum", "count"],
-            "quality_average": ["sum"],
-            "channel": ["unique"],
-        }
+        sequence_length_min=("sequence_length", "min"),
+        sequence_length_max=("sequence_length", "max"),
+        sequence_length_sum=("sequence_length", "sum"),
+        sequence_length_count=("sequence_length", "count"),
+        quality_average_sum=("quality_average", "sum"),
+        channel_unique=("channel", "unique"),
     )
-    fastq_df_result.reset_index().apply(
-        lambda row: save_flowcell_summary_barcode(row), axis=1
-    )
+    fastq_df_result.apply(lambda row: save_flowcell_summary_barcode(row), axis=1)
     #
     # Calculates statistics for FlowcellStatisticsBarcode
     #
@@ -288,15 +308,17 @@ def update_flowcell(reads_list):
             "type_id",
             "is_pass",
             "rejected_barcode_id",
-        ]
+        ],
+        as_index=False,
     ).agg(
-        {
-            "sequence_length": ["min", "max", "sum", "count"],
-            "quality_average": ["sum"],
-            "channel": ["unique"],
-        }
+        sequence_length_min=("sequence_length", "min"),
+        sequence_length_max=("sequence_length", "max"),
+        sequence_length_sum=("sequence_length", "sum"),
+        sequence_length_count=("sequence_length", "count"),
+        quality_average_sum=("quality_average", "sum"),
+        channel_unique=("channel", "unique"),
     )
-    fastq_df_result.reset_index().apply(
+    fastq_df_result.apply(
         lambda row: save_flowcell_statistic_barcode(row), axis=1,
     )
     fastq_df["bin_index"] = (
@@ -311,18 +333,23 @@ def update_flowcell(reads_list):
             "is_pass",
             "bin_index",
             "rejected_barcode_id",
-        ]
-    ).agg({"sequence_length": ["sum", "count"]})
-    fastq_df_result.reset_index().apply(
+        ],
+        as_index=False,
+    ).agg(
+        sequence_length_sum=("sequence_length", "sum"),
+        sequence_length_count=("sequence_length", "count"),
+    )
+    fastq_df_result.apply(
         lambda row: save_flowcell_histogram_summary(row), axis=1,
     )
     #
     # Calculates statistics for ChannelSummary
     #
-    fastq_df_result = fastq_df.groupby(["flowcell_id", "channel"]).agg(
-        {"sequence_length": ["sum", "count"]}
+    fastq_df_result = fastq_df.groupby(["flowcell_id", "channel"], as_index=False).agg(
+        sequence_length_sum=("sequence_length", "sum"),
+        sequence_length_count=("sequence_length", "count"),
     )
-    fastq_df_result.reset_index().apply(
+    fastq_df_result.apply(
         lambda row: save_flowcell_channel_summary(row), axis=1
     )
 
@@ -450,33 +477,25 @@ def update_run_summaries(fastq_df):
     None
 
     """
-    run_summaries = (
-        fastq_df.groupby("run_id")
-        .agg(
-            {
-                "run_id": "count",
-                "sequence_length": [np.sum, np.max, np.min, np.mean],
-                "start_time": [np.min, np.max],
-            }
-        )
-        .reset_index()
+    # Named aggregation yields stable string column names across pandas/numpy versions.
+    # The old MultiIndex + rename map used ("sequence_length", "amax") etc., but pandas
+    # labels np.max as "max" / "amin" as "min", so columns stayed as tuples and
+    # get_or_create(defaults=...) failed with: expected str instance, tuple found.
+    run_summaries = fastq_df.groupby("run_id", as_index=False).agg(
+        read_count=("run_id", "count"),
+        total_read_length=("sequence_length", "sum"),
+        max_read_length=("sequence_length", "max"),
+        min_read_length=("sequence_length", "min"),
+        avg_read_length=("sequence_length", "mean"),
+        first_read_start_time=("start_time", "min"),
+        last_read_start_time=("start_time", "max"),
     )
-    lookup = {
-        ("run_id", ""): "run_id",
-        ("run_id", "count"): "read_count",
-        ("sequence_length", "sum"): "total_read_length",
-        ("sequence_length", "amax"): "max_read_length",
-        ("sequence_length", "amin"): "min_read_length",
-        ("sequence_length", "mean"): "avg_read_length",
-        ("start_time", "amin"): "first_read_start_time",
-        ("start_time", "amax"): "last_read_start_time",
-    }
-    run_summaries.columns = run_summaries.columns.to_flat_index()
-    run_summaries = run_summaries.rename(columns=lookup)
     run_summaries = run_summaries.to_dict(orient="records")
     for run_summary in run_summaries:
+        run_id = run_summary["run_id"]
+        defaults = {k: v for k, v in run_summary.items() if k != "run_id"}
         run_summary_orm, created = RunSummary.objects.get_or_create(
-            run_id=run_summary["run_id"], defaults=run_summary
+            run_id=run_id, defaults=defaults
         )
         run = run_summary_orm.run
         if not created:
@@ -485,15 +504,23 @@ def update_run_summaries(fastq_df):
             first_read_time_str = run_summary["first_read_start_time"]
             last_read_time_str = run_summary["last_read_start_time"]
 
-            first_read_time_date, last_read_time_date = handle_timestamps(first_read_time_str,last_read_time_str)
+            first_read_time_date, last_read_time_date = handle_timestamps(
+                first_read_time_str, last_read_time_str
+            )
 
-            if first_read_time_date < run_summary_orm.first_read_start_time:
+            if first_read_time_date is not None and (
+                run_summary_orm.first_read_start_time is None
+                or first_read_time_date < run_summary_orm.first_read_start_time
+            ):
                 run.start_time = run_summary["first_read_start_time"]
                 run.save()
                 run_summary_orm.first_read_start_time = run_summary[
                     "first_read_start_time"
                 ]
-            if last_read_time_date > run_summary_orm.last_read_start_time:
+            if last_read_time_date is not None and (
+                run_summary_orm.last_read_start_time is None
+                or last_read_time_date > run_summary_orm.last_read_start_time
+            ):
                 run_summary_orm.last_read_start_time = run_summary[
                     "last_read_start_time"
                 ]
@@ -509,7 +536,33 @@ def update_run_summaries(fastq_df):
             run_summary_orm.save()
 
 
-def handle_timestamps(first_read_time_str,last_read_time_str):
+def handle_timestamps(first_read_time_str, last_read_time_str):
+    """
+    Compare min/max start times from run summaries. Accepts pandas Timestamps from
+    groupby min/max as well as ISO strings from JSON.
+    """
+    if first_read_time_str is None or last_read_time_str is None:
+        return None, None
+    try:
+        a = pd.Timestamp(first_read_time_str)
+        b = pd.Timestamp(last_read_time_str)
+        if pd.isna(a) or pd.isna(b):
+            raise ValueError("na timestamp")
+        a = a.to_pydatetime()
+        b = b.to_pydatetime()
+        if a.tzinfo is None:
+            a = a.replace(tzinfo=pytz.UTC)
+        if b.tzinfo is None:
+            b = b.replace(tzinfo=pytz.UTC)
+        return a, b
+    except Exception:
+        pass
+
+    if not isinstance(first_read_time_str, str) or not isinstance(
+        last_read_time_str, str
+    ):
+        return None, None
+
     try:
         first_read_time_date = datetime.strptime(
             first_read_time_str, "%Y-%m-%dT%H:%M:%S.%f%z"
@@ -517,8 +570,8 @@ def handle_timestamps(first_read_time_str,last_read_time_str):
         last_read_time_date = datetime.strptime(
             last_read_time_str, "%Y-%m-%dT%H:%M:%S.%f%z"
         )
-        return first_read_time_date,last_read_time_date
-    except ValueError as e:
+        return first_read_time_date, last_read_time_date
+    except ValueError:
         pass
     try:
         first_read_time_date = datetime.strptime(
@@ -527,8 +580,8 @@ def handle_timestamps(first_read_time_str,last_read_time_str):
         last_read_time_date = datetime.strptime(
             last_read_time_str, "%Y-%m-%dT%H:%M:%S%z"
         )
-        return first_read_time_date,last_read_time_date
-    except ValueError as e:
+        return first_read_time_date, last_read_time_date
+    except ValueError:
         pass
     try:
         first_read_time_date = datetime.strptime(
@@ -537,9 +590,10 @@ def handle_timestamps(first_read_time_str,last_read_time_str):
         last_read_time_date = datetime.strptime(
             last_read_time_str.split("Z")[0], "%Y-%m-%dT%H:%M:%S"
         ).replace(tzinfo=pytz.UTC)
-        return first_read_time_date,last_read_time_date
-    except ValueError as e:
+        return first_read_time_date, last_read_time_date
+    except ValueError:
         pass
+    return None, None
 
 
 @app.task
@@ -578,10 +632,10 @@ def save_reads_bulk(reads):
             flowcell_dict[read["flowcell_id"]] = 1
         fastq_read = FastqRead(
             read_id=read["read_id"],
-            read=read["read"],
-            channel=read["channel"],
-            barcode_id=read["barcode"],
-            rejected_barcode_id=read["rejected_barcode"],
+            read=_safe_int(read.get("read"), 0),
+            channel=_safe_int(read.get("channel"), 0),
+            barcode_id=_safe_optional_fk_id(read.get("barcode")),
+            rejected_barcode_id=_safe_optional_fk_id(read.get("rejected_barcode")),
             barcode_name=read["barcode_name"],
             sequence_length=read["sequence_length"],
             quality_average=read["quality_average"],
@@ -592,7 +646,7 @@ def save_reads_bulk(reads):
             run_id=read["run_id"],
             flowcell_id=read["flowcell_id"],
             type_id=read["type"],
-            fastqfile_id=read["fastq_file"],
+            fastqfile_id=_safe_optional_fk_id(read.get("fastq_file")),
         )
         reads_list.append(fastq_read)
     # Save reads to redis for later processing of base-called data summaries.
@@ -692,17 +746,17 @@ def save_flowcell_histogram_summary(row):
     None
 
     """
-    flowcell_id = int(row["flowcell_id"][0])
+    flowcell_id = int(row["flowcell_id"])
     # flowcell = Flowcell.objects.get(pk=flowcell_id)
-    barcode_name = row["barcode_name"][0]
-    read_type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
+    barcode_name = row["barcode_name"]
+    read_type_name = FastqReadType.objects.get(pk=row["type_id"]).name
     # read_type_name = row["type__name"][0]
-    rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
+    rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"]).name
     # rejection_status = row["rejected_barcode__name"][0]
-    status = row["is_pass"][0]
-    bin_index = int(row["bin_index"][0])
-    sequence_length_sum = int(row["sequence_length"]["sum"])
-    read_count = int(row["sequence_length"]["count"])
+    status = row["is_pass"]
+    bin_index = int(row["bin_index"])
+    sequence_length_sum = int(row["sequence_length_sum"])
+    read_count = int(row["sequence_length_count"])
 
     unique_key = "{}_flowcellHistogramSummary_{}_{}_{}_{}_{}".format(
         flowcell_id, barcode_name, rejection_status, read_type_name, status, bin_index
@@ -730,10 +784,10 @@ def save_flowcell_channel_summary(row):
     -------
     None
     """
-    flowcell_id = row["flowcell_id"][0]
-    channel_number = row["channel"][0]
-    channel_read_count = int(row["sequence_length"]["count"])
-    channel_yield = int(row["sequence_length"]["sum"])
+    flowcell_id = row["flowcell_id"]
+    channel_number = row["channel"]
+    channel_read_count = int(row["sequence_length_count"])
+    channel_yield = int(row["sequence_length_sum"])
     redis_instance.incrby(
         f"{flowcell_id}_{channel_number}_read_count", channel_read_count,
     )
@@ -757,17 +811,17 @@ def do_whatever_this_does(row, unique_key_base):
     -------
 
     """
-    flowcell_id = int(row["flowcell_id"][0])
-    type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
-    barcode_name = row["barcode_name"][0]
-    rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
-    status = row["is_pass"][0]
-    sequence_length_sum = int(row["sequence_length"]["sum"])
-    sequence_length_max = int(row["sequence_length"]["max"])
-    sequence_length_min = int(row["sequence_length"]["min"])
-    quality_average_sum = int(row["quality_average"]["sum"])
-    read_count = int(row["sequence_length"]["count"])
-    channels = row["channel"]["unique"]
+    flowcell_id = int(row["flowcell_id"])
+    type_name = FastqReadType.objects.get(pk=row["type_id"]).name
+    barcode_name = row["barcode_name"]
+    rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"]).name
+    status = row["is_pass"]
+    sequence_length_sum = int(row["sequence_length_sum"])
+    sequence_length_max = int(row["sequence_length_max"])
+    sequence_length_min = int(row["sequence_length_min"])
+    quality_average_sum = int(row["quality_average_sum"])
+    read_count = int(row["sequence_length_count"])
+    channels = row["channel_unique"]
     unique_key = f"{flowcell_id}_{unique_key_base}_{barcode_name}_{rejection_status}_{type_name}_{status}"
     prev_channel_list = redis_instance.hget(unique_key, "channel_presence")
     min_prev = redis_instance.hget(unique_key, "min_length")
@@ -776,8 +830,12 @@ def do_whatever_this_does(row, unique_key_base):
     p.multi()
     if unique_key_base == "flowcellStatisticBarcode":
         utc = pytz.utc
-        start_time = utc.localize(row["start_time_truncate"][0])
-        p.hset(unique_key, "sample_time", str(start_time))
+        st = row["start_time_truncate"]
+        if not pd.isna(st):
+            if isinstance(st, pd.Timestamp):
+                st = st.to_pydatetime()
+            start_time = utc.localize(st) if getattr(st, "tzinfo", None) is None else st
+            p.hset(unique_key, "sample_time", str(start_time))
     p.hset(unique_key, "barcode_name", barcode_name)
     p.hset(unique_key, "rejection_status", rejection_status)
     p.hset(unique_key, "type_name", type_name)

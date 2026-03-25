@@ -558,8 +558,15 @@ def per_barcode_coverage_summary(request, pk):
     chromosome_pk = request.GET.get("chromosomeId", None)
     barcode_pk = request.GET.get("barcodePk", None)
     queryset = PafSummaryCov.objects.filter(
-        job_master__flowcell_id=pk, chromosome_pk=chromosome_pk, barcode_id=barcode_pk
+        job_master__flowcell_id=pk, chromosome_pk=chromosome_pk
     ).exclude(job_master__job_type_id=16)
+    # Alignment UI can pass either a numeric barcode PK or a label (e.g. "No_barcode").
+    # Filtering barcode_id with a non-numeric string raises ValueError and caused HTTP 500.
+    if barcode_pk is not None:
+        if str(barcode_pk).isdigit():
+            queryset = queryset.filter(barcode_id=int(barcode_pk))
+        else:
+            queryset = queryset.filter(barcode_name=barcode_pk)
     if not queryset:
         return Response(
             "No data currently held in database.", status=status.HTTP_404_NOT_FOUND
@@ -601,7 +608,10 @@ def per_barcode_coverage_summary(request, pk):
             "read_type__name",
         ]
     ].T.apply(
-        lambda col: {"name": col[3] + " " + col[4] + " " + col[0], "data": col[1]}
+        lambda col: {
+            "name": f"{col['barcode_name']} {col['read_type__name']} {col['chromosome_name']}",
+            "data": col["coverage"],
+        }
     )
     df["average_read_length_series"] = df[
         [
@@ -612,7 +622,10 @@ def per_barcode_coverage_summary(request, pk):
             "read_type__name",
         ]
     ].T.apply(
-        lambda col: {"name": col[3] + " " + col[4] + " " + col[0], "data": col[2]}
+        lambda col: {
+            "name": f"{col['barcode_name']} {col['read_type__name']} {col['chromosome_name']}",
+            "data": col["average_read_length"],
+        }
     )
     categories = np.unique(df["chromosome_name"].values)
     return Response(

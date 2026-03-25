@@ -6,8 +6,8 @@ minoTour is a web-based real-time laboratory information management system (LIMS
 
 An example instance can be found at http://137.44.59.170. Credentials to log in to a deactivated account (one which cannot upload data) are: 
 
-    Username: demoAccount
-    Password: Welcome-to-minotour
+    Username: test-account
+    Password: TestMinotour
 
 Note that we are working on setting up HTTPS but it's currently friday
 
@@ -91,6 +91,9 @@ Now create a virtual environment for the project dependencies and install them:
 
 Setting up environment variables - many of minoTour's config parameters are stored in the environment. There is a file to be configured,
 [envs.sh](envs.sh). The fields required and what they represent are **explained in the file**.
+
+On **macOS with Homebrew (Apple Silicon)**, `envs.sh` sets `DYLD_FALLBACK_LIBRARY_PATH` to include `/opt/homebrew/lib` when that directory exists, so native wheels (e.g. WeasyPrint, `mysqlclient`) can find shared libraries. The same is applied when using `scripts/run_minotour_tmux_local.sh`. If you run Django without sourcing `envs.sh`, set it yourself: `export DYLD_FALLBACK_LIBRARY_PATH="/opt/homebrew/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"`.
+
 For the secret key, we recommend generating your own, which can be done as follows:
 ```bash
 $ python manage.py shell -c 'from django.core.management import utils; print(utils.get_random_secret_key())'
@@ -146,10 +149,16 @@ To install tmux on mac, use homebrew:
 ```bash
 brew install tmux
 ```
-Once installed, minoTour has a [bash script](cripts/run_minotour_tmux.sh) that runs all the tmux commands to open minoTour in Tmux. *__The file may need configuring to provide all the correct paths__*, but with paths set should run without any issue.
+Once installed, minoTour has a [bash script](scripts/run_minotour_tmux.sh) that runs all the tmux commands to open minoTour in Tmux. *__The file may need configuring to provide all the correct paths__*, but with paths set should run without any issue.
 It can be run simply from the **main minotourapp directory**:
 ```bash
 ./scripts/run_minotour_tmux.sh
+```
+
+For **local testing**, use `scripts/run_minotour_tmux_local.sh` instead: it resolves the repo root and `envs.sh` automatically, validates the venv and `MT_LOG_FOLDER`, and lays out windows for runserver, Celery workers, beat, log tails, a shell, and Flower. Run from anywhere:
+```bash
+./scripts/run_minotour_tmux_local.sh
+# optional session name: ./scripts/run_minotour_tmux_local.sh my-session
 ```
 
 ## Starting the server manually

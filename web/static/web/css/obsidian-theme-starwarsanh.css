@@ -1,0 +1,50 @@
+/**
+ * Star Wars: A New Hope inspired theme.
+ */
+
+html[data-theme="starwarsanh"] {
+    color-scheme: dark;
+    background-color: #0f0d08;
+    --font-body: "Lora", "Source Sans 3", Georgia, serif;
+    --font-display: "Cinzel", "Lora", Georgia, serif;
+}
+
+html[data-theme="starwarsanh"] body,
+html[data-theme="starwarsanh"] body.hold-transition,
+html[data-theme="starwarsanh"] .minotour-app-root,
+html[data-theme="starwarsanh"] .content-wrapper,
+html[data-theme="starwarsanh"] .private-app-shell,
+html[data-theme="starwarsanh"] .private-main-surface,
+html[data-theme="starwarsanh"] .flowcells-page,
+html[data-theme="starwarsanh"] .flowcell-detail-page { background-color: #0f0d08 !important; color: #f6e8b1; }
+
+html[data-theme="starwarsanh"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="starwarsanh"] nav#tn.topnav-primary { background: linear-gradient(90deg, #15120b 0%, #231d12 58%, #3b321c 100%) !important; border-bottom: 1px solid rgba(210, 179, 74, 0.34); }
+html[data-theme="starwarsanh"] nav#tn .navbar-brand,
+html[data-theme="starwarsanh"] nav#tn .nav-link,
+html[data-theme="starwarsanh"] nav#tn .navbar-nav > .nav-item > .nav-link i { color: #ffe066 !important; text-transform: uppercase; letter-spacing: 0.04em; }
+
+html[data-theme="starwarsanh"] .obsidian-card,
+html[data-theme="starwarsanh"] .card.card-primary.card-outline,
+html[data-theme="starwarsanh"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="starwarsanh"] .flowcells-page .flowcells-card { background: linear-gradient(165deg, #15120b 0%, #120f09 62%, #0f0d08 100%) !important; border-color: rgba(210, 179, 74, 0.3) !important; box-shadow: 0 0 0 1px rgba(210,179,74,0.12), 0 12px 28px rgba(0,0,0,0.58); }
+
+html[data-theme="starwarsanh"] .card-title,
+html[data-theme="starwarsanh"] .flowcells-page__title,
+html[data-theme="starwarsanh"] .flowcell-detail-page .flowcells-page__title { color: #ffe066 !important; }
+
+html[data-theme="starwarsanh"] .btn-primary,
+html[data-theme="starwarsanh"] .flowcells-btn--primary { background: linear-gradient(180deg, #ffe066 0%, #d2b34a 100%) !important; border-color: #f6c85f !important; color: #141109 !important; }
+
+html[data-theme="starwarsanh"] .form-control,
+html[data-theme="starwarsanh"] select.form-control,
+html[data-theme="starwarsanh"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="starwarsanh"] .dataTables_wrapper .dataTables_length select { background: #15120b !important; border-color: rgba(210, 179, 74, 0.42) !important; color: #f6e8b1 !important; }
+
+html[data-theme="starwarsanh"] .table thead th,
+html[data-theme="starwarsanh"] table.dataTable thead th,
+html[data-theme="starwarsanh"] table.dataTable tfoot th { background: #15120b !important; color: #d9c98b !important; border-bottom-color: rgba(210, 179, 74, 0.45) !important; }
+html[data-theme="starwarsanh"] .table,
+html[data-theme="starwarsanh"] .table td,
+html[data-theme="starwarsanh"] .table th,
+html[data-theme="starwarsanh"] table.dataTable tbody td { color: #f6e8b1; border-color: rgba(210, 179, 74, 0.24) !important; }

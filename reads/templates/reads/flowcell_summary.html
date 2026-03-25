@@ -1,139 +1,144 @@
 {% load humanize %}
 
-<div class="accordion" id="accordion">
-    <div class="card card-primary card-outline">
-        <div class="card-header">
-            <h5>
-                <button class="btn btn-link arrow-toggle" data-toggle="collapse" data-target="#collapseOne"
+<div class="accordion basecalled-summary-accordion" id="accordion">
+    <div class="card obsidian-card bc-summary-card">
+        <div class="card-header bc-summary-card-header" id="headingOne">
+            <h5 class="bc-summary-heading">
+                <button class="btn btn-link bc-summary-toggle arrow-toggle" type="button" data-toggle="collapse" data-target="#collapseOne"
                         aria-expanded="true" aria-controls="collapseOne">
-                    <i class="fas fa-table"></i>
-                    All Reads Summary
-                    <i class="fa fa-arrow-up"></i>
-                    <i class="fa fa-arrow-down"></i>
+                    <i class="fas fa-table" aria-hidden="true"></i>
+                    All reads summary
+                    <i class="fa fa-arrow-up" aria-hidden="true"></i>
+                    <i class="fa fa-arrow-down" aria-hidden="true"></i>
                 </button>
             </h5>
         </div>
 
         <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
-            <div class="card-body">
-                <table class="table table-hover">
-                    <thead>
-                    <th>Barcode</th>
-                    <th>Read type</th>
-                    <th>Rejection</th>
-                    <th>Pass/Fail</th>
-                    <th>Reads called</th>
-                    <th>Yield</th>
-                    <th>Percentage(bases)</th>
-                    <th>Min read length</th>
-                    <th>Average read length</th>
-                    <th>Max read length</th>
-                    <th>Average Quality</th>
-                    </thead>
-                    <tbody>
+            <div class="card-body bc-summary-card-body">
+                <div class="obsidian-table-wrap bc-summary-table-wrap">
+                    <table class="table table-hover bc-data-table">
+                        <thead>
+                        <tr>
+                            <th scope="col">Barcode</th>
+                            <th scope="col">Read type</th>
+                            <th scope="col">Rejection</th>
+                            <th scope="col">Pass/Fail</th>
+                            <th scope="col">Reads called</th>
+                            <th scope="col">Yield</th>
+                            <th scope="col">Percentage (bases)</th>
+                            <th scope="col">Min read length</th>
+                            <th scope="col">Average read length</th>
+                            <th scope="col">Max read length</th>
+                            <th scope="col">Average quality</th>
+                        </tr>
+                        </thead>
+                        <tbody>
 
-                    {% for record in qs|dictsortreversed:"read_type"|dictsort:"barcode_name" %}
-                        {% if record.barcode_name == "All reads" %}
+                        {% for record in qs|dictsortreversed:"read_type"|dictsort:"barcode_name" %}
+                            {% if record.barcode_name == "All reads" %}
 
-                            {% if record.read_type == "Pass" %}
-                                <tr class="table-success">
-                                    {% elif record.read_type == "Fail" %}
-                                <tr class="table-danger">
-                                    {% else %}
-                                <tr class="table-info" style="font-weight:bold;font-style: italic">
-                            {% endif %}
+                                {% if record.read_type == "Pass" %}
+                                    <tr class="bc-row-pass">
+                                {% elif record.read_type == "Fail" %}
+                                    <tr class="bc-row-fail">
+                                {% else %}
+                                    <tr class="bc-row-aggregate">
+                                {% endif %}
                         {% if record.read_type == "all" %}
-                            <th>{{ record.barcode_name }}</th>
-                            <th>{{ record.read_type_name }}</th>
+                            <th scope="row">{{ record.barcode_name }}</th>
+                            <th scope="row">{{ record.read_type_name }}</th>
                         {% else %}
-                            <th></th>
-                            <th></th>
+                            <th scope="row"></th>
+                            <th scope="row"></th>
                         {% endif %}
                         <th>{{ record.rejection_status }}</th>
                         <th>{{ record.read_type }}</th>
-                        <th >{{ record.read_count|intcomma }}</th>
-                        <th >{{ record.total_length|intcomma }}</th>
-                        <th >{{ record.percentage|floatformat:"2" }}</th>
-                        <th >{{ record.min_length|intcomma }}</th>
-                        <th >{{ record.avg_length|floatformat:"0"|intcomma }}</th>
-                        <th >{{ record.max_length|intcomma }}</th>
-                        <th >{{ record.avg_quality|floatformat:"1" }}</th>
+                        <td>{{ record.read_count|intcomma }}</td>
+                        <td>{{ record.total_length|intcomma }}</td>
+                        <td>{{ record.percentage|floatformat:"2" }}</td>
+                        <td>{{ record.min_length|intcomma }}</td>
+                        <td>{{ record.avg_length|floatformat:"0"|intcomma }}</td>
+                        <td>{{ record.max_length|intcomma }}</td>
+                        <td>{{ record.avg_quality|floatformat:"1" }}</td>
                         </tr>
                         {% endif %}
                     {% endfor %}
 
-                    </tbody>
+                        </tbody>
 
-
-                </table>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
     {% if qs|length > 3 %}
-        <div class="card card-primary card-outline">
-            <div class="card-header" id="headingTwo">
-                <h5>
-                    <button class="btn btn-link collapsed arrow-toggle" data-toggle="collapse"
+        <div class="card obsidian-card bc-summary-card">
+            <div class="card-header bc-summary-card-header" id="headingTwo">
+                <h5 class="bc-summary-heading">
+                    <button class="btn btn-link bc-summary-toggle arrow-toggle collapsed" type="button" data-toggle="collapse"
                             data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                        <i class="fas fa-table"></i>
-                        Read Summary by Barcode
-                        <i class="fa fa-arrow-up"></i>
-                        <i class="fa fa-arrow-down"></i>
+                        <i class="fas fa-table" aria-hidden="true"></i>
+                        Read summary by barcode
+                        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+                        <i class="fa fa-arrow-down" aria-hidden="true"></i>
                     </button>
                 </h5>
             </div>
             <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
-                <div class="card-body">
-                    <table id="barcode_table" class="table table-hover">
-                        <thead>
-                        <tr>
-                            <th>Barcode</th>
-                            <th>Read type</th>
-                            <th>Rejection</th>
-                            <th>Pass/Fail</th>
-                            <th>Reads called</th>
-                            <th>Yield</th>
-                            <th>Percentage(bases)</th>
-                            <th>Min read length</th>
-                            <th>Average read length</th>
-                            <th>Max read length</th>
-                            <th>Average Quality</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for record in qs|dictsortreversed:"read_type"|dictsort:"barcode_name" %}
-                            {% if record.barcode_name != "All reads" %}
-
-                                {% if record.read_type == "Pass" %}
-                                    <tr class="table-success">
-                                        {% elif record.read_type == "Fail" %}
-                                    <tr class="table-danger">
-                                        {% else %}
-                                    <tr class="table-info" style="font-weight:bold;font-style: italic">
-                                {% endif %}
-                            {% if record.read_type == "all" %}
-                                <th>{{ record.barcode_name }}</th>
-                                <th>{{ record.read_type_name }}</th>
-                            {% else %}
-                                <th></th>
-                                <th></th>
-                            {% endif %}
-                            <th>{{ record.rejection_status }}</th>
-
-                            <th>{{ record.read_type }}</th>
-                            <th>{{ record.read_count|intcomma }}</th>
-                            <th>{{ record.total_length|intcomma }}</th>
-                            <th>{{ record.percentage|floatformat:"2" }}</th>
-                            <th>{{ record.min_length|intcomma }}</th>
-                            <th>{{ record.avg_length|floatformat:"0"|intcomma }}</th>
-                            <th>{{ record.max_length|intcomma }}</th>
-                            <th>{{ record.avg_quality|floatformat:"1" }}</th>
+                <div class="card-body bc-summary-card-body">
+                    <div class="obsidian-table-wrap bc-summary-table-wrap">
+                        <table id="barcode_table" class="table table-hover bc-data-table">
+                            <thead>
+                            <tr>
+                                <th scope="col">Barcode</th>
+                                <th scope="col">Read type</th>
+                                <th scope="col">Rejection</th>
+                                <th scope="col">Pass/Fail</th>
+                                <th scope="col">Reads called</th>
+                                <th scope="col">Yield</th>
+                                <th scope="col">Percentage (bases)</th>
+                                <th scope="col">Min read length</th>
+                                <th scope="col">Average read length</th>
+                                <th scope="col">Max read length</th>
+                                <th scope="col">Average quality</th>
                             </tr>
-                            {% endif %}
-                        {% endfor %}
+                            </thead>
+                            <tbody>
+                            {% for record in qs|dictsortreversed:"read_type"|dictsort:"barcode_name" %}
+                                {% if record.barcode_name != "All reads" %}
 
-                        </tbody>
-                    </table>
+                                    {% if record.read_type == "Pass" %}
+                                        <tr class="bc-row-pass">
+                                    {% elif record.read_type == "Fail" %}
+                                        <tr class="bc-row-fail">
+                                    {% else %}
+                                        <tr class="bc-row-aggregate">
+                                    {% endif %}
+                                {% if record.read_type == "all" %}
+                                    <th scope="row">{{ record.barcode_name }}</th>
+                                    <th scope="row">{{ record.read_type_name }}</th>
+                                {% else %}
+                                    <th scope="row"></th>
+                                    <th scope="row"></th>
+                                {% endif %}
+                                <th>{{ record.rejection_status }}</th>
+
+                                <th>{{ record.read_type }}</th>
+                                <td>{{ record.read_count|intcomma }}</td>
+                                <td>{{ record.total_length|intcomma }}</td>
+                                <td>{{ record.percentage|floatformat:"2" }}</td>
+                                <td>{{ record.min_length|intcomma }}</td>
+                                <td>{{ record.avg_length|floatformat:"0"|intcomma }}</td>
+                                <td>{{ record.max_length|intcomma }}</td>
+                                <td>{{ record.avg_quality|floatformat:"1" }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

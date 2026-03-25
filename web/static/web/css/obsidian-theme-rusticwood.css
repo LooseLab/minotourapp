@@ -1,0 +1,127 @@
+/**
+ * Natural Wood / Rustic theme.
+ */
+
+html[data-theme="rusticwood"] {
+    color-scheme: light;
+    background-color: #f3e1c8;
+    --font-body: "Lora", "Source Sans 3", Georgia, serif;
+    --font-display: "Cinzel", "Lora", Georgia, serif;
+}
+
+html[data-theme="rusticwood"] body,
+html[data-theme="rusticwood"] body.hold-transition,
+html[data-theme="rusticwood"] .minotour-app-root,
+html[data-theme="rusticwood"] .content-wrapper,
+html[data-theme="rusticwood"] .private-app-shell,
+html[data-theme="rusticwood"] .private-main-surface,
+html[data-theme="rusticwood"] .flowcells-page,
+html[data-theme="rusticwood"] .flowcell-detail-page {
+    background-color: #f3e1c8 !important;
+    color: #2e2218;
+}
+
+html[data-theme="rusticwood"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="rusticwood"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #7a4f2f 0%, #a97142 55%, #c47b43 100%) !important;
+    border-bottom: 1px solid rgba(69, 40, 20, 0.28);
+}
+
+html[data-theme="rusticwood"] nav#tn .navbar-brand,
+html[data-theme="rusticwood"] nav#tn .nav-link,
+html[data-theme="rusticwood"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #fff6eb !important;
+}
+
+html[data-theme="rusticwood"] .obsidian-card,
+html[data-theme="rusticwood"] .card.card-primary.card-outline,
+html[data-theme="rusticwood"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="rusticwood"] .flowcells-page .flowcells-card {
+    background: linear-gradient(170deg, #f5e7d2 0%, #edd8ba 62%, #e2c9a7 100%) !important;
+    border-color: #b78f68 !important;
+    box-shadow: 0 1px 0 rgba(111, 67, 39, 0.1), 0 10px 24px rgba(71, 47, 28, 0.14);
+}
+
+html[data-theme="rusticwood"] .card-header,
+html[data-theme="rusticwood"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(90deg, #ebd4b1 0%, #f3e3ca 100%) !important;
+    border-bottom-color: #b78f68 !important;
+}
+
+html[data-theme="rusticwood"] .card-title,
+html[data-theme="rusticwood"] .flowcells-page__title,
+html[data-theme="rusticwood"] .flowcell-detail-page .flowcells-page__title {
+    color: #6f4327 !important;
+}
+
+html[data-theme="rusticwood"] .btn-primary,
+html[data-theme="rusticwood"] .flowcells-btn--primary {
+    background: linear-gradient(180deg, #8c5a3c 0%, #72462d 100%) !important;
+    border-color: #5b3824 !important;
+    color: #fff6ea !important;
+}
+
+html[data-theme="rusticwood"] .btn-primary:hover,
+html[data-theme="rusticwood"] .flowcells-btn--primary:hover {
+    background: linear-gradient(180deg, #9b6848 0%, #805136 100%) !important;
+}
+
+html[data-theme="rusticwood"] .form-control,
+html[data-theme="rusticwood"] select.form-control,
+html[data-theme="rusticwood"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="rusticwood"] .dataTables_wrapper .dataTables_length select {
+    background: #f8ebd8 !important;
+    border-color: #b78f68 !important;
+    color: #2e2218 !important;
+}
+
+html[data-theme="rusticwood"] .table thead th,
+html[data-theme="rusticwood"] table.dataTable thead th,
+html[data-theme="rusticwood"] table.dataTable tfoot th {
+    background: #ebd4b1 !important;
+    color: #66503c !important;
+    border-bottom-color: #b78f68 !important;
+}
+
+html[data-theme="rusticwood"] .table,
+html[data-theme="rusticwood"] .table td,
+html[data-theme="rusticwood"] .table th,
+html[data-theme="rusticwood"] table.dataTable tbody td {
+    color: #2e2218;
+    border-color: #d9bc98 !important;
+}
+
+html[data-theme="rusticwood"] .flowcells-page .fc-name,
+html[data-theme="rusticwood"] .flowcells-page td.fc-col-name {
+    color: #6f4327 !important;
+    font-weight: 700;
+}
+
+html[data-theme="rusticwood"] footer#sticky-footer.obsidian-footer.site-footer {
+    background: #ead4b4 !important;
+    border-top-color: #b78f68 !important;
+}
+
+html[data-theme="rusticwood"] .flowcell-detail-page #tab-basecalled-data .bc-data-table thead th,
+html[data-theme="rusticwood"] .flowcell-detail-page #tab-summary-data .summary-data-table thead th,
+html[data-theme="rusticwood"] .flowcell-detail-page #tab-notifications .notif-data-table thead th,
+html[data-theme="rusticwood"] .flowcell-detail-page #tab-reads table.dataTable thead th,
+html[data-theme="rusticwood"] .flowcell-detail-page #tab-tasks .task-history-table thead th,
+html[data-theme="rusticwood"] .flowcell-detail-page #tab-sharing .sharing-data-table thead th {
+    background: #ebd4b1 !important;
+    color: #66503c !important;
+    border-bottom-color: #b78f68 !important;
+}
+
+html[data-theme="rusticwood"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody td,
+html[data-theme="rusticwood"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody th,
+html[data-theme="rusticwood"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody td,
+html[data-theme="rusticwood"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody th,
+html[data-theme="rusticwood"] .flowcell-detail-page #tab-notifications .notif-data-table tbody td,
+html[data-theme="rusticwood"] .flowcell-detail-page #tab-reads table.dataTable tbody td,
+html[data-theme="rusticwood"] .flowcell-detail-page #tab-tasks .task-history-table tbody td,
+html[data-theme="rusticwood"] .flowcell-detail-page #tab-sharing .sharing-data-table tbody td {
+    background: #f8ebd8 !important;
+    color: #2e2218 !important;
+    border-color: #d9bc98 !important;
+}

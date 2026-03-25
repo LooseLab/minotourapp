@@ -17,6 +17,11 @@ urlpatterns = [
     url(
         r"^api/v1/reads/runs/(?P<pk>[0-9a-z-]+)/$", views.run_detail, name="run-detail"
     ),
+    url(
+        r"^api/v1/reads/processing-queue/$",
+        views.processing_queue_status,
+        name="processing-queue-status",
+    ),
     url(r"^api/v1/reads/read/$", views.read_list, name="fastqread-list-new"),
     url(r"^api/v1/reads/reads-extra/$", views.readextra_list, name="readextra_list"),
     url(

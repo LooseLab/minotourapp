@@ -1,8 +1,8 @@
 {% extends "web/template_private.html" %}
-{% block content %}
+{% block private_main %}
     {#    <script src="https://unpkg.com/vue"></script>#}
 
-    <div class="content-wrapper" style="background-color: white">
+    <div class="content-wrapper private-main-surface">
 
         <!-- Content Header (Page header) -->
         <section class="content-header">
@@ -13,6 +13,7 @@
 
         <!-- Main content -->
         <section class="content">
+            <div class="container-fluid obsidian-page-inner">
             <div class="box">
                 <div class="box-header">
                     <h2 class="box-title">Devices Available</h2>
@@ -466,6 +467,7 @@
                         </div>
                     </div>
                 </div>
+            </div>
             </div>
         </section>
     </div>

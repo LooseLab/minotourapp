@@ -1,11 +1,12 @@
 {% extends "web/template_base.html" %}
-{% load static %}
 {% block header %}
     <!-- Public NavBar -->
-        <nav class="navbar navbar-expand-md navbar-dark topnav-primary" id="tn">
-        <a class="navbar-brand" href="{% url 'login' %}"> minoTour </a>
+        <nav class="navbar navbar-expand-md navbar-dark topnav-primary obsidian-site-nav" id="tn" role="navigation" aria-label="Main">
+        <a class="navbar-brand d-flex align-items-center" href="{% url 'login' %}">
+            <span>minoTour</span>
+        </a>
 
-            <div class="container-fluid"  style="padding-top: 2rem">
+            <div class="container-fluid obsidian-page-inner" style="padding-top: 2rem">
                 <div class="navbar-header">
                 </div><!-- /.navbar-collapse -->
             </div><!-- /.container-fluid -->

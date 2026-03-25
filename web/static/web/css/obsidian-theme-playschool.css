@@ -1,0 +1,98 @@
+/**
+ * PlaySchool inspired theme.
+ * Bright primary colors and playful soft surfaces.
+ */
+
+html[data-theme="playschool"] {
+    color-scheme: light;
+    background-color: #f2f8ff;
+    --font-body: "Baloo 2", "Nunito", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Baloo 2", "Nunito", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-theme="playschool"] body,
+html[data-theme="playschool"] body.hold-transition,
+html[data-theme="playschool"] .minotour-app-root,
+html[data-theme="playschool"] .content-wrapper,
+html[data-theme="playschool"] .private-app-shell,
+html[data-theme="playschool"] .private-main-surface,
+html[data-theme="playschool"] .flowcells-page,
+html[data-theme="playschool"] .flowcell-detail-page {
+    background-color: #f2f8ff !important;
+    color: #28385a;
+}
+
+html[data-theme="playschool"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="playschool"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #ff5e5e 0%, #ffd166 45%, #4aa8ff 100%) !important;
+    border-bottom: 1px solid rgba(47, 95, 184, 0.24);
+}
+
+html[data-theme="playschool"] nav#tn .navbar-brand,
+html[data-theme="playschool"] nav#tn .nav-link,
+html[data-theme="playschool"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #fffef8 !important;
+}
+
+html[data-theme="playschool"] .obsidian-card,
+html[data-theme="playschool"] .card.card-primary.card-outline,
+html[data-theme="playschool"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="playschool"] .flowcells-page .flowcells-card {
+    background: linear-gradient(170deg, #ffffff 0%, #f2f8ff 62%, #e8f2ff 100%) !important;
+    border-color: #8eb8ff !important;
+    box-shadow: 0 1px 0 rgba(74, 168, 255, 0.1), 0 10px 24px rgba(64, 101, 166, 0.14);
+}
+
+html[data-theme="playschool"] .card-header,
+html[data-theme="playschool"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(90deg, #e8f2ff 0%, #ffffff 100%) !important;
+    border-bottom-color: #8eb8ff !important;
+}
+
+html[data-theme="playschool"] .card-title,
+html[data-theme="playschool"] .flowcells-page__title,
+html[data-theme="playschool"] .flowcell-detail-page .flowcells-page__title {
+    color: #2f5fb8 !important;
+}
+
+html[data-theme="playschool"] .btn-primary,
+html[data-theme="playschool"] .flowcells-btn--primary {
+    background: linear-gradient(180deg, #4aa8ff 0%, #2f7be2 100%) !important;
+    border-color: #2f5fb8 !important;
+    color: #fffef8 !important;
+}
+
+html[data-theme="playschool"] .form-control,
+html[data-theme="playschool"] select.form-control,
+html[data-theme="playschool"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="playschool"] .dataTables_wrapper .dataTables_length select {
+    background: #ffffff !important;
+    border-color: #8eb8ff !important;
+    color: #28385a !important;
+}
+
+html[data-theme="playschool"] .table thead th,
+html[data-theme="playschool"] table.dataTable thead th,
+html[data-theme="playschool"] table.dataTable tfoot th {
+    background: #e8f2ff !important;
+    color: #4c6492 !important;
+    border-bottom-color: #8eb8ff !important;
+}
+
+html[data-theme="playschool"] .table,
+html[data-theme="playschool"] .table td,
+html[data-theme="playschool"] .table th,
+html[data-theme="playschool"] table.dataTable tbody td {
+    color: #28385a;
+    border-color: #c7dcff !important;
+}
+
+html[data-theme="playschool"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody td,
+html[data-theme="playschool"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody td,
+html[data-theme="playschool"] .flowcell-detail-page #tab-notifications .notif-data-table tbody td,
+html[data-theme="playschool"] .flowcell-detail-page #tab-reads table.dataTable tbody td,
+html[data-theme="playschool"] .flowcell-detail-page #tab-tasks .task-history-table tbody td,
+html[data-theme="playschool"] .flowcell-detail-page #tab-sharing .sharing-data-table tbody td {
+    background: #ffffff !important;
+    color: #28385a !important;
+}

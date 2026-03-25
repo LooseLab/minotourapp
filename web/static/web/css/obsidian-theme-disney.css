@@ -1,0 +1,136 @@
+/**
+ * Disney-inspired theme.
+ * Storybook blues, soft clouds, and warm accents.
+ */
+
+html[data-theme="disney"] {
+    color-scheme: light;
+    background-color: #eaf5ff;
+    --font-body: "Nunito", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Baloo 2", "Nunito", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-theme="disney"] body,
+html[data-theme="disney"] body.hold-transition,
+html[data-theme="disney"] .minotour-app-root,
+html[data-theme="disney"] .content-wrapper,
+html[data-theme="disney"] .private-app-shell,
+html[data-theme="disney"] .private-main-surface,
+html[data-theme="disney"] .flowcells-page,
+html[data-theme="disney"] .flowcell-detail-page {
+    background-color: #eaf5ff !important;
+    color: #173055;
+}
+
+html[data-theme="disney"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(circle at 15% 15%, rgba(86, 176, 255, 0.2) 0%, rgba(86, 176, 255, 0) 42%),
+        radial-gradient(circle at 85% 85%, rgba(255, 209, 102, 0.14) 0%, rgba(255, 209, 102, 0) 40%);
+}
+
+html[data-theme="disney"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="disney"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #1e6fd9 0%, #56b0ff 55%, #9ad6ff 100%) !important;
+    border-bottom: 1px solid rgba(16, 57, 113, 0.22);
+}
+
+html[data-theme="disney"] nav#tn .navbar-brand,
+html[data-theme="disney"] nav#tn .nav-link,
+html[data-theme="disney"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #f8fcff !important;
+    letter-spacing: 0.02em;
+}
+
+html[data-theme="disney"] nav#tn .nav-link:hover,
+html[data-theme="disney"] nav#tn .nav-link.active {
+    background: rgba(248, 252, 255, 0.24);
+    color: #ffffff !important;
+}
+
+html[data-theme="disney"] .obsidian-card,
+html[data-theme="disney"] .card.card-primary.card-outline,
+html[data-theme="disney"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="disney"] .flowcells-page .flowcells-card {
+    background: linear-gradient(170deg, #f4faff 0%, #eaf5ff 65%, #e1f0ff 100%) !important;
+    border-color: #9fc8f8 !important;
+    box-shadow: 0 1px 0 rgba(30, 111, 217, 0.1), 0 10px 24px rgba(43, 89, 154, 0.14);
+}
+
+html[data-theme="disney"] .card-header,
+html[data-theme="disney"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(90deg, #dceeff 0%, #f0f8ff 100%) !important;
+    border-bottom-color: #9fc8f8 !important;
+}
+
+html[data-theme="disney"] .card-title,
+html[data-theme="disney"] .flowcells-page__title,
+html[data-theme="disney"] .flowcell-detail-page .flowcells-page__title {
+    color: #1e4f9e !important;
+}
+
+html[data-theme="disney"] .btn-primary,
+html[data-theme="disney"] .flowcells-btn--primary {
+    background: linear-gradient(180deg, #2a84ec 0%, #1e6fd9 100%) !important;
+    border-color: #1e5cbc !important;
+    color: #f8fcff !important;
+}
+
+html[data-theme="disney"] .btn-primary:hover,
+html[data-theme="disney"] .flowcells-btn--primary:hover {
+    background: linear-gradient(180deg, #3d94f1 0%, #2a7de2 100%) !important;
+}
+
+html[data-theme="disney"] .form-control,
+html[data-theme="disney"] select.form-control,
+html[data-theme="disney"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="disney"] .dataTables_wrapper .dataTables_length select {
+    background: #f7fbff !important;
+    border-color: #9fc8f8 !important;
+    color: #173055 !important;
+}
+
+html[data-theme="disney"] .table thead th,
+html[data-theme="disney"] table.dataTable thead th,
+html[data-theme="disney"] table.dataTable tfoot th {
+    background: #dceeff !important;
+    color: #24548f !important;
+    border-bottom-color: #9fc8f8 !important;
+}
+
+html[data-theme="disney"] .table,
+html[data-theme="disney"] .table td,
+html[data-theme="disney"] .table th,
+html[data-theme="disney"] table.dataTable tbody td {
+    color: #173055;
+    border-color: #c2ddfb !important;
+}
+
+html[data-theme="disney"] .table-striped tbody tr:nth-of-type(odd),
+html[data-theme="disney"] table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(225, 240, 255, 0.72) !important;
+}
+
+html[data-theme="disney"] .flowcells-page .fc-name,
+html[data-theme="disney"] .flowcells-page td.fc-col-name {
+    color: #1e4f9e !important;
+    font-weight: 700;
+}
+
+html[data-theme="disney"] footer#sticky-footer.obsidian-footer.site-footer {
+    background: #dff0ff !important;
+    border-top-color: #9fc8f8 !important;
+}
+
+html[data-theme="disney"] footer#sticky-footer .site-footer__copy {
+    color: #3f6ea8;
+}
+
+html[data-theme="disney"] footer#sticky-footer .site-footer__copy a {
+    color: #1e4f9e;
+    border-bottom-color: rgba(30, 79, 158, 0.35);
+}

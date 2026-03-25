@@ -1,0 +1,303 @@
+/**
+ * Tron — deep black void, cyan/magenta neon, perspective grid, glowing edges.
+ */
+
+html[data-theme="tron"] {
+    color-scheme: dark;
+    background-color: #020508;
+    --tron-cyan: #00f0ff;
+    --tron-cyan-dim: #00b8d4;
+    --tron-magenta: #ff2fd0;
+    --tron-grid: rgba(0, 240, 255, 0.14);
+    --tron-grid-bright: rgba(0, 240, 255, 0.28);
+    --font-body: "Exo 2", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Orbitron", "Exo 2", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Layered grids + horizon glow (no pointer capture) */
+html[data-theme="tron"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(ellipse 120% 80% at 50% 100%, rgba(0, 180, 255, 0.22) 0%, rgba(0, 40, 80, 0.08) 35%, transparent 55%),
+        linear-gradient(180deg, rgba(255, 47, 208, 0.06) 0%, transparent 28%),
+        repeating-linear-gradient(
+            90deg,
+            var(--tron-grid) 0,
+            var(--tron-grid) 1px,
+            transparent 1px,
+            transparent 32px
+        ),
+        repeating-linear-gradient(
+            0deg,
+            var(--tron-grid) 0,
+            var(--tron-grid) 1px,
+            transparent 1px,
+            transparent 28px
+        );
+}
+
+html[data-theme="tron"]::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        repeating-linear-gradient(
+            105deg,
+            transparent 0,
+            transparent 48px,
+            rgba(0, 240, 255, 0.045) 48px,
+            rgba(0, 240, 255, 0.045) 49px
+        );
+    opacity: 0.85;
+}
+
+html[data-theme="tron"] body,
+html[data-theme="tron"] body.hold-transition,
+html[data-theme="tron"] .minotour-app-root,
+html[data-theme="tron"] .content-wrapper,
+html[data-theme="tron"] .private-app-shell,
+html[data-theme="tron"] .private-main-surface,
+html[data-theme="tron"] .flowcells-page,
+html[data-theme="tron"] .flowcell-detail-page {
+    background-color: transparent !important;
+    color: #e8fdff;
+    position: relative;
+    z-index: 1;
+}
+
+/* .minotour-app-root radial veil: obsidian-theme-compat.css (loads after themes) */
+
+html[data-theme="tron"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="tron"] nav#tn.topnav-primary {
+    background: linear-gradient(180deg, #050a12 0%, #0a1524 50%, #0d1a2e 100%) !important;
+    border-bottom: 1px solid var(--tron-grid-bright) !important;
+    box-shadow:
+        0 0 20px rgba(0, 240, 255, 0.12),
+        0 1px 0 rgba(255, 47, 208, 0.15),
+        inset 0 -1px 0 rgba(0, 240, 255, 0.25);
+}
+
+html[data-theme="tron"] nav#tn .navbar-brand,
+html[data-theme="tron"] nav#tn .nav-link,
+html[data-theme="tron"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: var(--tron-cyan) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    text-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
+}
+
+html[data-theme="tron"] nav#tn .nav-link:hover,
+html[data-theme="tron"] nav#tn .nav-link.active {
+    color: #fff !important;
+    background: rgba(0, 240, 255, 0.12) !important;
+    box-shadow: inset 0 0 0 1px rgba(0, 240, 255, 0.35), 0 0 16px rgba(255, 47, 208, 0.2);
+}
+
+html[data-theme="tron"] .obsidian-card,
+html[data-theme="tron"] .card.card-primary.card-outline,
+html[data-theme="tron"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="tron"] .flowcells-page .flowcells-card {
+    background:
+        linear-gradient(135deg, rgba(8, 19, 34, 0.98) 0%, rgba(5, 12, 22, 0.99) 100%),
+        repeating-linear-gradient(
+            0deg,
+            rgba(0, 240, 255, 0.04) 0,
+            rgba(0, 240, 255, 0.04) 1px,
+            transparent 1px,
+            transparent 20px
+        ) !important;
+    border: 1px solid rgba(0, 240, 255, 0.45) !important;
+    box-shadow:
+        0 0 0 1px rgba(255, 47, 208, 0.12),
+        0 0 24px rgba(0, 240, 255, 0.15),
+        0 12px 40px rgba(0, 0, 0, 0.65),
+        inset 0 1px 0 rgba(0, 240, 255, 0.12);
+}
+
+html[data-theme="tron"] .card-header,
+html[data-theme="tron"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    border-bottom: 1px solid rgba(0, 240, 255, 0.35) !important;
+    box-shadow: 0 1px 0 rgba(255, 47, 208, 0.1);
+}
+
+html[data-theme="tron"] .card-title,
+html[data-theme="tron"] .flowcells-page__title,
+html[data-theme="tron"] .flowcell-detail-page .flowcells-page__title {
+    color: var(--tron-cyan) !important;
+    text-shadow:
+        0 0 8px rgba(0, 240, 255, 0.5),
+        0 0 24px rgba(255, 47, 208, 0.25);
+    letter-spacing: 0.06em;
+}
+
+html[data-theme="tron"] a:not(.btn):not(.nav-link) {
+    color: #6efff5;
+    border-bottom: 1px solid rgba(0, 240, 255, 0.4);
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.35);
+}
+
+html[data-theme="tron"] a:not(.btn):not(.nav-link):hover {
+    color: #fff;
+    text-shadow: 0 0 12px rgba(255, 47, 208, 0.6);
+    border-bottom-color: var(--tron-magenta);
+}
+
+html[data-theme="tron"] .btn-primary,
+html[data-theme="tron"] .flowcells-btn--primary {
+    background: linear-gradient(180deg, var(--tron-cyan) 0%, var(--tron-cyan-dim) 100%) !important;
+    border: 1px solid #9ff !important;
+    color: #020508 !important;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    box-shadow:
+        0 0 20px rgba(0, 240, 255, 0.45),
+        0 0 40px rgba(255, 47, 208, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+html[data-theme="tron"] .btn-primary:hover,
+html[data-theme="tron"] .flowcells-btn--primary:hover {
+    box-shadow:
+        0 0 28px rgba(0, 240, 255, 0.65),
+        0 0 48px rgba(255, 47, 208, 0.25);
+}
+
+html[data-theme="tron"] .form-control,
+html[data-theme="tron"] select.form-control,
+html[data-theme="tron"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="tron"] .dataTables_wrapper .dataTables_length select {
+    background: rgba(5, 14, 26, 0.95) !important;
+    border: 1px solid rgba(0, 240, 255, 0.5) !important;
+    color: #e8fdff !important;
+    box-shadow: inset 0 0 12px rgba(0, 240, 255, 0.08);
+}
+
+html[data-theme="tron"] .form-control:focus,
+html[data-theme="tron"] select.form-control:focus,
+html[data-theme="tron"] .dataTables_wrapper .dataTables_filter input:focus {
+    border-color: var(--tron-magenta) !important;
+    box-shadow:
+        inset 0 0 12px rgba(255, 47, 208, 0.12),
+        0 0 16px rgba(0, 240, 255, 0.25);
+}
+
+html[data-theme="tron"] .table thead th,
+html[data-theme="tron"] table.dataTable thead th,
+html[data-theme="tron"] table.dataTable tfoot th {
+    background: rgba(5, 14, 26, 0.95) !important;
+    color: var(--tron-cyan) !important;
+    border-bottom: 2px solid rgba(0, 240, 255, 0.5) !important;
+    text-shadow: 0 0 6px rgba(0, 240, 255, 0.35);
+}
+
+html[data-theme="tron"] .table,
+html[data-theme="tron"] .table td,
+html[data-theme="tron"] .table th,
+html[data-theme="tron"] table.dataTable tbody td {
+    color: #e8fdff;
+    border-color: rgba(0, 240, 255, 0.22) !important;
+    box-shadow: none;
+}
+
+html[data-theme="tron"] .table-striped tbody tr:nth-of-type(odd),
+html[data-theme="tron"] table.table-striped tbody tr:nth-of-type(odd) {
+    background: linear-gradient(
+        90deg,
+        rgba(0, 240, 255, 0.05) 0%,
+        rgba(255, 47, 208, 0.03) 100%
+    ) !important;
+}
+
+html[data-theme="tron"] .table-striped tbody tr:nth-of-type(even),
+html[data-theme="tron"] table.table-striped tbody tr:nth-of-type(even) {
+    background: rgba(5, 14, 26, 0.85) !important;
+}
+
+/* DataTables / AdminLTE can paint cell backgrounds; force dark cells for readability */
+html[data-theme="tron"] .table-striped tbody td,
+html[data-theme="tron"] .table-striped tbody th,
+html[data-theme="tron"] table.table-striped tbody td,
+html[data-theme="tron"] table.table-striped tbody th {
+    background: rgba(5, 14, 26, 0.85) !important;
+}
+
+html[data-theme="tron"] table.dataTable.stripe tbody tr.odd td,
+html[data-theme="tron"] table.dataTable.display tbody tr.odd td,
+html[data-theme="tron"] table.dataTable.stripe tbody tr.odd th,
+html[data-theme="tron"] table.dataTable.display tbody tr.odd th {
+    background: linear-gradient(
+        90deg,
+        rgba(0, 240, 255, 0.05) 0%,
+        rgba(255, 47, 208, 0.03) 100%
+    ) !important;
+}
+
+html[data-theme="tron"] table.dataTable.stripe tbody tr.even td,
+html[data-theme="tron"] table.dataTable.display tbody tr.even td,
+html[data-theme="tron"] table.dataTable.stripe tbody tr.even th,
+html[data-theme="tron"] table.dataTable.display tbody tr.even th {
+    background: rgba(5, 14, 26, 0.85) !important;
+}
+
+html[data-theme="tron"] .table-striped tbody tr:hover,
+html[data-theme="tron"] table.table-striped tbody tr:hover {
+    background: rgba(0, 240, 255, 0.12) !important;
+}
+
+html[data-theme="tron"] .table-striped tbody tr:hover td,
+html[data-theme="tron"] .table-striped tbody tr:hover th,
+html[data-theme="tron"] table.table-striped tbody tr:hover td,
+html[data-theme="tron"] table.table-striped tbody tr:hover th {
+    background: rgba(0, 240, 255, 0.12) !important;
+}
+
+/* Flowcell registry table (explicit id) */
+html[data-theme="tron"] table#all-flowcells tbody td,
+html[data-theme="tron"] table#all-flowcells tbody th {
+    background: rgba(5, 14, 26, 0.85) !important;
+}
+
+html[data-theme="tron"] table#all-flowcells tbody tr:hover td,
+html[data-theme="tron"] table#all-flowcells tbody tr:hover th {
+    background: rgba(0, 240, 255, 0.12) !important;
+}
+
+html[data-theme="tron"] .flowcells-page .fc-name,
+html[data-theme="tron"] td.fc-col-name {
+    color: #f2ffff !important;
+    text-shadow: 0 0 6px rgba(0, 240, 255, 0.25);
+}
+
+html[data-theme="tron"] footer#sticky-footer,
+html[data-theme="tron"] .site-footer__copy {
+    border-top: 1px solid rgba(0, 240, 255, 0.25);
+    box-shadow: 0 -1px 0 rgba(255, 47, 208, 0.08);
+}
+
+html[data-theme="tron"] footer#sticky-footer a {
+    color: #6efff5;
+}
+
+/* Flowcell detail tab nav (compat handles shell + gutters for all themes) */
+html[data-theme="tron"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab {
+    color: rgba(200, 250, 255, 0.75) !important;
+}
+
+html[data-theme="tron"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab:hover {
+    color: #00f0ff !important;
+    background: rgba(0, 240, 255, 0.1) !important;
+}
+
+html[data-theme="tron"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab.active {
+    color: #fff !important;
+    border-bottom-color: #ff2fd0 !important;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.45);
+}

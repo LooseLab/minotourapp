@@ -1,0 +1,50 @@
+/**
+ * Muted Scientist theme.
+ */
+
+html[data-theme="mutedscientist"] {
+    color-scheme: light;
+    background-color: #f1f5f6;
+    --font-body: "Source Sans 3", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Source Sans 3", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-theme="mutedscientist"] body,
+html[data-theme="mutedscientist"] body.hold-transition,
+html[data-theme="mutedscientist"] .minotour-app-root,
+html[data-theme="mutedscientist"] .content-wrapper,
+html[data-theme="mutedscientist"] .private-app-shell,
+html[data-theme="mutedscientist"] .private-main-surface,
+html[data-theme="mutedscientist"] .flowcells-page,
+html[data-theme="mutedscientist"] .flowcell-detail-page { background-color: #f1f5f6 !important; color: #2a3438; }
+
+html[data-theme="mutedscientist"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="mutedscientist"] nav#tn.topnav-primary { background: linear-gradient(90deg, #496b7a 0%, #6a8a92 55%, #8fa7ab 100%) !important; border-bottom: 1px solid rgba(73, 107, 122, 0.24); }
+html[data-theme="mutedscientist"] nav#tn .navbar-brand,
+html[data-theme="mutedscientist"] nav#tn .nav-link,
+html[data-theme="mutedscientist"] nav#tn .navbar-nav > .nav-item > .nav-link i { color: #f7fbfc !important; }
+
+html[data-theme="mutedscientist"] .obsidian-card,
+html[data-theme="mutedscientist"] .card.card-primary.card-outline,
+html[data-theme="mutedscientist"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="mutedscientist"] .flowcells-page .flowcells-card { background: #f8fbfb !important; border-color: #b7c4c9 !important; box-shadow: 0 1px 0 rgba(73,107,122,0.08), 0 8px 20px rgba(42,52,56,0.1); }
+
+html[data-theme="mutedscientist"] .card-title,
+html[data-theme="mutedscientist"] .flowcells-page__title,
+html[data-theme="mutedscientist"] .flowcell-detail-page .flowcells-page__title { color: #496b7a !important; }
+
+html[data-theme="mutedscientist"] .btn-primary,
+html[data-theme="mutedscientist"] .flowcells-btn--primary { background: linear-gradient(180deg, #6a8a92 0%, #496b7a 100%) !important; border-color: #3e5a66 !important; color: #f7fbfc !important; }
+
+html[data-theme="mutedscientist"] .form-control,
+html[data-theme="mutedscientist"] select.form-control,
+html[data-theme="mutedscientist"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="mutedscientist"] .dataTables_wrapper .dataTables_length select { background: #fbfdfd !important; border-color: #b7c4c9 !important; color: #2a3438 !important; }
+
+html[data-theme="mutedscientist"] .table thead th,
+html[data-theme="mutedscientist"] table.dataTable thead th,
+html[data-theme="mutedscientist"] table.dataTable tfoot th { background: #e8eeef !important; color: #5f6f75 !important; border-bottom-color: #b7c4c9 !important; }
+html[data-theme="mutedscientist"] .table,
+html[data-theme="mutedscientist"] .table td,
+html[data-theme="mutedscientist"] .table th,
+html[data-theme="mutedscientist"] table.dataTable tbody td { color: #2a3438; border-color: #d2dcdf !important; }

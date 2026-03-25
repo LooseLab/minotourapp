@@ -1,0 +1,214 @@
+/**
+ * 1940s Paris theme.
+ * Warm paper, sepia ink, brass accents.
+ */
+
+html[data-theme="paris1940s"] {
+    color-scheme: light;
+    background-color: #eadac1;
+    --font-body: "Libre Baskerville", "Source Sans 3", Georgia, serif;
+    --font-display: "EB Garamond", "Cormorant Garamond", Georgia, serif;
+}
+
+html[data-theme="paris1940s"] body,
+html[data-theme="paris1940s"] body.hold-transition,
+html[data-theme="paris1940s"] .minotour-app-root,
+html[data-theme="paris1940s"] .content-wrapper,
+html[data-theme="paris1940s"] .private-app-shell,
+html[data-theme="paris1940s"] .private-main-surface,
+html[data-theme="paris1940s"] .flowcells-page,
+html[data-theme="paris1940s"] .flowcell-detail-page {
+    background-color: #eadac1 !important;
+    color: #2f2923;
+}
+
+html[data-theme="paris1940s"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(circle at 14% 12%, rgba(153, 108, 61, 0.14) 0%, rgba(153, 108, 61, 0) 42%),
+        radial-gradient(circle at 84% 84%, rgba(78, 91, 83, 0.12) 0%, rgba(78, 91, 83, 0) 44%),
+        repeating-linear-gradient(
+            0deg,
+            rgba(255, 255, 255, 0.07) 0,
+            rgba(255, 255, 255, 0.07) 1px,
+            rgba(0, 0, 0, 0) 1px,
+            rgba(0, 0, 0, 0) 3px
+        );
+}
+
+html[data-theme="paris1940s"] .minotour-app-root {
+    position: relative;
+}
+
+html[data-theme="paris1940s"] aside.obsidian-settings-sidebar.control-sidebar {
+    z-index: 1040 !important;
+}
+
+html[data-theme="paris1940s"] .obsidian-settings-backdrop {
+    z-index: 1035 !important;
+}
+
+html[data-theme="paris1940s"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="paris1940s"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #6d4a2f 0%, #8a5c3a 55%, #b38755 100%) !important;
+    border-bottom: 1px solid rgba(34, 24, 16, 0.25);
+}
+
+html[data-theme="paris1940s"] nav#tn .navbar-brand,
+html[data-theme="paris1940s"] nav#tn .nav-link,
+html[data-theme="paris1940s"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #f6ebdc !important;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+html[data-theme="paris1940s"] nav#tn .nav-link:hover,
+html[data-theme="paris1940s"] nav#tn .nav-link.active {
+    background: rgba(255, 244, 225, 0.22);
+    color: #fff7ec !important;
+}
+
+html[data-theme="paris1940s"] .obsidian-card,
+html[data-theme="paris1940s"] .card.card-primary.card-outline,
+html[data-theme="paris1940s"] .flowcell-detail-page .flowcell-detail-tab-card.card-info {
+    background: linear-gradient(170deg, #f4e6d0 0%, #efddc2 62%, #e8d5b9 100%) !important;
+    border-color: #bda788 !important;
+    box-shadow: 0 1px 0 rgba(122, 79, 47, 0.12), 0 12px 28px rgba(66, 52, 40, 0.14);
+}
+
+html[data-theme="paris1940s"] .card-header,
+html[data-theme="paris1940s"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(90deg, #e2ccb0 0%, #f0dfc7 100%) !important;
+    border-bottom-color: #bda788 !important;
+}
+
+html[data-theme="paris1940s"] .card-title,
+html[data-theme="paris1940s"] .flowcells-page__title,
+html[data-theme="paris1940s"] .flowcell-detail-page .flowcells-page__title {
+    color: #3f2f22 !important;
+    letter-spacing: 0.01em;
+}
+
+html[data-theme="paris1940s"] .flowcells-page__lead,
+html[data-theme="paris1940s"] .fc-detail-meta,
+html[data-theme="paris1940s"] .dataTables_wrapper .dataTables_info {
+    color: #5f5245 !important;
+}
+
+html[data-theme="paris1940s"] a:not(.btn):not(.nav-link) {
+    color: #5a705f;
+    border-bottom-color: rgba(90, 112, 95, 0.35);
+}
+
+html[data-theme="paris1940s"] a:not(.btn):not(.nav-link):hover {
+    color: #3f5647;
+    border-bottom-color: rgba(63, 86, 71, 0.5);
+}
+
+html[data-theme="paris1940s"] .btn-primary,
+html[data-theme="paris1940s"] .flowcells-btn--primary {
+    background: linear-gradient(180deg, #5d6f64 0%, #49584f 100%) !important;
+    border-color: #3f4b45 !important;
+    color: #fff9ef !important;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+html[data-theme="paris1940s"] .btn-primary:hover,
+html[data-theme="paris1940s"] .flowcells-btn--primary:hover {
+    background: linear-gradient(180deg, #4d5d54 0%, #3d4a43 100%) !important;
+    border-color: #323b36 !important;
+}
+
+html[data-theme="paris1940s"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab {
+    color: #6f5c49;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+html[data-theme="paris1940s"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab:hover {
+    color: #4e3a2c;
+    background: rgba(122, 79, 47, 0.1);
+}
+
+html[data-theme="paris1940s"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab.active {
+    color: #3f2f22;
+    border-bottom-color: #7a4f2f;
+    background: linear-gradient(180deg, rgba(122, 79, 47, 0.14) 0%, rgba(122, 79, 47, 0) 95%);
+}
+
+html[data-theme="paris1940s"] .form-control,
+html[data-theme="paris1940s"] select.form-control,
+html[data-theme="paris1940s"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="paris1940s"] .dataTables_wrapper .dataTables_length select {
+    background: #fbf3e6 !important;
+    border-color: #ccb89a !important;
+    color: #2f2923 !important;
+}
+
+html[data-theme="paris1940s"] .table thead th,
+html[data-theme="paris1940s"] table.dataTable thead th,
+html[data-theme="paris1940s"] table.dataTable tfoot th {
+    background: #ead7bd !important;
+    color: #4b3b2f !important;
+    border-bottom-color: #bfa987 !important;
+}
+
+html[data-theme="paris1940s"] .table,
+html[data-theme="paris1940s"] .table td,
+html[data-theme="paris1940s"] .table th,
+html[data-theme="paris1940s"] table.dataTable tbody td {
+    color: #2f2923;
+    border-color: #d6c2a6 !important;
+}
+
+html[data-theme="paris1940s"] .table-striped tbody tr:nth-of-type(odd),
+html[data-theme="paris1940s"] table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(234, 215, 189, 0.55) !important;
+}
+
+html[data-theme="paris1940s"] footer#sticky-footer.obsidian-footer.site-footer {
+    background: #e4d2b7 !important;
+    border-top-color: #c8b196 !important;
+}
+
+html[data-theme="paris1940s"] footer#sticky-footer .site-footer__copy {
+    color: #5f5245;
+}
+
+html[data-theme="paris1940s"] footer#sticky-footer .site-footer__copy a {
+    color: #4e3a2c;
+    border-bottom-color: rgba(78, 58, 44, 0.34);
+}
+
+html[data-theme="paris1940s"] .highcharts-background,
+html[data-theme="paris1940s"] .highcharts-plot-background {
+    fill: #efe1cb !important;
+}
+
+html[data-theme="paris1940s"] .highcharts-axis-line,
+html[data-theme="paris1940s"] .highcharts-tick,
+html[data-theme="paris1940s"] .highcharts-grid-line {
+    stroke: rgba(122, 79, 47, 0.24) !important;
+}
+
+html[data-theme="paris1940s"] .highcharts-title,
+html[data-theme="paris1940s"] .highcharts-subtitle {
+    fill: #3f2f22 !important;
+}
+
+html[data-theme="paris1940s"] .highcharts-axis-labels text,
+html[data-theme="paris1940s"] .highcharts-legend-item text {
+    fill: #5c5043 !important;
+}
+
+html[data-theme="paris1940s"] .highcharts-tooltip-box {
+    fill: #f2e6d2 !important;
+    stroke: #c8b79f !important;
+}

@@ -1,0 +1,50 @@
+/**
+ * Standard Academic theme.
+ */
+
+html[data-theme="academic"] {
+    color-scheme: light;
+    background-color: #f6f9fc;
+    --font-body: "IBM Plex Sans", "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "IBM Plex Sans", "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-theme="academic"] body,
+html[data-theme="academic"] body.hold-transition,
+html[data-theme="academic"] .minotour-app-root,
+html[data-theme="academic"] .content-wrapper,
+html[data-theme="academic"] .private-app-shell,
+html[data-theme="academic"] .private-main-surface,
+html[data-theme="academic"] .flowcells-page,
+html[data-theme="academic"] .flowcell-detail-page { background-color: #f6f9fc !important; color: #223243; }
+
+html[data-theme="academic"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="academic"] nav#tn.topnav-primary { background: linear-gradient(90deg, #1f4e79 0%, #2a6f97 55%, #5a8fbd 100%) !important; border-bottom: 1px solid rgba(31, 78, 121, 0.24); }
+html[data-theme="academic"] nav#tn .navbar-brand,
+html[data-theme="academic"] nav#tn .nav-link,
+html[data-theme="academic"] nav#tn .navbar-nav > .nav-item > .nav-link i { color: #f6fbff !important; }
+
+html[data-theme="academic"] .obsidian-card,
+html[data-theme="academic"] .card.card-primary.card-outline,
+html[data-theme="academic"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="academic"] .flowcells-page .flowcells-card { background: #ffffff !important; border-color: #9db4c8 !important; box-shadow: 0 1px 0 rgba(31,78,121,0.08), 0 8px 20px rgba(46,67,87,0.1); }
+
+html[data-theme="academic"] .card-title,
+html[data-theme="academic"] .flowcells-page__title,
+html[data-theme="academic"] .flowcell-detail-page .flowcells-page__title { color: #1f4e79 !important; }
+
+html[data-theme="academic"] .btn-primary,
+html[data-theme="academic"] .flowcells-btn--primary { background: linear-gradient(180deg, #2a6f97 0%, #1f4e79 100%) !important; border-color: #1a405f !important; color: #f6fbff !important; }
+
+html[data-theme="academic"] .form-control,
+html[data-theme="academic"] select.form-control,
+html[data-theme="academic"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="academic"] .dataTables_wrapper .dataTables_length select { background: #ffffff !important; border-color: #9db4c8 !important; color: #223243 !important; }
+
+html[data-theme="academic"] .table thead th,
+html[data-theme="academic"] table.dataTable thead th,
+html[data-theme="academic"] table.dataTable tfoot th { background: #edf3f9 !important; color: #4b6072 !important; border-bottom-color: #9db4c8 !important; }
+html[data-theme="academic"] .table,
+html[data-theme="academic"] .table td,
+html[data-theme="academic"] .table th,
+html[data-theme="academic"] table.dataTable tbody td { color: #223243; border-color: #d4e0ea !important; }

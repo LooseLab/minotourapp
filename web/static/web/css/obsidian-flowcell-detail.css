@@ -1,0 +1,1296 @@
+/**
+ * Obsidian & Ether — flowcell detail (/web/private/flowcells/:id/)
+ * Scoped under .flowcell-detail-page (design.md §3, §6).
+ */
+.flowcell-detail-page {
+    --obsidian: #004b44;
+    --obsidian-dark: #00322d;
+    --obsidian-hover: #00322d;
+    --ether-bg: #f8fafc;
+    --ether-border: rgba(226, 232, 240, 0.85);
+    --radius-brand: 4px;
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1e293b;
+    background: #fff;
+    flex: 1 0 auto;
+    padding-bottom: 2rem;
+}
+
+/* Horizontal padding / max-width: .obsidian-page-inner in obsidian-chrome.css */
+
+/* Toolbar title on detail inherits .flowcells-page__title; ensure spacing */
+.flowcell-detail-page .flowcells-page__toolbar {
+    margin-bottom: 1.25rem;
+}
+
+.flowcell-detail-page .fc-detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin: 0.35rem 0 0;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.flowcell-detail-page .fc-detail-meta strong {
+    color: #334155;
+    font-weight: 600;
+}
+
+.flowcell-detail-page .fc-detail-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.65rem;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-radius: 9999px;
+    line-height: 1.2;
+}
+
+.flowcell-detail-page .fc-detail-badge--archived {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.flowcell-detail-page .fc-detail-badge--active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+/* Card shell (matches registry obsidian-card) */
+.flowcell-detail-page .obsidian-card {
+    background: #fff;
+    border: 1px solid var(--ether-border);
+    border-radius: var(--radius-brand);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+.flowcell-detail-page .flowcell-detail-tab-card {
+    margin-bottom: 1.5rem;
+}
+
+.flowcell-detail-page .flowcell-detail-tab-card.card {
+    border-radius: var(--radius-brand);
+}
+
+/* Remove AdminLTE card-info tint */
+.flowcell-detail-page .flowcell-detail-tab-card.card-info {
+    background: #fff !important;
+    border-color: var(--ether-border) !important;
+}
+
+.flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: #fff !important;
+    border-bottom: 1px solid var(--ether-border);
+    padding: 0;
+}
+
+.flowcell-detail-page .flowcell-detail-tab-card .nav-tabs {
+    border-bottom: none;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 0;
+}
+
+.flowcell-detail-page .flowcell-detail-tab-card .nav-tabs .nav-item {
+    margin-bottom: 0;
+}
+
+.flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab {
+    border: none;
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    padding: 0.8rem 0.95rem;
+    white-space: nowrap;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab:hover {
+    color: var(--obsidian-dark);
+    background: rgba(248, 250, 252, 0.95);
+}
+
+.flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab.active {
+    color: var(--obsidian-dark);
+    border-bottom-color: var(--obsidian);
+    background: transparent;
+}
+
+.flowcell-detail-page .flowcell-detail-tab-card .card-body {
+    background: #fff;
+    padding: 1.25rem 1.25rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .flowcell-detail-page .flowcell-detail-tab-card .card-body {
+        padding: 1.5rem 1.75rem 1.75rem;
+    }
+}
+
+/* Hint strip (Ether banner, design.md §3 alerts) */
+.flowcell-detail-page .flowcell-detail-hint {
+    margin-bottom: 1.25rem;
+}
+
+.flowcell-detail-page .flowcell-detail-hint[hidden] {
+    display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   Basecalled Data tab — Obsidian & Ether (design.md §2–3)
+   Scoped under .flowcell-detail-page #tab-basecalled-data
+   -------------------------------------------------------------------------- */
+
+.flowcell-detail-page #tab-basecalled-data .basecalled-content {
+    --bc-obsidian: #004b44;
+    --bc-obsidian-dark: #00322d;
+    --bc-muted: #64748b;
+    --bc-border: rgba(226, 232, 240, 0.85);
+}
+
+.flowcell-detail-page #tab-basecalled-data .basecalled-summary-row {
+    margin-bottom: 1.25rem;
+}
+
+/* Loader: Obsidian accent (global loader.css uses blue/red) */
+.flowcell-detail-page #tab-basecalled-data #loader {
+    border-top-color: var(--bc-obsidian);
+}
+
+.flowcell-detail-page #tab-basecalled-data #loader:before {
+    border-top-color: rgba(0, 75, 68, 0.55);
+}
+
+.flowcell-detail-page #tab-basecalled-data #loader:after {
+    border-top-color: var(--bc-obsidian-dark);
+}
+
+/* Chart cards */
+.flowcell-detail-page #tab-basecalled-data .bc-chart-card {
+    border: 1px solid var(--bc-border);
+    border-radius: 4px;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    overflow: hidden;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-card-header {
+    background: #fff;
+    border-bottom: 1px solid var(--bc-border);
+    padding: 0.75rem 1rem;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-card-title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--bc-obsidian-dark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-card-title .fas {
+    color: var(--bc-obsidian);
+    font-size: 0.9em;
+    opacity: 0.95;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-card-body {
+    padding: 1rem 1rem 1.25rem;
+    background: #fff;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-chart-host,
+.flowcell-detail-page #tab-basecalled-data .bc-heatmap-host {
+    border-radius: 4px;
+    background: #fafbfc;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-barcode-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bc-muted);
+    margin-bottom: 0.5rem;
+}
+
+/* Barcode sub-tabs (pill nav) */
+.flowcell-detail-page #tab-basecalled-data .bc-barcode-tabs {
+    border-bottom: 1px solid var(--bc-border);
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-barcode-tabs .nav-item {
+    margin-bottom: 0;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-barcode-tabs .nav-link {
+    border-radius: 4px;
+    color: var(--bc-muted);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid transparent;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-barcode-tabs .nav-link:hover {
+    color: var(--bc-obsidian-dark);
+    background: rgba(248, 250, 252, 0.95);
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-barcode-tabs .nav-link.active {
+    color: #fff;
+    background: var(--bc-obsidian);
+    border-color: var(--bc-obsidian);
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-ru-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--bc-muted);
+    margin-bottom: 0.35rem;
+    display: block;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-select {
+    max-width: 280px;
+    border-radius: 4px;
+    border-color: var(--bc-border);
+    font-size: 0.875rem;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-select:focus {
+    border-color: var(--bc-obsidian);
+    box-shadow: 0 0 0 0.15rem rgba(0, 75, 68, 0.15);
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-charts-grid {
+    margin-top: 0.5rem;
+}
+
+/* Summary accordion + dense tables */
+.flowcell-detail-page #tab-basecalled-data .basecalled-summary-accordion {
+    border: none;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-summary-card {
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--bc-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-summary-card:last-child {
+    margin-bottom: 0;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-summary-card-header {
+    background: #f8fafc;
+    border-bottom: 1px solid var(--bc-border);
+    padding: 0;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-summary-heading {
+    margin: 0;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-summary-toggle {
+    width: 100%;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: var(--bc-obsidian-dark);
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    background: transparent;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-summary-toggle:hover,
+.flowcell-detail-page #tab-basecalled-data .bc-summary-toggle:focus {
+    color: var(--bc-obsidian);
+    text-decoration: none;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-summary-toggle .fas {
+    color: var(--bc-obsidian);
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-summary-card-body {
+    padding: 0;
+}
+
+.flowcell-detail-page #tab-basecalled-data .obsidian-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-data-table {
+    margin-bottom: 0;
+    font-size: 0.8125rem;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-data-table thead th {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bc-muted);
+    border-bottom: 2px solid var(--bc-border);
+    background: #f8fafc;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-data-table tbody td,
+.flowcell-detail-page #tab-basecalled-data .bc-data-table tbody th {
+    vertical-align: middle;
+    border-color: rgba(226, 232, 240, 0.7);
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-row-pass td,
+.flowcell-detail-page #tab-basecalled-data .bc-row-pass th {
+    background: rgba(209, 250, 229, 0.35);
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-row-fail td,
+.flowcell-detail-page #tab-basecalled-data .bc-row-fail th {
+    background: rgba(254, 226, 226, 0.35);
+}
+
+.flowcell-detail-page #tab-basecalled-data .bc-row-aggregate td,
+.flowcell-detail-page #tab-basecalled-data .bc-row-aggregate th {
+    font-weight: 600;
+}
+
+/* Highcharts typography (SVG) */
+.flowcell-detail-page #tab-basecalled-data .highcharts-title,
+.flowcell-detail-page #tab-basecalled-data .highcharts-subtitle {
+    fill: var(--bc-obsidian-dark) !important;
+    font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+.flowcell-detail-page #tab-basecalled-data .highcharts-axis-labels text,
+.flowcell-detail-page #tab-basecalled-data .highcharts-legend-item text {
+    fill: var(--bc-muted) !important;
+    font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+.flowcell-detail-page #tab-basecalled-data .highcharts-grid-line {
+    stroke: rgba(226, 232, 240, 0.9);
+}
+
+/* --------------------------------------------------------------------------
+   Summary tab — same Obsidian & Ether treatment as Basecalled (design.md)
+   Scoped under .flowcell-detail-page #tab-summary-data
+   -------------------------------------------------------------------------- */
+
+.flowcell-detail-page #tab-summary-data .summary-tab-content {
+    --sp-obsidian: #004b44;
+    --sp-obsidian-dark: #00322d;
+    --sp-muted: #64748b;
+    --sp-border: rgba(226, 232, 240, 0.85);
+}
+
+.flowcell-detail-page #tab-summary-data .summary-tab-row {
+    margin-bottom: 1.25rem;
+}
+
+.flowcell-detail-page #tab-summary-data .summary-tab-row:last-child {
+    margin-bottom: 0;
+}
+
+.flowcell-detail-page #tab-summary-data .summary-panel-card {
+    border: 1px solid var(--sp-border);
+    border-radius: 4px;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    overflow: hidden;
+}
+
+.flowcell-detail-page #tab-summary-data .summary-card-header {
+    background: #fff;
+    border-bottom: 1px solid var(--sp-border);
+    padding: 0.75rem 1rem;
+}
+
+.flowcell-detail-page #tab-summary-data .summary-card-title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--sp-obsidian-dark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.flowcell-detail-page #tab-summary-data .summary-card-title .fas,
+.flowcell-detail-page #tab-summary-data .summary-card-title .fa {
+    color: var(--sp-obsidian);
+    font-size: 0.9em;
+    opacity: 0.95;
+}
+
+.flowcell-detail-page #tab-summary-data .summary-card-body {
+    padding: 1rem 1rem 1.25rem;
+    background: #fff;
+    min-height: 3rem;
+}
+
+.flowcell-detail-page #tab-summary-data .summary-tab-spinner {
+    color: var(--sp-obsidian);
+    width: 2.5rem;
+    height: 2.5rem;
+    border-width: 0.2em;
+}
+
+.flowcell-detail-page #tab-summary-data .summary-empty {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--sp-muted);
+}
+
+.flowcell-detail-page #tab-summary-data .obsidian-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.flowcell-detail-page #tab-summary-data .summary-minknow-wrap {
+    margin-top: 0;
+}
+
+.flowcell-detail-page #tab-summary-data .summary-data-table {
+    margin-bottom: 0;
+    font-size: 0.8125rem;
+}
+
+.flowcell-detail-page #tab-summary-data .summary-data-table thead th {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sp-muted);
+    border-bottom: 2px solid var(--sp-border);
+    background: #f8fafc;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.flowcell-detail-page #tab-summary-data .summary-data-table tbody td,
+.flowcell-detail-page #tab-summary-data .summary-data-table tbody th,
+.flowcell-detail-page #tab-summary-data .summary-data-table tfoot th {
+    vertical-align: middle;
+    border-color: rgba(226, 232, 240, 0.7);
+}
+
+.flowcell-detail-page #tab-summary-data .summary-data-table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(248, 250, 252, 0.65);
+}
+
+.flowcell-detail-page #tab-summary-data .dataTables_wrapper {
+    font-size: 0.8125rem;
+}
+
+.flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_length,
+.flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_filter,
+.flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_info,
+.flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_paginate {
+    color: var(--sp-muted);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_filter input {
+    border-radius: 4px;
+    border: 1px solid var(--sp-border);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8125rem;
+}
+
+.flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_filter input:focus {
+    border-color: var(--sp-obsidian);
+    outline: none;
+    box-shadow: 0 0 0 0.15rem rgba(0, 75, 68, 0.15);
+}
+
+.flowcell-detail-page #tab-summary-data .dataTables_wrapper .paginate_button.current {
+    background: var(--sp-obsidian) !important;
+    border-color: var(--sp-obsidian) !important;
+    color: #fff !important;
+}
+
+.flowcell-detail-page #tab-summary-data .dataTables_wrapper .paginate_button:hover {
+    background: rgba(0, 75, 68, 0.12) !important;
+    border-color: var(--sp-border) !important;
+    color: var(--sp-obsidian-dark) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Notifications tab — Obsidian & Ether (design.md)
+   Scoped under .flowcell-detail-page #tab-notifications
+   -------------------------------------------------------------------------- */
+
+.flowcell-detail-page #tab-notifications .notifications-tab-content {
+    --nt-obsidian: #004b44;
+    --nt-obsidian-dark: #00322d;
+    --nt-muted: #64748b;
+    --nt-border: rgba(226, 232, 240, 0.85);
+}
+
+.flowcell-detail-page #tab-notifications .notifications-tab-row {
+    align-items: stretch;
+}
+
+.flowcell-detail-page #tab-notifications .notif-panel-card {
+    border: 1px solid var(--nt-border);
+    border-radius: 4px;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    overflow: hidden;
+    min-height: 400px;
+}
+
+.flowcell-detail-page #tab-notifications .notif-panel-card--create {
+    overflow-wrap: anywhere;
+}
+
+.flowcell-detail-page #tab-notifications .notif-card-header {
+    background: #fff;
+    border-bottom: 1px solid var(--nt-border);
+    padding: 0.75rem 1rem;
+}
+
+.flowcell-detail-page #tab-notifications .notif-card-title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--nt-obsidian-dark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.flowcell-detail-page #tab-notifications .notif-card-title .far {
+    color: var(--nt-obsidian);
+    font-size: 0.9em;
+    opacity: 0.95;
+}
+
+.flowcell-detail-page #tab-notifications .notif-card-body {
+    padding: 1rem 1rem 1.25rem;
+    background: #fff;
+}
+
+.flowcell-detail-page #tab-notifications .notif-panel-inner {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.flowcell-detail-page #tab-notifications .notif-lead {
+    font-size: 0.875rem;
+    color: var(--nt-muted);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.flowcell-detail-page #tab-notifications .notif-suggestions-shell {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.flowcell-detail-page #tab-notifications .notif-suggestions-row {
+    overflow: auto;
+    position: relative;
+}
+
+.flowcell-detail-page #tab-notifications .notif-list-group .list-group-item {
+    border-radius: 4px;
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    color: var(--nt-muted);
+    border: 1px solid var(--nt-border);
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.flowcell-detail-page #tab-notifications .notif-list-group .list-group-item:hover {
+    background: rgba(248, 250, 252, 0.95);
+    color: var(--nt-obsidian-dark);
+}
+
+.flowcell-detail-page #tab-notifications .notif-list-group .list-group-item.active {
+    background: var(--nt-obsidian);
+    border-color: var(--nt-obsidian);
+    color: #fff;
+}
+
+.flowcell-detail-page #tab-notifications .notif-list-group--compact .list-group-item {
+    margin-bottom: 0.35rem;
+}
+
+.flowcell-detail-page #tab-notifications .notif-tab-content {
+    padding-left: 0.25rem;
+}
+
+.flowcell-detail-page #tab-notifications .form-control:focus,
+.flowcell-detail-page #tab-notifications .noti-control:focus {
+    border-color: var(--nt-obsidian);
+    box-shadow: 0 0 0 0.15rem rgba(0, 75, 68, 0.15);
+}
+
+.flowcell-detail-page #tab-notifications .notif-btn-primary,
+.flowcell-detail-page #tab-notifications .btn-primary.notif-btn-primary {
+    background: var(--nt-obsidian);
+    border-color: var(--nt-obsidian);
+    font-weight: 700;
+    font-size: 0.8125rem;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+}
+
+.flowcell-detail-page #tab-notifications .notif-btn-primary:hover,
+.flowcell-detail-page #tab-notifications .btn-primary.notif-btn-primary:hover {
+    background: var(--nt-obsidian-dark);
+    border-color: var(--nt-obsidian-dark);
+}
+
+.flowcell-detail-page #tab-notifications .obsidian-table-wrap.notif-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.flowcell-detail-page #tab-notifications .notif-data-table {
+    margin-bottom: 0;
+    font-size: 0.8125rem;
+}
+
+.flowcell-detail-page #tab-notifications .notif-data-table thead th {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--nt-muted);
+    border-bottom: 2px solid var(--nt-border);
+    background: #f8fafc;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.flowcell-detail-page #tab-notifications .notif-data-table tbody td,
+.flowcell-detail-page #tab-notifications .notif-data-table tfoot th {
+    vertical-align: middle;
+    border-color: rgba(226, 232, 240, 0.7);
+}
+
+.flowcell-detail-page #tab-notifications .notif-data-table tbody tr.notification-row {
+    cursor: pointer;
+}
+
+.flowcell-detail-page #tab-notifications .notif-data-table tbody tr.notification-row:hover {
+    background: rgba(248, 250, 252, 0.9);
+}
+
+.flowcell-detail-page #tab-notifications .notif-data-table .task-icon {
+    color: var(--nt-obsidian);
+}
+
+.flowcell-detail-page #tab-notifications .dataTables_wrapper {
+    font-size: 0.8125rem;
+}
+
+.flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_length,
+.flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_filter,
+.flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_info,
+.flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_paginate {
+    color: var(--nt-muted);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_filter input {
+    border-radius: 4px;
+    border: 1px solid var(--nt-border);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8125rem;
+}
+
+.flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_filter input:focus {
+    border-color: var(--nt-obsidian);
+    outline: none;
+    box-shadow: 0 0 0 0.15rem rgba(0, 75, 68, 0.15);
+}
+
+.flowcell-detail-page #tab-notifications .dataTables_wrapper .paginate_button.current {
+    background: var(--nt-obsidian) !important;
+    border-color: var(--nt-obsidian) !important;
+    color: #fff !important;
+}
+
+.flowcell-detail-page #tab-notifications .dataTables_wrapper .paginate_button:hover {
+    background: rgba(0, 75, 68, 0.12) !important;
+    border-color: var(--nt-border) !important;
+    color: var(--nt-obsidian-dark) !important;
+}
+
+/* Modals (IDs unique per page) */
+.flowcell-detail-page .notif-modal .notif-modal-content {
+    border-radius: 4px;
+    border: 1px solid var(--ether-border);
+    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.12);
+}
+
+.flowcell-detail-page .notif-modal .notif-modal-header {
+    border-bottom: 1px solid var(--ether-border);
+    padding: 1rem 1.25rem;
+}
+
+.flowcell-detail-page .notif-modal .notif-modal-title {
+    font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--obsidian-dark);
+}
+
+.flowcell-detail-page .notif-modal .notif-modal-body {
+    font-size: 0.9375rem;
+    color: #334155;
+    line-height: 1.55;
+}
+
+.flowcell-detail-page .notif-modal .notif-modal-footer {
+    border-top: 1px solid var(--ether-border);
+}
+
+.flowcell-detail-page .notif-modal .notif-btn-secondary {
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.flowcell-detail-page .notif-modal .notif-btn-confirm {
+    border-radius: 4px;
+    font-weight: 700;
+    background: var(--obsidian);
+    border-color: var(--obsidian);
+}
+
+.flowcell-detail-page .notif-modal .notif-btn-confirm:hover {
+    background: var(--obsidian-hover);
+    border-color: var(--obsidian-hover);
+}
+
+/* --------------------------------------------------------------------------
+   Read data tab (#tab-reads)
+   -------------------------------------------------------------------------- */
+
+.flowcell-detail-page #tab-reads .reads-tab-content {
+    --rt-muted: #64748b;
+    --rt-border: rgba(226, 232, 240, 0.85);
+}
+
+.flowcell-detail-page #tab-reads .reads-tab-row {
+    margin-bottom: 0;
+}
+
+.flowcell-detail-page #tab-reads .reads-tab-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding: 0.85rem 1rem;
+    background: #ecfdf5;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-left: 4px solid var(--obsidian);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    color: #0f172a;
+    line-height: 1.5;
+}
+
+.flowcell-detail-page #tab-reads .reads-tab-hint__text {
+    margin: 0;
+}
+
+.flowcell-detail-page #tab-reads .rt-panel-card {
+    border: 1px solid var(--rt-border);
+    border-radius: 4px;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    overflow: hidden;
+}
+
+.flowcell-detail-page #tab-reads .rt-card-header {
+    background: #fff;
+    border-bottom: 1px solid var(--rt-border);
+    padding: 0.75rem 1rem;
+}
+
+.flowcell-detail-page #tab-reads .rt-card-title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--obsidian-dark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.flowcell-detail-page #tab-reads .rt-card-title .far {
+    color: var(--obsidian);
+    font-size: 0.9em;
+}
+
+.flowcell-detail-page #tab-reads .rt-card-body {
+    padding: 1rem 1rem 1.25rem;
+    background: #fff;
+}
+
+.flowcell-detail-page #tab-reads .rt-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.flowcell-detail-page #tab-reads .dataTables_wrapper {
+    font-size: 0.8125rem;
+}
+
+.flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_length,
+.flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_filter,
+.flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_info,
+.flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_paginate {
+    color: var(--rt-muted);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_filter input {
+    border-radius: 4px;
+    border: 1px solid var(--rt-border);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8125rem;
+}
+
+.flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_filter input:focus {
+    border-color: var(--obsidian);
+    outline: none;
+    box-shadow: 0 0 0 0.15rem rgba(0, 75, 68, 0.15);
+}
+
+.flowcell-detail-page #tab-reads .dataTables_wrapper .paginate_button.current {
+    background: var(--obsidian) !important;
+    border-color: var(--obsidian) !important;
+    color: #fff !important;
+}
+
+.flowcell-detail-page #tab-reads .dataTables_wrapper .paginate_button:hover {
+    background: rgba(0, 75, 68, 0.12) !important;
+    border-color: var(--rt-border) !important;
+    color: var(--obsidian-dark) !important;
+}
+
+.flowcell-detail-page #tab-reads table.dataTable thead th {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--rt-muted);
+    border-bottom: 2px solid var(--rt-border);
+    background: #f8fafc;
+    vertical-align: middle;
+}
+
+.flowcell-detail-page #tab-reads table.dataTable tbody td {
+    border-color: rgba(226, 232, 240, 0.7);
+    vertical-align: middle;
+}
+
+/* --------------------------------------------------------------------------
+   Tasks tab (#tab-tasks)
+   -------------------------------------------------------------------------- */
+
+.flowcell-detail-page #tab-tasks .tasks-tab-content {
+    --tk-muted: #64748b;
+    --tk-border: rgba(226, 232, 240, 0.85);
+}
+
+.flowcell-detail-page #tab-tasks .tasks-tab-row {
+    margin-bottom: 1.25rem;
+}
+
+.flowcell-detail-page #tab-tasks .tasks-tab-row--reactivate {
+    margin-bottom: 0;
+}
+
+.flowcell-detail-page #tab-tasks .task-panel-card {
+    border: 1px solid var(--tk-border);
+    border-radius: 4px;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    overflow: hidden;
+    min-height: 25rem;
+}
+
+.flowcell-detail-page #tab-tasks .task-panel-card--reactivate {
+    min-height: 0;
+}
+
+.flowcell-detail-page #tab-tasks .task-card-header {
+    background: #fff;
+    border-bottom: 1px solid var(--tk-border);
+    padding: 0.75rem 1rem;
+}
+
+.flowcell-detail-page #tab-tasks .task-card-title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--obsidian-dark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.flowcell-detail-page #tab-tasks .task-card-title .fas {
+    color: var(--obsidian);
+    font-size: 0.9em;
+}
+
+.flowcell-detail-page #tab-tasks .task-card-body {
+    padding: 1rem 1rem 1.25rem;
+    background: #fff;
+}
+
+.flowcell-detail-page #tab-tasks .task-form-control:focus {
+    border-color: var(--obsidian);
+    box-shadow: 0 0 0 0.15rem rgba(0, 75, 68, 0.15);
+}
+
+.flowcell-detail-page #tab-tasks .task-btn-primary {
+    background: var(--obsidian);
+    border-color: var(--obsidian);
+    font-weight: 700;
+    font-size: 0.8125rem;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+}
+
+.flowcell-detail-page #tab-tasks .task-btn-primary:hover {
+    background: var(--obsidian-hover);
+    border-color: var(--obsidian-hover);
+}
+
+.flowcell-detail-page #tab-tasks .task-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.flowcell-detail-page #tab-tasks .task-history-table thead th {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--tk-muted);
+    border-bottom: 2px solid var(--tk-border);
+    background: #f8fafc;
+    vertical-align: middle;
+}
+
+.flowcell-detail-page #tab-tasks .task-history-table tbody td,
+.flowcell-detail-page #tab-tasks .task-history-table tfoot th {
+    vertical-align: middle;
+    border-color: rgba(226, 232, 240, 0.7);
+}
+
+.flowcell-detail-page #tab-tasks .dataTables_wrapper {
+    font-size: 0.8125rem;
+}
+
+.flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_length,
+.flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_filter,
+.flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_info,
+.flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_paginate {
+    color: var(--tk-muted);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_filter input {
+    border-radius: 4px;
+    border: 1px solid var(--tk-border);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8125rem;
+}
+
+.flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_filter input:focus {
+    border-color: var(--obsidian);
+    outline: none;
+    box-shadow: 0 0 0 0.15rem rgba(0, 75, 68, 0.15);
+}
+
+.flowcell-detail-page #tab-tasks .dataTables_wrapper .paginate_button.current {
+    background: var(--obsidian) !important;
+    border-color: var(--obsidian) !important;
+    color: #fff !important;
+}
+
+.flowcell-detail-page #tab-tasks .dataTables_wrapper .paginate_button:hover {
+    background: rgba(0, 75, 68, 0.12) !important;
+    border-color: var(--tk-border) !important;
+    color: var(--obsidian-dark) !important;
+}
+
+.flowcell-detail-page #tab-tasks .task-reactivate-inner {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.flowcell-detail-page #tab-tasks .task-panel-card--reactivate {
+    border-left: 4px solid #f59e0b;
+}
+
+.flowcell-detail-page #tab-tasks .task-reactivate-actions {
+    align-items: center;
+}
+
+.flowcell-detail-page #tab-tasks .task-reactivate-btn-wrap {
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    flex-direction: column;
+}
+
+.flowcell-detail-page #tab-tasks .task-reactivate-help {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--tk-muted);
+    line-height: 1.55;
+}
+
+.flowcell-detail-page #tab-tasks .task-btn-warn {
+    background: #fffbeb;
+    color: #92400e !important;
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+}
+
+.flowcell-detail-page #tab-tasks .task-btn-warn:hover {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #78350f !important;
+}
+
+.flowcell-detail-page .task-modal .task-modal-content {
+    border-radius: 4px;
+    border: 1px solid var(--ether-border);
+    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.12);
+}
+
+.flowcell-detail-page .task-modal .task-modal-header {
+    border-bottom: 1px solid var(--ether-border);
+    padding: 1rem 1.25rem;
+}
+
+.flowcell-detail-page .task-modal .task-modal-title {
+    font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--obsidian-dark);
+}
+
+.flowcell-detail-page .task-modal .task-modal-body {
+    font-size: 0.9375rem;
+    color: #334155;
+    line-height: 1.55;
+}
+
+.flowcell-detail-page .task-modal .task-modal-footer {
+    border-top: 1px solid var(--ether-border);
+}
+
+.flowcell-detail-page .task-modal .task-btn-secondary {
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.flowcell-detail-page .task-modal .task-modal-input {
+    margin-top: 0.35rem;
+}
+
+.flowcell-detail-page .task-modal .task-btn-confirm {
+    border-radius: 4px;
+    font-weight: 700;
+    background: var(--obsidian);
+    border-color: var(--obsidian);
+}
+
+.flowcell-detail-page .task-modal .task-btn-confirm:hover {
+    background: var(--obsidian-hover);
+    border-color: var(--obsidian-hover);
+}
+
+/* --------------------------------------------------------------------------
+   Sharing tab (#tab-sharing)
+   -------------------------------------------------------------------------- */
+
+.flowcell-detail-page #tab-sharing .sharing-tab-content {
+    --sh-muted: #64748b;
+    --sh-border: rgba(226, 232, 240, 0.85);
+}
+
+.flowcell-detail-page #tab-sharing .sharing-tab-row {
+    margin-bottom: 1.25rem;
+}
+
+.flowcell-detail-page #tab-sharing .sharing-tab-row:last-child {
+    margin-bottom: 0;
+}
+
+.flowcell-detail-page #tab-sharing .sharing-panel-card {
+    border: 1px solid var(--sh-border);
+    border-radius: 4px;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    overflow: hidden;
+}
+
+.flowcell-detail-page #tab-sharing .sharing-card-header {
+    background: #fff;
+    border-bottom: 1px solid var(--sh-border);
+    padding: 0.75rem 1rem;
+}
+
+.flowcell-detail-page #tab-sharing .sharing-card-title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--obsidian-dark);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    line-height: 1.35;
+}
+
+.flowcell-detail-page #tab-sharing .sharing-panel-card--users .sharing-card-title {
+    flex-wrap: wrap;
+}
+
+.flowcell-detail-page #tab-sharing .sharing-card-title .fas,
+.flowcell-detail-page #tab-sharing .sharing-card-title .far {
+    color: var(--obsidian);
+    font-size: 0.95em;
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+}
+
+.flowcell-detail-page #tab-sharing .sharing-card-title__text {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #334155;
+    letter-spacing: -0.01em;
+}
+
+.flowcell-detail-page #tab-sharing .sharing-card-body {
+    padding: 1rem 1rem 1.25rem;
+    background: #fff;
+}
+
+.flowcell-detail-page #tab-sharing .sharing-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.flowcell-detail-page #tab-sharing .sharing-data-table thead th {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sh-muted);
+    border-bottom: 2px solid var(--sh-border);
+    background: #f8fafc;
+    vertical-align: middle;
+}
+
+.flowcell-detail-page #tab-sharing .sharing-data-table tbody td {
+    vertical-align: middle;
+    border-color: rgba(226, 232, 240, 0.7);
+}
+
+.flowcell-detail-page #tab-sharing .sharing-form-control:focus {
+    border-color: var(--obsidian);
+    box-shadow: 0 0 0 0.15rem rgba(0, 75, 68, 0.15);
+}
+
+.flowcell-detail-page #tab-sharing .sharing-btn-primary {
+    background: var(--obsidian);
+    border-color: var(--obsidian);
+    font-weight: 700;
+    font-size: 0.8125rem;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+}
+
+.flowcell-detail-page #tab-sharing .sharing-btn-primary:hover {
+    background: var(--obsidian-hover);
+    border-color: var(--obsidian-hover);
+}
+
+.flowcell-detail-page #tab-sharing .dataTables_wrapper {
+    font-size: 0.8125rem;
+}
+
+.flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_length,
+.flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_filter,
+.flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_info,
+.flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_paginate {
+    color: var(--sh-muted);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_filter input {
+    border-radius: 4px;
+    border: 1px solid var(--sh-border);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8125rem;
+}
+
+.flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_filter input:focus {
+    border-color: var(--obsidian);
+    outline: none;
+    box-shadow: 0 0 0 0.15rem rgba(0, 75, 68, 0.15);
+}
+
+.flowcell-detail-page #tab-sharing .dataTables_wrapper .paginate_button.current {
+    background: var(--obsidian) !important;
+    border-color: var(--obsidian) !important;
+    color: #fff !important;
+}
+
+.flowcell-detail-page #tab-sharing .dataTables_wrapper .paginate_button:hover {
+    background: rgba(0, 75, 68, 0.12) !important;
+    border-color: var(--sh-border) !important;
+    color: var(--obsidian-dark) !important;
+}

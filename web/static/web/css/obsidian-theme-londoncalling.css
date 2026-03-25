@@ -1,0 +1,138 @@
+/**
+ * London Calling vibe theme.
+ * Punk poster contrast: black base, bone text, neon pink/green accents.
+ */
+
+html[data-theme="londoncalling"] {
+    color-scheme: dark;
+    background-color: #0f1012;
+    --font-body: "Barlow Condensed", "IBM Plex Sans", "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Archivo Black", "Barlow Condensed", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-theme="londoncalling"] body,
+html[data-theme="londoncalling"] body.hold-transition,
+html[data-theme="londoncalling"] .minotour-app-root,
+html[data-theme="londoncalling"] .content-wrapper,
+html[data-theme="londoncalling"] .private-app-shell,
+html[data-theme="londoncalling"] .private-main-surface,
+html[data-theme="londoncalling"] .flowcells-page,
+html[data-theme="londoncalling"] .flowcell-detail-page {
+    background-color: #0f1012 !important;
+    color: #f2f0e8;
+}
+
+html[data-theme="londoncalling"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(circle at 12% 14%, rgba(232, 63, 122, 0.16) 0%, rgba(232, 63, 122, 0) 40%),
+        radial-gradient(circle at 84% 84%, rgba(128, 247, 154, 0.14) 0%, rgba(128, 247, 154, 0) 42%),
+        repeating-linear-gradient(
+            0deg,
+            rgba(255, 255, 255, 0.02) 0,
+            rgba(255, 255, 255, 0.02) 1px,
+            rgba(0, 0, 0, 0) 1px,
+            rgba(0, 0, 0, 0) 3px
+        );
+}
+
+html[data-theme="londoncalling"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="londoncalling"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #16181c 0%, #22252b 58%, #2b2f36 100%) !important;
+    border-bottom: 1px solid rgba(242, 240, 232, 0.24);
+}
+
+html[data-theme="londoncalling"] nav#tn .navbar-brand,
+html[data-theme="londoncalling"] nav#tn .nav-link,
+html[data-theme="londoncalling"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #f2f0e8 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+}
+
+html[data-theme="londoncalling"] nav#tn .nav-link:hover,
+html[data-theme="londoncalling"] nav#tn .nav-link.active {
+    background: rgba(232, 63, 122, 0.18);
+    color: #ffffff !important;
+}
+
+html[data-theme="londoncalling"] .obsidian-card,
+html[data-theme="londoncalling"] .card.card-primary.card-outline,
+html[data-theme="londoncalling"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="londoncalling"] .flowcells-page .flowcells-card {
+    background: linear-gradient(165deg, #16181c 0%, #121315 62%, #0f1012 100%) !important;
+    border-color: rgba(242, 240, 232, 0.22) !important;
+    box-shadow: 0 0 0 1px rgba(232, 63, 122, 0.14), 0 12px 28px rgba(0, 0, 0, 0.58);
+}
+
+html[data-theme="londoncalling"] .card-header,
+html[data-theme="londoncalling"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(90deg, rgba(232, 63, 122, 0.2) 0%, rgba(22, 24, 28, 0.98) 55%, rgba(128, 247, 154, 0.12) 100%) !important;
+    border-bottom-color: rgba(242, 240, 232, 0.24) !important;
+}
+
+html[data-theme="londoncalling"] .card-title,
+html[data-theme="londoncalling"] .flowcells-page__title,
+html[data-theme="londoncalling"] .flowcell-detail-page .flowcells-page__title {
+    color: #e83f7a !important;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+html[data-theme="londoncalling"] a:not(.btn):not(.nav-link) {
+    color: #80f79a;
+    border-bottom-color: rgba(128, 247, 154, 0.38);
+}
+
+html[data-theme="londoncalling"] a:not(.btn):not(.nav-link):hover {
+    color: #b2ffc3;
+}
+
+html[data-theme="londoncalling"] .btn-primary,
+html[data-theme="londoncalling"] .flowcells-btn--primary {
+    background: linear-gradient(180deg, #e83f7a 0%, #bf2d62 100%) !important;
+    border-color: #ff7aa8 !important;
+    color: #ffffff !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+html[data-theme="londoncalling"] .btn-primary:hover,
+html[data-theme="londoncalling"] .flowcells-btn--primary:hover {
+    background: linear-gradient(180deg, #f05b8f 0%, #cf3a72 100%) !important;
+}
+
+html[data-theme="londoncalling"] .form-control,
+html[data-theme="londoncalling"] select.form-control,
+html[data-theme="londoncalling"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="londoncalling"] .dataTables_wrapper .dataTables_length select {
+    background: #121315 !important;
+    border-color: rgba(242, 240, 232, 0.28) !important;
+    color: #f2f0e8 !important;
+}
+
+html[data-theme="londoncalling"] .table thead th,
+html[data-theme="londoncalling"] table.dataTable thead th,
+html[data-theme="londoncalling"] table.dataTable tfoot th {
+    background: #16181c !important;
+    color: #cfd4da !important;
+    border-bottom-color: rgba(242, 240, 232, 0.24) !important;
+}
+
+html[data-theme="londoncalling"] .table,
+html[data-theme="londoncalling"] .table td,
+html[data-theme="londoncalling"] .table th,
+html[data-theme="londoncalling"] table.dataTable tbody td {
+    color: #f2f0e8;
+    border-color: rgba(242, 240, 232, 0.16) !important;
+}
+
+html[data-theme="londoncalling"] .table-striped tbody tr:nth-of-type(odd),
+html[data-theme="londoncalling"] table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(33, 35, 40, 0.8) !important;
+}

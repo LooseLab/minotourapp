@@ -1,0 +1,194 @@
+/**
+ * 1960s Flower Power theme.
+ * Psychedelic pastels, bold petals, and playful contrast.
+ */
+
+html[data-theme="flowerpower1960s"] {
+    color-scheme: light;
+    background-color: #fff6d6;
+    --font-body: "Nunito", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Pacifico", "Baloo 2", "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-theme="flowerpower1960s"] body,
+html[data-theme="flowerpower1960s"] body.hold-transition,
+html[data-theme="flowerpower1960s"] .minotour-app-root,
+html[data-theme="flowerpower1960s"] .content-wrapper,
+html[data-theme="flowerpower1960s"] .private-app-shell,
+html[data-theme="flowerpower1960s"] .private-main-surface,
+html[data-theme="flowerpower1960s"] .flowcells-page,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page {
+    background-color: #fff6d6 !important;
+    color: #3b235a;
+}
+
+html[data-theme="flowerpower1960s"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(circle at 12% 16%, rgba(255, 79, 161, 0.18) 0%, rgba(255, 79, 161, 0) 40%),
+        radial-gradient(circle at 86% 24%, rgba(71, 184, 255, 0.16) 0%, rgba(71, 184, 255, 0) 40%),
+        radial-gradient(circle at 80% 84%, rgba(122, 229, 130, 0.14) 0%, rgba(122, 229, 130, 0) 38%);
+}
+
+html[data-theme="flowerpower1960s"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="flowerpower1960s"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #ff4fa1 0%, #ff9f1c 45%, #9b5de5 100%) !important;
+    border-bottom: 1px solid rgba(83, 33, 110, 0.24);
+}
+
+html[data-theme="flowerpower1960s"] nav#tn .navbar-brand,
+html[data-theme="flowerpower1960s"] nav#tn .nav-link,
+html[data-theme="flowerpower1960s"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #fffdf7 !important;
+    letter-spacing: 0.02em;
+}
+
+html[data-theme="flowerpower1960s"] nav#tn .nav-link:hover,
+html[data-theme="flowerpower1960s"] nav#tn .nav-link.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff !important;
+}
+
+html[data-theme="flowerpower1960s"] .obsidian-card,
+html[data-theme="flowerpower1960s"] .card.card-primary.card-outline,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="flowerpower1960s"] .flowcells-page .flowcells-card {
+    background: linear-gradient(170deg, #fff8e8 0%, #fff2ff 55%, #eef8ff 100%) !important;
+    border-color: #d77bff !important;
+    box-shadow: 0 1px 0 rgba(155, 47, 201, 0.1), 0 10px 24px rgba(90, 46, 126, 0.14);
+}
+
+html[data-theme="flowerpower1960s"] .card-header,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(90deg, #ffe4f2 0%, #fff4d8 100%) !important;
+    border-bottom-color: #d77bff !important;
+}
+
+html[data-theme="flowerpower1960s"] .card-title,
+html[data-theme="flowerpower1960s"] .flowcells-page__title,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page .flowcells-page__title {
+    color: #9b2fc9 !important;
+}
+
+html[data-theme="flowerpower1960s"] .flowcells-page__lead,
+html[data-theme="flowerpower1960s"] .fc-detail-meta,
+html[data-theme="flowerpower1960s"] .dataTables_wrapper .dataTables_info {
+    color: #5d3a8f !important;
+}
+
+html[data-theme="flowerpower1960s"] a:not(.btn):not(.nav-link) {
+    color: #8e2ec0;
+    border-bottom-color: rgba(142, 46, 192, 0.35);
+}
+
+html[data-theme="flowerpower1960s"] a:not(.btn):not(.nav-link):hover {
+    color: #662091;
+    border-bottom-color: rgba(102, 32, 145, 0.5);
+}
+
+html[data-theme="flowerpower1960s"] .btn-primary,
+html[data-theme="flowerpower1960s"] .flowcells-btn--primary {
+    background: linear-gradient(180deg, #ff4fa1 0%, #d33f86 100%) !important;
+    border-color: #a62f6a !important;
+    color: #fffaf4 !important;
+}
+
+html[data-theme="flowerpower1960s"] .btn-primary:hover,
+html[data-theme="flowerpower1960s"] .flowcells-btn--primary:hover {
+    background: linear-gradient(180deg, #ff67b1 0%, #de4a93 100%) !important;
+}
+
+html[data-theme="flowerpower1960s"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab {
+    color: #6b459a;
+    font-weight: 700;
+}
+
+html[data-theme="flowerpower1960s"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab:hover {
+    color: #9b2fc9;
+    background: rgba(215, 123, 255, 0.14);
+}
+
+html[data-theme="flowerpower1960s"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab.active {
+    color: #9b2fc9;
+    border-bottom-color: #ff4fa1;
+    background: linear-gradient(180deg, rgba(255, 79, 161, 0.14) 0%, rgba(255, 79, 161, 0) 95%);
+}
+
+html[data-theme="flowerpower1960s"] .form-control,
+html[data-theme="flowerpower1960s"] select.form-control,
+html[data-theme="flowerpower1960s"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="flowerpower1960s"] .dataTables_wrapper .dataTables_length select {
+    background: #fff8ff !important;
+    border-color: #d77bff !important;
+    color: #3b235a !important;
+}
+
+html[data-theme="flowerpower1960s"] .table thead th,
+html[data-theme="flowerpower1960s"] table.dataTable thead th,
+html[data-theme="flowerpower1960s"] table.dataTable tfoot th {
+    background: #ffe4f2 !important;
+    color: #6a2a86 !important;
+    border-bottom-color: #d77bff !important;
+}
+
+html[data-theme="flowerpower1960s"] .table,
+html[data-theme="flowerpower1960s"] .table td,
+html[data-theme="flowerpower1960s"] .table th,
+html[data-theme="flowerpower1960s"] table.dataTable tbody td {
+    color: #3b235a;
+    border-color: #e9b9ff !important;
+}
+
+html[data-theme="flowerpower1960s"] .table-striped tbody tr:nth-of-type(odd),
+html[data-theme="flowerpower1960s"] table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(248, 225, 255, 0.7) !important;
+}
+
+html[data-theme="flowerpower1960s"] .flowcells-page .fc-name,
+html[data-theme="flowerpower1960s"] .flowcells-page td.fc-col-name {
+    color: #9b2fc9 !important;
+    font-weight: 700;
+}
+
+html[data-theme="flowerpower1960s"] footer#sticky-footer.obsidian-footer.site-footer {
+    background: #ffe9f5 !important;
+    border-top-color: #d77bff !important;
+}
+
+html[data-theme="flowerpower1960s"] footer#sticky-footer .site-footer__copy {
+    color: #5d3a8f;
+}
+
+html[data-theme="flowerpower1960s"] footer#sticky-footer .site-footer__copy a {
+    color: #8e2ec0;
+    border-bottom-color: rgba(142, 46, 192, 0.35);
+}
+
+/* Flowcell detail tab-specific table readability */
+html[data-theme="flowerpower1960s"] .flowcell-detail-page #tab-basecalled-data .bc-data-table thead th,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page #tab-summary-data .summary-data-table thead th,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page #tab-notifications .notif-data-table thead th,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page #tab-reads table.dataTable thead th,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page #tab-tasks .task-history-table thead th,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page #tab-sharing .sharing-data-table thead th {
+    background: #ffe4f2 !important;
+    color: #6a2a86 !important;
+    border-bottom-color: #d77bff !important;
+}
+
+html[data-theme="flowerpower1960s"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody td,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody th,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody td,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody th,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page #tab-notifications .notif-data-table tbody td,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page #tab-reads table.dataTable tbody td,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page #tab-tasks .task-history-table tbody td,
+html[data-theme="flowerpower1960s"] .flowcell-detail-page #tab-sharing .sharing-data-table tbody td {
+    background: #fff8ff !important;
+    color: #3b235a !important;
+    border-color: #e9b9ff !important;
+}

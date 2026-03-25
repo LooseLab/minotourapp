@@ -1,0 +1,217 @@
+/**
+ * Stoneage / Flintstones inspired theme.
+ * Rock, sand, lava, and bone accents.
+ */
+
+html[data-theme="stoneage"] {
+    color-scheme: light;
+    background-color: #efe0c4;
+    --font-body: "Source Sans 3", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Bangers", "Archivo Black", "Barlow Condensed", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-theme="stoneage"] body,
+html[data-theme="stoneage"] body.hold-transition,
+html[data-theme="stoneage"] .minotour-app-root,
+html[data-theme="stoneage"] .content-wrapper,
+html[data-theme="stoneage"] .private-app-shell,
+html[data-theme="stoneage"] .private-main-surface,
+html[data-theme="stoneage"] .flowcells-page,
+html[data-theme="stoneage"] .flowcell-detail-page {
+    background-color: #efe0c4 !important;
+    color: #2b2218;
+}
+
+html[data-theme="stoneage"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(circle at 15% 10%, rgba(179, 83, 46, 0.14) 0%, rgba(179, 83, 46, 0) 42%),
+        radial-gradient(circle at 86% 82%, rgba(95, 127, 79, 0.12) 0%, rgba(95, 127, 79, 0) 40%),
+        repeating-linear-gradient(
+            45deg,
+            rgba(120, 86, 54, 0.08) 0 2px,
+            rgba(0, 0, 0, 0) 2px 9px
+        );
+}
+
+html[data-theme="stoneage"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="stoneage"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #7a4f2f 0%, #b3532e 52%, #d18a3f 100%) !important;
+    border-bottom: 1px solid rgba(53, 33, 19, 0.28);
+}
+
+html[data-theme="stoneage"] nav#tn .navbar-brand,
+html[data-theme="stoneage"] nav#tn .nav-link,
+html[data-theme="stoneage"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #fdf2df !important;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+html[data-theme="stoneage"] nav#tn .nav-link:hover,
+html[data-theme="stoneage"] nav#tn .nav-link.active {
+    background: rgba(255, 238, 214, 0.22);
+    color: #fffaf1 !important;
+}
+
+html[data-theme="stoneage"] .obsidian-card,
+html[data-theme="stoneage"] .card.card-primary.card-outline,
+html[data-theme="stoneage"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="stoneage"] .flowcells-page .flowcells-card {
+    background: linear-gradient(170deg, #f1e3c8 0%, #e7d3ae 62%, #dfc294 100%) !important;
+    border-color: #c79c64 !important;
+    box-shadow: 0 1px 0 rgba(122, 79, 47, 0.12), 0 10px 26px rgba(78, 56, 33, 0.14);
+}
+
+html[data-theme="stoneage"] .card-header,
+html[data-theme="stoneage"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(90deg, #e2c396 0%, #efdcb9 100%) !important;
+    border-bottom-color: #c79c64 !important;
+}
+
+html[data-theme="stoneage"] .card-title,
+html[data-theme="stoneage"] .flowcells-page__title,
+html[data-theme="stoneage"] .flowcell-detail-page .flowcells-page__title {
+    color: #4b2f1c !important;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+html[data-theme="stoneage"] .flowcells-page__lead,
+html[data-theme="stoneage"] .fc-detail-meta,
+html[data-theme="stoneage"] .dataTables_wrapper .dataTables_info {
+    color: #6d5845 !important;
+}
+
+html[data-theme="stoneage"] a:not(.btn):not(.nav-link) {
+    color: #7f5f3f;
+    border-bottom-color: rgba(127, 95, 63, 0.35);
+}
+
+html[data-theme="stoneage"] a:not(.btn):not(.nav-link):hover {
+    color: #5f4630;
+    border-bottom-color: rgba(95, 70, 48, 0.5);
+}
+
+html[data-theme="stoneage"] .btn-primary,
+html[data-theme="stoneage"] .flowcells-btn--primary {
+    background: linear-gradient(180deg, #b3532e 0%, #964226 100%) !important;
+    border-color: #7a4f2f !important;
+    color: #fff5e5 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+html[data-theme="stoneage"] .btn-primary:hover,
+html[data-theme="stoneage"] .flowcells-btn--primary:hover {
+    background: linear-gradient(180deg, #c06237 0%, #a54b2a 100%) !important;
+    border-color: #6b4327 !important;
+}
+
+html[data-theme="stoneage"] .flowcells-btn--ghost {
+    border-color: #b99873;
+    color: #5f4630;
+}
+
+html[data-theme="stoneage"] .flowcells-btn--ghost:hover {
+    background: rgba(122, 79, 47, 0.12);
+    color: #4b2f1c;
+}
+
+html[data-theme="stoneage"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab {
+    color: #6d5845;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 700;
+}
+
+html[data-theme="stoneage"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab:hover {
+    color: #4b2f1c;
+    background: rgba(179, 83, 46, 0.1);
+}
+
+html[data-theme="stoneage"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab.active {
+    color: #4b2f1c;
+    border-bottom-color: #b3532e;
+    background: linear-gradient(180deg, rgba(179, 83, 46, 0.16) 0%, rgba(179, 83, 46, 0) 95%);
+}
+
+html[data-theme="stoneage"] .form-control,
+html[data-theme="stoneage"] select.form-control,
+html[data-theme="stoneage"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="stoneage"] .dataTables_wrapper .dataTables_length select {
+    background: #f5e4c4 !important;
+    border-color: #c79c64 !important;
+    color: #2b2218 !important;
+}
+
+html[data-theme="stoneage"] .table thead th,
+html[data-theme="stoneage"] table.dataTable thead th,
+html[data-theme="stoneage"] table.dataTable tfoot th {
+    background: #ead2ad !important;
+    color: #523521 !important;
+    border-bottom-color: #c79c64 !important;
+}
+
+html[data-theme="stoneage"] .table,
+html[data-theme="stoneage"] .table td,
+html[data-theme="stoneage"] .table th,
+html[data-theme="stoneage"] table.dataTable tbody td {
+    color: #2b2218;
+    border-color: #d9be94 !important;
+}
+
+html[data-theme="stoneage"] .table-striped tbody tr:nth-of-type(odd),
+html[data-theme="stoneage"] table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(234, 210, 173, 0.62) !important;
+}
+
+html[data-theme="stoneage"] .flowcells-page table.dataTable tbody td.fc-col-name,
+html[data-theme="stoneage"] .flowcells-page table.dataTable tbody td.fc-col-name .fc-name {
+    color: #7a2f1e !important;
+    font-weight: 700;
+}
+
+html[data-theme="stoneage"] footer#sticky-footer.obsidian-footer.site-footer {
+    background: #e7d0a8 !important;
+    border-top-color: #c79c64 !important;
+}
+
+html[data-theme="stoneage"] footer#sticky-footer .site-footer__copy {
+    color: #6d5845;
+}
+
+html[data-theme="stoneage"] footer#sticky-footer .site-footer__copy a {
+    color: #5f4630;
+    border-bottom-color: rgba(95, 70, 48, 0.35);
+}
+
+html[data-theme="stoneage"] .highcharts-background,
+html[data-theme="stoneage"] .highcharts-plot-background {
+    fill: #efe0c4 !important;
+}
+
+html[data-theme="stoneage"] .highcharts-axis-line,
+html[data-theme="stoneage"] .highcharts-tick,
+html[data-theme="stoneage"] .highcharts-grid-line {
+    stroke: rgba(75, 47, 28, 0.2) !important;
+}
+
+html[data-theme="stoneage"] .highcharts-title,
+html[data-theme="stoneage"] .highcharts-subtitle {
+    fill: #4b2f1c !important;
+}
+
+html[data-theme="stoneage"] .highcharts-axis-labels text,
+html[data-theme="stoneage"] .highcharts-legend-item text {
+    fill: #5c4a39 !important;
+}
+
+html[data-theme="stoneage"] .highcharts-tooltip-box {
+    fill: #f5e4c4 !important;
+    stroke: #c79c64 !important;
+}

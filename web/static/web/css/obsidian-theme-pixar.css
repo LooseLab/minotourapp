@@ -1,0 +1,151 @@
+/**
+ * Pixar-inspired theme.
+ * Clean modern gradients, bright primaries, cinematic polish.
+ */
+
+html[data-theme="pixar"] {
+    color-scheme: light;
+    background-color: #edf7ff;
+    --font-body: "Nunito", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Nunito", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-theme="pixar"] body,
+html[data-theme="pixar"] body.hold-transition,
+html[data-theme="pixar"] .minotour-app-root,
+html[data-theme="pixar"] .content-wrapper,
+html[data-theme="pixar"] .private-app-shell,
+html[data-theme="pixar"] .private-main-surface,
+html[data-theme="pixar"] .flowcells-page,
+html[data-theme="pixar"] .flowcell-detail-page {
+    background-color: #edf7ff !important;
+    color: #10243f;
+}
+
+html[data-theme="pixar"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(circle at 20% 12%, rgba(11, 95, 255, 0.14) 0%, rgba(11, 95, 255, 0) 44%),
+        radial-gradient(circle at 82% 86%, rgba(58, 212, 196, 0.12) 0%, rgba(58, 212, 196, 0) 40%);
+}
+
+html[data-theme="pixar"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="pixar"] nav#tn.topnav-primary {
+    background: linear-gradient(90deg, #0b5fff 0%, #00b3ff 60%, #6ed9ff 100%) !important;
+    border-bottom: 1px solid rgba(16, 56, 97, 0.24);
+}
+
+html[data-theme="pixar"] nav#tn .navbar-brand,
+html[data-theme="pixar"] nav#tn .nav-link,
+html[data-theme="pixar"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #f8fcff !important;
+    font-weight: 700;
+}
+
+html[data-theme="pixar"] nav#tn .nav-link:hover,
+html[data-theme="pixar"] nav#tn .nav-link.active {
+    background: rgba(248, 252, 255, 0.24);
+    color: #ffffff !important;
+}
+
+html[data-theme="pixar"] .obsidian-card,
+html[data-theme="pixar"] .card.card-primary.card-outline,
+html[data-theme="pixar"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="pixar"] .flowcells-page .flowcells-card {
+    background: linear-gradient(165deg, #f6fbff 0%, #edf7ff 66%, #e2f2ff 100%) !important;
+    border-color: #8bc5ff !important;
+    box-shadow: 0 1px 0 rgba(11, 95, 255, 0.1), 0 12px 24px rgba(31, 78, 130, 0.14);
+}
+
+html[data-theme="pixar"] .card-header,
+html[data-theme="pixar"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(90deg, #e2f2ff 0%, #f6fbff 100%) !important;
+    border-bottom-color: #8bc5ff !important;
+}
+
+html[data-theme="pixar"] .card-title,
+html[data-theme="pixar"] .flowcells-page__title,
+html[data-theme="pixar"] .flowcell-detail-page .flowcells-page__title {
+    color: #0b5fff !important;
+}
+
+html[data-theme="pixar"] .btn-primary,
+html[data-theme="pixar"] .flowcells-btn--primary {
+    background: linear-gradient(180deg, #0f6bff 0%, #0b5fff 100%) !important;
+    border-color: #0a52dc !important;
+    color: #f8fcff !important;
+}
+
+html[data-theme="pixar"] .btn-primary:hover,
+html[data-theme="pixar"] .flowcells-btn--primary:hover {
+    background: linear-gradient(180deg, #1e78ff 0%, #1669f0 100%) !important;
+}
+
+html[data-theme="pixar"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab {
+    color: #2f4f78;
+    font-weight: 700;
+}
+
+html[data-theme="pixar"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab:hover {
+    color: #0b5fff;
+    background: rgba(11, 95, 255, 0.1);
+}
+
+html[data-theme="pixar"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab.active {
+    color: #0b5fff;
+    border-bottom-color: #0b5fff;
+}
+
+html[data-theme="pixar"] .form-control,
+html[data-theme="pixar"] select.form-control,
+html[data-theme="pixar"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="pixar"] .dataTables_wrapper .dataTables_length select {
+    background: #f8fcff !important;
+    border-color: #8bc5ff !important;
+    color: #10243f !important;
+}
+
+html[data-theme="pixar"] .table thead th,
+html[data-theme="pixar"] table.dataTable thead th,
+html[data-theme="pixar"] table.dataTable tfoot th {
+    background: #e2f2ff !important;
+    color: #20508b !important;
+    border-bottom-color: #8bc5ff !important;
+}
+
+html[data-theme="pixar"] .table,
+html[data-theme="pixar"] .table td,
+html[data-theme="pixar"] .table th,
+html[data-theme="pixar"] table.dataTable tbody td {
+    color: #10243f;
+    border-color: #c0e2ff !important;
+}
+
+html[data-theme="pixar"] .table-striped tbody tr:nth-of-type(odd),
+html[data-theme="pixar"] table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(226, 242, 255, 0.72) !important;
+}
+
+html[data-theme="pixar"] .flowcells-page .fc-name,
+html[data-theme="pixar"] .flowcells-page td.fc-col-name {
+    color: #0b5fff !important;
+    font-weight: 700;
+}
+
+html[data-theme="pixar"] footer#sticky-footer.obsidian-footer.site-footer {
+    background: #e1f2ff !important;
+    border-top-color: #8bc5ff !important;
+}
+
+html[data-theme="pixar"] footer#sticky-footer .site-footer__copy {
+    color: #3f6ea8;
+}
+
+html[data-theme="pixar"] footer#sticky-footer .site-footer__copy a {
+    color: #0b5fff;
+    border-bottom-color: rgba(11, 95, 255, 0.35);
+}

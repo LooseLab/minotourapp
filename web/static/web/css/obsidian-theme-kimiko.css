@@ -1,0 +1,193 @@
+/**
+ * Kimiko theme inspired by kimiko.co.uk hero styling.
+ * Coral-forward, minimal white nav text, warm food tones.
+ */
+
+html[data-theme="kimiko"] {
+    color-scheme: light;
+    background-color: #e86758;
+    --font-body: "Noto Sans JP", "IBM Plex Sans", "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Noto Sans JP", "IBM Plex Sans", "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-theme="kimiko"] body,
+html[data-theme="kimiko"] body.hold-transition,
+html[data-theme="kimiko"] .minotour-app-root,
+html[data-theme="kimiko"] .content-wrapper,
+html[data-theme="kimiko"] .private-app-shell,
+html[data-theme="kimiko"] .private-main-surface,
+html[data-theme="kimiko"] .flowcells-page,
+html[data-theme="kimiko"] .flowcell-detail-page {
+    background-color: #e86758 !important;
+    color: #fff5ee;
+}
+
+html[data-theme="kimiko"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(circle at 12% 14%, rgba(255, 206, 177, 0.18) 0%, rgba(255, 206, 177, 0) 42%),
+        radial-gradient(circle at 82% 78%, rgba(255, 148, 126, 0.16) 0%, rgba(255, 148, 126, 0) 44%),
+        repeating-linear-gradient(
+            0deg,
+            rgba(255, 255, 255, 0.03) 0,
+            rgba(255, 255, 255, 0.03) 1px,
+            rgba(0, 0, 0, 0) 1px,
+            rgba(0, 0, 0, 0) 3px
+        );
+}
+
+html[data-theme="kimiko"] nav#tn.obsidian-site-nav.navbar,
+html[data-theme="kimiko"] nav#tn.topnav-primary {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 245, 238, 0.2);
+    box-shadow: none;
+}
+
+html[data-theme="kimiko"] nav#tn .navbar-brand,
+html[data-theme="kimiko"] nav#tn .nav-link,
+html[data-theme="kimiko"] nav#tn .navbar-nav > .nav-item > .nav-link i {
+    color: #fff5ee !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    font-size: 0.78rem;
+}
+
+html[data-theme="kimiko"] nav#tn .nav-link:hover,
+html[data-theme="kimiko"] nav#tn .nav-link.active {
+    background: rgba(255, 245, 238, 0.16);
+    color: #ffffff !important;
+}
+
+html[data-theme="kimiko"] .obsidian-card,
+html[data-theme="kimiko"] .card.card-primary.card-outline,
+html[data-theme="kimiko"] .flowcell-detail-page .flowcell-detail-tab-card.card-info,
+html[data-theme="kimiko"] .flowcells-page .flowcells-card {
+    background: #f7f4ee !important;
+    border-color: #d5c8ba !important;
+    box-shadow: 0 1px 0 rgba(98, 63, 45, 0.08), 0 12px 24px rgba(55, 35, 24, 0.14);
+}
+
+html[data-theme="kimiko"] .card-header,
+html[data-theme="kimiko"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: linear-gradient(90deg, #f0e8de 0%, #f7f4ee 100%) !important;
+    border-bottom-color: #d5c8ba !important;
+}
+
+html[data-theme="kimiko"] .card-title,
+html[data-theme="kimiko"] .flowcells-page__title,
+html[data-theme="kimiko"] .flowcell-detail-page .flowcells-page__title {
+    color: #7f1d1d !important;
+}
+
+html[data-theme="kimiko"] a:not(.btn):not(.nav-link) {
+    color: #9a1f28;
+    border-bottom-color: rgba(154, 31, 40, 0.35);
+}
+
+html[data-theme="kimiko"] a:not(.btn):not(.nav-link):hover {
+    color: #7d1820;
+}
+
+html[data-theme="kimiko"] .btn-primary,
+html[data-theme="kimiko"] .flowcells-btn--primary {
+    background: linear-gradient(180deg, #b3232e 0%, #911c25 100%) !important;
+    border-color: #7d1820 !important;
+    color: #ffffff !important;
+}
+
+html[data-theme="kimiko"] .btn-primary:hover,
+html[data-theme="kimiko"] .flowcells-btn--primary:hover {
+    background: linear-gradient(180deg, #c2333d 0%, #a2232d 100%) !important;
+}
+
+html[data-theme="kimiko"] .form-control,
+html[data-theme="kimiko"] select.form-control,
+html[data-theme="kimiko"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="kimiko"] .dataTables_wrapper .dataTables_length select {
+    background: #fffaf3 !important;
+    border-color: #c1b2a2 !important;
+    color: #1f2b37 !important;
+}
+
+html[data-theme="kimiko"] .table thead th,
+html[data-theme="kimiko"] table.dataTable thead th,
+html[data-theme="kimiko"] table.dataTable tfoot th {
+    background: #efe7dc !important;
+    color: #5f4b3a !important;
+    border-bottom-color: #c1b2a2 !important;
+}
+
+html[data-theme="kimiko"] .table,
+html[data-theme="kimiko"] .table td,
+html[data-theme="kimiko"] .table th,
+html[data-theme="kimiko"] table.dataTable tbody td {
+    color: #1f2b37;
+    border-color: #ddd1c2 !important;
+}
+
+/* Raise foreground contrast on light coral-paper surfaces. */
+html[data-theme="kimiko"] .content-wrapper,
+html[data-theme="kimiko"] .card-body,
+html[data-theme="kimiko"] .flowcells-page__lead,
+html[data-theme="kimiko"] .fc-detail-meta,
+html[data-theme="kimiko"] .dataTables_wrapper .dataTables_info {
+    color: #1f2b37 !important;
+}
+
+html[data-theme="kimiko"] .text-muted,
+html[data-theme="kimiko"] small,
+html[data-theme="kimiko"] .small {
+    color: #4a3d31 !important;
+}
+
+/* Form/select legibility in chart and coverage controls. */
+html[data-theme="kimiko"] .form-control,
+html[data-theme="kimiko"] select.form-control,
+html[data-theme="kimiko"] .custom-select,
+html[data-theme="kimiko"] .dataTables_wrapper .dataTables_filter input,
+html[data-theme="kimiko"] .dataTables_wrapper .dataTables_length select {
+    color: #1f2b37 !important;
+    border-color: #b9a693 !important;
+}
+
+html[data-theme="kimiko"] .form-control::placeholder,
+html[data-theme="kimiko"] .custom-select::placeholder,
+html[data-theme="kimiko"] .dataTables_wrapper .dataTables_filter input::placeholder {
+    color: #6b5646 !important;
+    opacity: 1;
+}
+
+/* Highcharts text/grid contrast for light kimiko canvas. */
+html[data-theme="kimiko"] .highcharts-title,
+html[data-theme="kimiko"] .highcharts-subtitle {
+    fill: #243546 !important;
+}
+
+html[data-theme="kimiko"] .highcharts-axis-labels text,
+html[data-theme="kimiko"] .highcharts-legend-item text {
+    fill: #344a60 !important;
+}
+
+html[data-theme="kimiko"] .highcharts-axis-title {
+    fill: #243546 !important;
+}
+
+html[data-theme="kimiko"] .highcharts-grid-line {
+    stroke: rgba(57, 74, 91, 0.2) !important;
+}
+
+html[data-theme="kimiko"] .highcharts-tooltip text,
+html[data-theme="kimiko"] .highcharts-data-label text {
+    fill: #1f2b37 !important;
+}
+
+html[data-theme="kimiko"] .flowcells-page .fc-name,
+html[data-theme="kimiko"] .flowcells-page td.fc-col-name {
+    color: #9a1f28 !important;
+    font-weight: 700;
+}

@@ -1,0 +1,880 @@
+/**
+ * Dark mode — activated via html[data-theme="dark"] (minotour-theme.js).
+ * Complements obsidian-chrome.css, obsidian-private-pages.css, obsidian-flowcells*.css
+ */
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+    background-color: #0f172a;
+    --font-body: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-theme="dark"] body.hold-transition {
+    background-color: #0f172a !important;
+    color: #e2e8f0;
+}
+
+/* Outermost layout wrapper (template_base) — fills viewport so short pages do not show a white band above the footer */
+html[data-theme="dark"] .minotour-app-root {
+    background-color: #0f172a !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+html[data-theme="dark"] .content-wrapper {
+    background-color: #0f172a !important;
+    color: #e2e8f0;
+}
+
+/* ----- Private shell (About, Client, Help, managers, profile, …) ----- */
+/* Replaces inline background-color: white on legacy page wrappers */
+html[data-theme="dark"] .private-app-shell .private-main-surface {
+    background-color: #0f172a !important;
+}
+
+html[data-theme="dark"] .private-app-shell {
+    background-color: #0f172a;
+    min-height: 100%;
+    --pp-obsidian: #5eead4;
+    --pp-obsidian-dark: #ecfdf5;
+    --pp-muted: #94a3b8;
+    --pp-border: rgba(148, 163, 184, 0.22);
+    --pp-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.35);
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .private-app-shell section.content .card.card-primary.card-outline,
+html[data-theme="dark"] .private-app-shell .content-wrapper .card.card-primary.card-outline,
+html[data-theme="dark"] .private-app-shell .container-fluid .card.card-primary.card-outline {
+    background: #1e293b;
+    border-color: var(--pp-border);
+}
+
+html[data-theme="dark"] .private-app-shell section.content .card.card-primary.card-outline > .card-header,
+html[data-theme="dark"] .private-app-shell .card.card-primary.card-outline > h5.card-header,
+html[data-theme="dark"] .private-app-shell .card.card-primary.card-outline > h2.card-header {
+    background: #1e293b !important;
+    border-bottom-color: var(--pp-border);
+    color: var(--pp-obsidian-dark);
+}
+
+html[data-theme="dark"] .private-app-shell .card.card-primary.card-outline .card-footer {
+    background: #0f172a;
+    border-top-color: var(--pp-border);
+}
+
+html[data-theme="dark"] .private-app-shell section.content h1,
+html[data-theme="dark"] .private-app-shell section.content h2,
+html[data-theme="dark"] .private-app-shell .content-wrapper h1,
+html[data-theme="dark"] .private-app-shell .content-wrapper h2 {
+    color: #ecfdf5;
+}
+
+html[data-theme="dark"] .private-app-shell pre {
+    background: #0f172a;
+    border-color: var(--pp-border);
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .private-app-shell .table thead th {
+    background: #0f172a;
+    color: #94a3b8;
+    border-bottom-color: var(--pp-border);
+}
+
+html[data-theme="dark"] .private-app-shell .table-bordered {
+    border-color: rgba(148, 163, 184, 0.25);
+}
+
+html[data-theme="dark"] .private-app-shell .dataTables_wrapper .dataTables_filter input {
+    background: #0f172a;
+    border-color: var(--pp-border);
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .private-app-shell .login-panel.panel.panel-default {
+    background: #1e293b;
+    border-color: var(--pp-border);
+}
+
+html[data-theme="dark"] .private-app-shell .login-panel .panel-heading {
+    background: #1e293b;
+    border-bottom-color: var(--pp-border);
+}
+
+html[data-theme="dark"] .private-app-shell .modal-content {
+    background: #1e293b;
+    border-color: var(--pp-border);
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .private-app-shell .modal-footer.bg-light {
+    background: #0f172a !important;
+    border-top-color: var(--pp-border);
+}
+
+html[data-theme="dark"] .private-app-shell .form-control {
+    background: #0f172a;
+    border-color: var(--pp-border);
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .private-app-shell .alert-success {
+    background: rgba(6, 78, 59, 0.45);
+    border-color: rgba(52, 211, 153, 0.4);
+    color: #d1fae5;
+}
+
+/* ----- Flowcells registry & detail ----- */
+html[data-theme="dark"] .flowcells-page,
+html[data-theme="dark"] .flowcell-detail-page {
+    --ether-bg: #0f172a;
+    --ether-border: rgba(148, 163, 184, 0.22);
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.4);
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] section.flowcells-page {
+    background-color: #0f172a;
+}
+
+html[data-theme="dark"] .flowcell-detail-page {
+    background: #0f172a;
+}
+
+html[data-theme="dark"] .flowcells-page__title,
+html[data-theme="dark"] .flowcell-detail-page .flowcells-page__title {
+    color: #ecfdf5;
+}
+
+html[data-theme="dark"] .flowcells-page__lead,
+html[data-theme="dark"] .flowcell-detail-page .fc-detail-meta {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .flowcell-detail-page .fc-detail-meta strong {
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .flowcells-page .obsidian-card,
+html[data-theme="dark"] .flowcell-detail-page .obsidian-card {
+    background: #1e293b !important;
+    border-color: var(--ether-border);
+}
+
+html[data-theme="dark"] .flowcell-detail-page .flowcell-detail-tab-card.card-info {
+    background: #1e293b !important;
+    border-color: var(--ether-border) !important;
+}
+
+html[data-theme="dark"] .flowcells-breadcrumbs__list a {
+    color: #5eead4;
+}
+
+html[data-theme="dark"] .flowcells-breadcrumbs__list a:hover {
+    color: #99f6e4;
+}
+
+html[data-theme="dark"] .flowcells-breadcrumbs__list li[aria-current="page"] {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .flowcells-btn--ghost {
+    background: transparent;
+    border-color: rgba(148, 163, 184, 0.35);
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .flowcells-btn--ghost:hover {
+    background: rgba(148, 163, 184, 0.12);
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .flowcells-page .dataTables_wrapper .dataTables_length select,
+html[data-theme="dark"] .flowcells-page .dataTables_wrapper .dataTables_filter input {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .flowcells-page table.dataTable thead th,
+html[data-theme="dark"] .flowcells-page table.dataTable tfoot th {
+    background: #0f172a !important;
+    color: #cbd5e1 !important;
+    border-color: rgba(148, 163, 184, 0.2) !important;
+}
+
+html[data-theme="dark"] .flowcells-page table.dataTable tbody tr {
+    background: #1e293b !important;
+}
+
+html[data-theme="dark"] .flowcells-page table.dataTable.stripe tbody tr.odd,
+html[data-theme="dark"] .flowcells-page table.dataTable.display tbody tr.odd {
+    background: #1e293b !important;
+}
+
+/* Bootstrap .table-striped (used with DataTables) — must beat obsidian-flowcells.css (loads before this file) */
+html[data-theme="dark"] .flowcells-page table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(30, 41, 59, 0.92) !important;
+}
+
+html[data-theme="dark"] .flowcells-page table.table-striped tbody tr:nth-of-type(even) {
+    background-color: #1e293b !important;
+}
+
+html[data-theme="dark"] .flowcells-page table.dataTable tbody tr:hover {
+    background: #334155 !important;
+}
+
+html[data-theme="dark"] .flowcells-page table.dataTable tbody td {
+    border-color: rgba(148, 163, 184, 0.15);
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .flowcells-page .dataTables_wrapper .dataTables_paginate .paginate_button {
+    background: #1e293b !important;
+    color: #cbd5e1 !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+}
+
+html[data-theme="dark"] .flowcells-page .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: #0f766e !important;
+    color: #ecfdf5 !important;
+    border-color: #14b8a6 !important;
+}
+
+html[data-theme="dark"] .flowcells-page .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #334155 !important;
+    color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] .flowcells-insight--media {
+    background: linear-gradient(135deg, #134e4a 0%, #1e293b 50%, #0f172a 100%);
+}
+
+html[data-theme="dark"] .flowcells-insight__title {
+    color: #ecfdf5;
+}
+
+html[data-theme="dark"] .flowcells-insight__text {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .flowcells-status-banner {
+    background: rgba(6, 78, 59, 0.55);
+    border-color: rgba(52, 211, 153, 0.35);
+    border-left-color: #34d399;
+}
+
+html[data-theme="dark"] .flowcells-status-banner__title {
+    color: #ecfdf5;
+}
+
+html[data-theme="dark"] .flowcells-status-banner__text {
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .flowcells-status-banner__icon {
+    color: #6ee7b7;
+}
+
+/* ----- Chrome: footer & settings drawer ----- */
+html[data-theme="dark"] footer#sticky-footer.obsidian-footer.site-footer {
+    background: #0f172a !important;
+    border-top-color: rgba(148, 163, 184, 0.25) !important;
+}
+
+html[data-theme="dark"] footer#sticky-footer .site-footer__copy {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] footer#sticky-footer .site-footer__copy a {
+    color: #5eead4;
+    border-bottom-color: rgba(94, 234, 212, 0.35);
+}
+
+html[data-theme="dark"] footer#sticky-footer .site-footer__copy a:hover {
+    color: #99f6e4;
+}
+
+/* Settings drawer shell: obsidian-theme-compat.css (html.dark) — loads after this file. */
+
+/* ----- AdminLTE / Bootstrap tables in content ----- */
+html[data-theme="dark"] .table {
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(30, 41, 59, 0.65);
+}
+
+html[data-theme="dark"] .table-hover tbody tr:hover {
+    background-color: rgba(51, 65, 85, 0.85);
+    color: #f1f5f9;
+}
+
+/* ----- Flowcell detail: tab card & basecalled variables ----- */
+html[data-theme="dark"] .flowcell-detail-page .flowcell-detail-tab-card.card-info {
+    background: #1e293b !important;
+    border-color: var(--ether-border) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page .flowcell-detail-tab-card > .card-header {
+    background: #1e293b !important;
+    border-bottom-color: rgba(148, 163, 184, 0.25);
+}
+
+html[data-theme="dark"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab:hover {
+    color: #ecfdf5;
+    background: rgba(51, 65, 85, 0.55);
+}
+
+html[data-theme="dark"] .flowcell-detail-page .flowcell-detail-tab-card .nav-link.flowcell-tab.active {
+    color: #5eead4;
+    border-bottom-color: #5eead4;
+}
+
+html[data-theme="dark"] .flowcell-detail-page .flowcell-detail-tab-card .card-body {
+    background: #1e293b;
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .basecalled-content {
+    --bc-obsidian: #5eead4;
+    --bc-obsidian-dark: #ecfdf5;
+    --bc-muted: #94a3b8;
+    --bc-border: rgba(148, 163, 184, 0.22);
+}
+
+/* Basecalled tab — obsidian-flowcell-detail.css uses literal #fff / #f8fafc / #fafbfc; override here */
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-chart-card.obsidian-card {
+    background: #1e293b !important;
+    border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-card-header {
+    background: #1e293b !important;
+    border-bottom-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-card-body {
+    background: #1e293b !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-chart-host,
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-heatmap-host {
+    background: #0f172a !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-summary-card-header {
+    background: #0f172a !important;
+    border-bottom-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-barcode-tabs .nav-link:hover {
+    color: #ecfdf5 !important;
+    background: rgba(51, 65, 85, 0.75) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-select {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-data-table thead th {
+    background: #0f172a !important;
+    color: #94a3b8 !important;
+    border-bottom-color: rgba(148, 163, 184, 0.3) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody td,
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-data-table tbody th {
+    background: #1e293b !important;
+    border-color: rgba(148, 163, 184, 0.2) !important;
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-row-pass td,
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-row-pass th {
+    background: rgba(16, 185, 129, 0.16) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-row-fail td,
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .bc-row-fail th {
+    background: rgba(248, 113, 113, 0.12) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .highcharts-grid-line {
+    stroke: rgba(51, 65, 85, 0.9) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .highcharts-title,
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .highcharts-subtitle {
+    fill: #ecfdf5 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .highcharts-axis-labels text,
+html[data-theme="dark"] .flowcell-detail-page #tab-basecalled-data .highcharts-legend-item text {
+    fill: #94a3b8 !important;
+}
+
+/* Highcharts SVG surfaces (plot + chart area) — existing charts keep baked-in fills until JS update; CSS covers most cases */
+html[data-theme="dark"] .highcharts-background {
+    fill: #0f172a !important;
+}
+
+html[data-theme="dark"] .highcharts-plot-background {
+    fill: #0f172a !important;
+}
+
+html[data-theme="dark"] .highcharts-plot-border {
+    stroke: rgba(148, 163, 184, 0.25);
+}
+
+html[data-theme="dark"] .highcharts-axis-line,
+html[data-theme="dark"] .highcharts-tick {
+    stroke: #475569 !important;
+}
+
+html[data-theme="dark"] .admin-warning .alert-danger {
+    background: rgba(69, 10, 10, 0.65) !important;
+    border-color: rgba(248, 113, 113, 0.45) !important;
+    color: #fecaca !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .summary-tab-content {
+    --sp-obsidian: #5eead4;
+    --sp-obsidian-dark: #ecfdf5;
+    --sp-muted: #94a3b8;
+    --sp-border: rgba(148, 163, 184, 0.22);
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .summary-card-header,
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .summary-card-body {
+    background: #1e293b !important;
+    border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .summary-card-title {
+    color: #ecfdf5 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .summary-empty {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .summary-data-table thead th {
+    background: #0f172a !important;
+    color: #94a3b8 !important;
+    border-bottom-color: rgba(148, 163, 184, 0.28) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody td,
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .summary-data-table tbody th,
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .summary-data-table tfoot th {
+    background: #1e293b !important;
+    border-color: rgba(148, 163, 184, 0.2) !important;
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .summary-data-table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(30, 41, 59, 0.85) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .summary-card-title .fas,
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .summary-card-title .fa {
+    color: #5eead4 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_length,
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_filter,
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_info,
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_paginate {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_length select {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .dataTables_wrapper .dataTables_filter input {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .dataTables_wrapper .paginate_button.current {
+    background: #0d9488 !important;
+    border-color: #14b8a6 !important;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .dataTables_wrapper .paginate_button:hover {
+    background: rgba(45, 212, 191, 0.15) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #ecfdf5 !important;
+}
+
+/* Notifications tab */
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .notifications-tab-content {
+    --nt-obsidian: #5eead4;
+    --nt-obsidian-dark: #ecfdf5;
+    --nt-muted: #94a3b8;
+    --nt-border: rgba(148, 163, 184, 0.22);
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .notif-card-header,
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .notif-card-body {
+    background: #1e293b !important;
+    border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .notif-card-title {
+    color: #ecfdf5 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .notif-list-group .list-group-item {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.25) !important;
+    color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .notif-list-group .list-group-item:hover {
+    background: rgba(51, 65, 85, 0.85) !important;
+    color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .notif-data-table thead th {
+    background: #0f172a !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .notif-data-table tbody td,
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .notif-data-table tfoot th {
+    background: #1e293b !important;
+    color: #e2e8f0;
+    border-color: rgba(148, 163, 184, 0.2) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .notif-data-table tbody tr.notification-row:hover {
+    background: rgba(51, 65, 85, 0.75) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .form-control,
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .noti-control {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .notif-lead {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .notif-list-group .list-group-item.active {
+    background: #0d9488 !important;
+    border-color: #14b8a6 !important;
+    color: #ecfdf5 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_length,
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_filter,
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_info,
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_paginate {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_length select {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .dataTables_wrapper .dataTables_filter input {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .dataTables_wrapper .paginate_button.current {
+    background: #0d9488 !important;
+    border-color: #14b8a6 !important;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-notifications .dataTables_wrapper .paginate_button:hover {
+    background: rgba(45, 212, 191, 0.15) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #ecfdf5 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page .notif-modal .notif-modal-content {
+    background: #1e293b !important;
+    border-color: rgba(148, 163, 184, 0.25) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page .notif-modal .notif-modal-header,
+html[data-theme="dark"] .flowcell-detail-page .notif-modal .notif-modal-footer {
+    border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page .notif-modal .notif-modal-title {
+    color: #ecfdf5 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page .notif-modal .notif-modal-body {
+    color: #cbd5e1 !important;
+}
+
+/* Read data tab */
+html[data-theme="dark"] .flowcell-detail-page #tab-reads .reads-tab-content {
+    --rt-muted: #94a3b8;
+    --rt-border: rgba(148, 163, 184, 0.22);
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-reads .reads-tab-hint {
+    background: rgba(6, 78, 59, 0.55) !important;
+    border-color: rgba(52, 211, 153, 0.35) !important;
+    color: #d1fae5 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-reads .rt-card-header,
+html[data-theme="dark"] .flowcell-detail-page #tab-reads .rt-card-body {
+    background: #1e293b !important;
+    border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-reads .rt-card-title {
+    color: #ecfdf5 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-reads table.dataTable thead th {
+    background: #0f172a !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-reads table.dataTable tbody td {
+    background: #1e293b !important;
+    color: #e2e8f0;
+    border-color: rgba(148, 163, 184, 0.2) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_length,
+html[data-theme="dark"] .flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_filter,
+html[data-theme="dark"] .flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_info,
+html[data-theme="dark"] .flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_paginate {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_length select {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-reads .dataTables_wrapper .dataTables_filter input {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-reads .dataTables_wrapper .paginate_button.current {
+    background: #0d9488 !important;
+    border-color: #14b8a6 !important;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-reads .dataTables_wrapper .paginate_button:hover {
+    background: rgba(45, 212, 191, 0.15) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #ecfdf5 !important;
+}
+
+/* Tasks tab */
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .tasks-tab-content {
+    --tk-muted: #94a3b8;
+    --tk-border: rgba(148, 163, 184, 0.22);
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .task-card-header,
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .task-card-body {
+    background: #1e293b !important;
+    border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .task-card-title {
+    color: #ecfdf5 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .task-form-control,
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks select.form-control,
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .form-control {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .task-history-table thead th {
+    background: #0f172a !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .task-history-table tbody td,
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .task-history-table tfoot th {
+    background: #1e293b !important;
+    color: #e2e8f0;
+    border-color: rgba(148, 163, 184, 0.2) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_length,
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_filter,
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_info,
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_paginate {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_length select {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .dataTables_wrapper .dataTables_filter input {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .dataTables_wrapper .paginate_button.current {
+    background: #0d9488 !important;
+    border-color: #14b8a6 !important;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .dataTables_wrapper .paginate_button:hover {
+    background: rgba(45, 212, 191, 0.15) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #ecfdf5 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .task-btn-warn {
+    background: rgba(120, 53, 15, 0.45) !important;
+    color: #fde68a !important;
+    border-color: rgba(245, 158, 11, 0.45) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .task-btn-warn:hover {
+    background: rgba(120, 53, 15, 0.65) !important;
+    color: #fef3c7 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-tasks .task-reactivate-help {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page .task-modal .task-modal-content {
+    background: #1e293b !important;
+    border-color: rgba(148, 163, 184, 0.25) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page .task-modal .task-modal-header,
+html[data-theme="dark"] .flowcell-detail-page .task-modal .task-modal-footer {
+    border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page .task-modal .task-modal-title {
+    color: #ecfdf5 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page .task-modal .task-modal-body {
+    color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page .task-modal .task-modal-input {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+/* Sharing tab */
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .sharing-tab-content {
+    --sh-muted: #94a3b8;
+    --sh-border: rgba(148, 163, 184, 0.22);
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .sharing-card-header,
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .sharing-card-body {
+    background: #1e293b !important;
+    border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .sharing-card-title {
+    color: #ecfdf5 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .sharing-card-title__text {
+    color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .sharing-data-table thead th {
+    background: #0f172a !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .sharing-data-table tbody td {
+    background: #1e293b !important;
+    color: #e2e8f0;
+    border-color: rgba(148, 163, 184, 0.2) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .sharing-form-control,
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .form-control {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_length,
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_filter,
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_info,
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_paginate {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_length select {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .dataTables_wrapper .dataTables_filter input {
+    background: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .dataTables_wrapper .paginate_button.current {
+    background: #0d9488 !important;
+    border-color: #14b8a6 !important;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-sharing .dataTables_wrapper .paginate_button:hover {
+    background: rgba(45, 212, 191, 0.15) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #ecfdf5 !important;
+}
+
+/* Fallback: legacy inline style="background-color: white" (higher specificity than most rules) */
+html[data-theme="dark"] .minotour-app-root [style*="background-color: white"],
+html[data-theme="dark"] .minotour-app-root [style*="background-color:white"] {
+    background-color: #0f172a !important;
+}
