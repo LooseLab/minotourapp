@@ -75,12 +75,33 @@ class LiveMinKnowController {
   /**
    * Reveal the live data tab by removing loder divs once charts are drawn
    */
+  _reflowLiveCharts () {
+    const charts = [
+      this._liveYieldChart,
+      this._livePoreStatesChart,
+      this._liveHistogramChart,
+      this._liveOccupancyChart,
+      this._liveInStrandChart,
+      this._liveTemperatureChart,
+      this._liveVoltageChart
+    ]
+    charts.forEach((ch) => {
+      if (ch && typeof ch.reflow === `function`) {
+        ch.reflow()
+      }
+    })
+  }
+
   _revealPage () {
     $(`#tab-live-event-data`).addClass(`loaded`)
     $(`html`).removeClass(`disable-scroll`)
+    this._reflowLiveCharts()
   }
 
   updateTab () {
+    if (getSelectedTab() === `live-event-data`) {
+      this._reflowLiveCharts()
+    }
     if (!$(`#tab-live-event-data`).hasClass(`loaded`) || getSelectedTab() === `metagenomics`){
       this._makePageUnscrollable()
     }
@@ -101,16 +122,17 @@ class LiveMinKnowController {
     $(`#displayed-date`).html(`${new Date(histogramData[index].sample_time).toGMTString()}`)
     this._liveHistogramChart.series[0].setData(histogramData[index].histogram_series)
     this._liveHistogramChart.xAxis[0].setCategories(histogramData[index].categories)
+    const liveTheme = getLiveChartsThemeFromDom()
     this._liveHistogramChart.xAxis[0].removePlotBand(`plot-band-1`)
     this._liveHistogramChart.xAxis[0].addPlotBand({
       from: n50 - 0.5,
       to: n50 + 0.5,
-      color: `#FCFFC5`,
+      color: liveTheme.pass,
       id: `plot-band-1`
     })
     this._liveHistogramChart.xAxis[0].removePlotBand(`plot-band-2`)
     this._liveHistogramChart.xAxis[0].addPlotBand({
-      color: `black`,
+      color: liveTheme.accent,
       width: 2,
       dashStyle: `longdashdot`,
       value: n50,
@@ -118,7 +140,11 @@ class LiveMinKnowController {
         text: `Estimated Read N50`,
         align: `left`,
         rotation: 0,
-        x: +16 // Amount of pixels the label will be repositioned according to the alignment.
+        x: +16,
+        style: {
+          color: liveTheme.text,
+          fontWeight: `600`
+        }
       },
       id: `plot-band-2`
     })
@@ -133,6 +159,7 @@ class LiveMinKnowController {
    * @param runStarts [[]] Array of Arrays like [[run_id, run_start_time]], where run_start_time is in microseconds
    */
   updateLiveTabChart (data, chart, runStarts) {
+    const liveTheme = getLiveChartsThemeFromDom()
     let redraw = false
     data.forEach(chartReadySeries => {
       // check if this series has already been added
@@ -161,12 +188,11 @@ class LiveMinKnowController {
               x: 10,
               verticalAlign: `top`,
               style: {
-                color: `blue`,
-                fontSize: `.8rem`,
-                fontFamily: `arial`
+                color: liveTheme.muted,
+                fontSize: `.8rem`
               }
             },
-            color: `red`,
+            color: liveTheme.accent,
             value: runStart,
             dashStyle: `longdashdot`,
             width: 2

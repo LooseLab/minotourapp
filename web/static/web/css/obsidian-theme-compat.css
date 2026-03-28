@@ -119,7 +119,9 @@ html[data-theme] .flowcell-detail-page #tab-reads .rt-card-body,
 html[data-theme] .flowcell-detail-page #tab-tasks .task-card-header,
 html[data-theme] .flowcell-detail-page #tab-tasks .task-card-body,
 html[data-theme] .flowcell-detail-page #tab-sharing .sharing-card-header,
-html[data-theme] .flowcell-detail-page #tab-sharing .sharing-card-body {
+html[data-theme] .flowcell-detail-page #tab-sharing .sharing-card-body,
+html[data-theme] .flowcell-detail-page #tab-live-event-data .live-card-header,
+html[data-theme] .flowcell-detail-page #tab-live-event-data .live-card-body {
     background: var(--mtc-surface) !important;
     border-color: var(--mtc-border) !important;
     color: var(--mtc-text) !important;
@@ -132,7 +134,10 @@ html[data-theme] .flowcell-detail-page #tab-tasks .task-card-title,
 html[data-theme] .flowcell-detail-page #tab-sharing .sharing-card-title,
 html[data-theme] .flowcell-detail-page #tab-sharing .sharing-card-title__text,
 html[data-theme] .flowcell-detail-page #tab-notifications .notif-lead,
-html[data-theme] .flowcell-detail-page #tab-tasks .task-reactivate-help {
+html[data-theme] .flowcell-detail-page #tab-tasks .task-reactivate-help,
+html[data-theme] .flowcell-detail-page #tab-live-event-data .live-card-title,
+html[data-theme] .flowcell-detail-page #tab-live-event-data .live-histogram-label,
+html[data-theme] .flowcell-detail-page #tab-live-event-data .live-histogram-label__value {
     color: var(--mtc-text) !important;
 }
 
@@ -267,6 +272,83 @@ html[data-theme] .flowcell-detail-page #tab-sequence-mapping .highcharts-legend-
 }
 
 html[data-theme] .flowcell-detail-page #tab-sequence-mapping .highcharts-grid-line {
+    stroke: var(--mtc-border) !important;
+}
+
+/* Live Event Data tab: nested cards + Highcharts (stock + column) */
+html[data-theme] .flowcell-detail-page #tab-live-event-data .live-panel-card {
+    background: var(--mtc-surface) !important;
+    border-color: var(--mtc-border) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .live-histogram-label__title,
+html[data-theme] .flowcell-detail-page #tab-live-event-data .live-card-title__hint {
+    color: var(--mtc-muted) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .live-histogram-toolbar {
+    border-top-color: var(--mtc-border) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .live-chart-placeholder {
+    color: var(--mtc-muted) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-background,
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-plot-background {
+    fill: var(--mtc-surface) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-plot-border {
+    stroke: var(--mtc-border) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-title,
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-subtitle,
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-axis-title {
+    fill: var(--mtc-text) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-axis-labels text,
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-legend-item text {
+    fill: var(--mtc-muted) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-grid-line {
+    stroke: var(--mtc-border) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-axis-line,
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-tick {
+    stroke: var(--mtc-border) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-button-box {
+    fill: var(--mtc-surface-alt) !important;
+    stroke: var(--mtc-border) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-button text {
+    fill: var(--mtc-text) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-range-selector-buttons .highcharts-button-pressed .highcharts-button-box {
+    fill: #004b44 !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-range-selector-buttons .highcharts-button-pressed text {
+    fill: #ffffff !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-input-group text {
+    fill: var(--mtc-muted) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-navigator-mask-inside {
+    fill: rgba(0, 75, 68, 0.12) !important;
+}
+
+html[data-theme] .flowcell-detail-page #tab-live-event-data .highcharts-navigator-outline {
     stroke: var(--mtc-border) !important;
 }
 

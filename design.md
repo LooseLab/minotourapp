@@ -68,8 +68,8 @@ Use it alongside §3 when evolving the flowcells page. Product names in the mock
 **Logged-in shell (`template_private.html`)**  
 - All pages that extend `web/templates/web/template_private.html` render their markup inside `<div class="private-app-shell">`.  
 - Child templates define **`{% block private_main %}`** (not `{% block content %}` directly — the parent wraps `private_main` in the shell `div`).  
-- **Stylesheet:** `web/static/web/css/obsidian-private-pages.css`, linked from `{% block extra_head %}` in `template_private.html`. It styles generic AdminLTE cards, prose, tables, DataTables chrome, forms, and alerts on About, Client (minFQ), Help, Messages, remote control, flowcell manager, profile, password change, reference/primer managers, etc.  
-- **Does not override** `.flowcells-page` or `.flowcell-detail-page`; those use dedicated CSS below.  
+- **Stylesheet:** `web/static/web/css/obsidian-private-pages.css`, linked from `{% block extra_head %}` in `template_private.html`. It styles generic AdminLTE cards, prose, tables, DataTables chrome, forms, and alerts on About, Client (minFQ), Help, Messages, flowcell manager, profile, password change, reference/primer managers, etc. MinKnow Control additionally loads `obsidian-remote-control.css` (see §6 **MinKnow Control**).  
+- **Does not override** `.flowcells-page`, `.flowcell-detail-page`, or `.remote-control-page`; those use dedicated scoped CSS.  
 - Pages that add their own CSS in `{% block extra_head %}` should call **`{{ block.super }}`** first so `obsidian-private-pages.css` stays loaded.
 
 **Flowcells index (`/web/private/flowcells`)**  
@@ -81,7 +81,11 @@ Use it alongside §3 when evolving the flowcells page. Product names in the mock
 
 **Flowcell detail (`/web/private/flowcells/<id>/`)**  
 - Template: `web/templates/web/flowcell_index.html`; loads `obsidian-flowcells.css` (shared buttons/breadcrumbs) and `obsidian-flowcell-detail.css` scoped under `.flowcell-detail-page` (page header, badges, Obsidian tab bar, card shell).  
-- Tab-specific styling in `obsidian-flowcell-det8c300af59ea2fb4216c2435f749610317924727f ail.css` is scoped with IDs such as `#tab-summary-data`, `#tab-basecalled-data`, `#tab-notifications`, `#tab-reads`, `#tab-tasks`, `#tab-sharing` (cards, tables, charts, settings-style panels).
+- Tab-specific styling in `obsidian-flowcell-detail.css` is scoped with IDs such as `#tab-summary-data`, `#tab-basecalled-data`, `#tab-live-event-data`, `#tab-notifications`, `#tab-reads`, `#tab-tasks`, `#tab-sharing` (cards, tables, charts, settings-style panels).
+
+**MinKnow Control (`/web/private/remote-control`)**  
+- Template: `web/templates/web/remote_control_2_electric_boogaloo.html` (extends `template_private.html`).  
+- Styles: `web/static/web/css/obsidian-remote-control.css`, scoped under `.remote-control-page` (page header, card-wrapped tables, connection summary strip, computer cards, modals). Vuetify theme primary is aligned with Obsidian (`#004B44`).
 
 **Settings drawer (header bar, user menu)**  
 - AdminLTE **control sidebar** in `template_private.html` (`obsidian-settings-sidebar`). The panel body uses **Tailwind** via CDN in `{% block extra_head %}` with **`corePlugins.preflight: false`** and **`prefix: 'tw-'`** on all Tailwind classes so utilities never collide with Bootstrap class names such as **`collapse`** on `#navbar-minotour-content` (Tailwind’s `collapse` utility would otherwise break the main nav). Obsidian tokens and Manrope match `template_login.html`.  
@@ -117,6 +121,7 @@ Every theme must explicitly style these areas:
 
 - `#tab-basecalled-data` (including `.bc-data-table` and pass/fail rows)
 - `#tab-summary-data` (`.summary-data-table`)
+- `#tab-live-event-data` (`.live-panel-card`, `.live-chart-host`, Highcharts range selector / navigator)
 - `#tab-notifications` (`.notif-data-table`)
 - `#tab-reads` (`table.dataTable`)
 - `#tab-tasks` (`.task-history-table`)
@@ -131,7 +136,7 @@ Every theme must explicitly style these areas:
 
 ### QA checklist before shipping a theme
 
-1. Flowcell detail tabs: Summary, Basecalled, Read Data, Tasks, Sharing, Notifications.
+1. Flowcell detail tabs: Summary, Basecalled, Live Event Data, Read Data, Tasks, Sharing, Notifications.
 2. At least one table with striped rows + hover.
 3. DataTables filter input and pagination readability.
 4. Highcharts title, axis labels, legend, tooltip text contrast.

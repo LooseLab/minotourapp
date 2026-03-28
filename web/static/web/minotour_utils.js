@@ -291,6 +291,155 @@ function makeBoxPlot (divName, chartTitle, yAxisTitle) {
 }
 
 /**
+ * Read --mtc-* tokens from .flowcell-detail-page (obsidian-theme-compat.css) for Live Event charts.
+ */
+function getLiveChartsThemeFromDom () {
+  var page = document.querySelector(`.flowcell-detail-page`)
+  var cs = page ? getComputedStyle(page) : null
+  function pick (name, fallback) {
+    if (!cs) return fallback
+    var v = cs.getPropertyValue(name).trim()
+    return (v && v.length) ? v : fallback
+  }
+  return {
+    surface: pick(`--mtc-surface`, `#ffffff`),
+    surfaceAlt: pick(`--mtc-surface-alt`, `#f8fafc`),
+    header: pick(`--mtc-header`, `#f1f5f9`),
+    text: pick(`--mtc-text`, `#0f172a`),
+    muted: pick(`--mtc-muted`, `#64748b`),
+    border: pick(`--mtc-border`, `#cbd5e1`),
+    pass: pick(`--mtc-pass`, `rgba(16, 185, 129, 0.12)`),
+    accent: pick(`--obsidian`, `#004B44`)
+  }
+}
+
+function mergeLiveStockChartTheme () {
+  var t = getLiveChartsThemeFromDom()
+  return {
+    chart: {
+      backgroundColor: t.surface,
+      plotBackgroundColor: t.surface,
+      plotBorderWidth: 1,
+      plotBorderColor: t.border
+    },
+    tooltip: {
+      backgroundColor: t.surfaceAlt,
+      borderColor: t.border,
+      style: {
+        color: t.text
+      }
+    },
+    rangeSelector: {
+      buttonTheme: {
+        fill: t.surfaceAlt,
+        stroke: t.border,
+        'stroke-width': 1,
+        r: 2,
+        style: {
+          color: t.text
+        },
+        states: {
+          hover: {
+            fill: t.header
+          },
+          select: {
+            fill: t.accent,
+            style: {
+              color: `#ffffff`
+            }
+          }
+        }
+      },
+      inputBoxBorderColor: t.border,
+      inputStyle: {
+        color: t.text,
+        fontWeight: `600`
+      },
+      labelStyle: {
+        color: t.muted,
+        fontWeight: `600`
+      }
+    },
+    navigator: {
+      outlineColor: t.border,
+      maskFill: `rgba(0, 75, 68, 0.1)`,
+      series: {
+        color: t.accent,
+        lineColor: t.accent
+      }
+    },
+    legend: {
+      itemStyle: { color: t.muted },
+      itemHoverStyle: { color: t.text }
+    },
+    title: {
+      style: {
+        color: t.text,
+        fontSize: `16px`,
+        fontWeight: `700`
+      }
+    },
+    xAxis: {
+      lineColor: t.border,
+      tickColor: t.border,
+      labels: { style: { color: t.muted } },
+      gridLineColor: t.border
+    },
+    yAxis: {
+      lineColor: t.border,
+      tickColor: t.border,
+      gridLineColor: t.border,
+      labels: { style: { color: t.muted } },
+      title: { style: { color: t.muted } }
+    }
+  }
+}
+
+function mergeLiveColumnChartTheme () {
+  var t = getLiveChartsThemeFromDom()
+  return {
+    chart: {
+      backgroundColor: t.surface,
+      plotBackgroundColor: t.surface,
+      plotBorderWidth: 1,
+      plotBorderColor: t.border
+    },
+    tooltip: {
+      backgroundColor: t.surfaceAlt,
+      borderColor: t.border,
+      style: { color: t.text }
+    },
+    title: {
+      style: {
+        color: t.text,
+        fontSize: `16px`,
+        fontWeight: `700`
+      }
+    },
+    legend: {
+      itemStyle: { color: t.muted }
+    },
+    xAxis: {
+      lineColor: t.border,
+      labels: { style: { color: t.muted } },
+      gridLineColor: t.border
+    },
+    yAxis: {
+      lineColor: t.border,
+      gridLineColor: t.border,
+      labels: { style: { color: t.muted } },
+      title: { style: { color: t.muted } }
+    },
+    plotOptions: {
+      column: {
+        borderWidth: 0,
+        color: t.accent
+      }
+    }
+  }
+}
+
+/**
  *
  * @param divId
  * @param chartTitle
@@ -298,12 +447,13 @@ function makeBoxPlot (divName, chartTitle, yAxisTitle) {
  * @return {*}
  */
 function makeLiveHistogram (divId, chartTitle, yAxisTitle) {
-  return Highcharts.chart(divId, {
+  var th = mergeLiveColumnChartTheme()
+  return Highcharts.chart(divId, Highcharts.merge(true, th, {
     chart: {
       type: `column`,
-      // marginRight: 10,
       animation: false,
-      zoomType: `x`
+      zoomType: `x`,
+      height: 400
     },
     title: {
       text: chartTitle
@@ -321,9 +471,8 @@ function makeLiveHistogram (divId, chartTitle, yAxisTitle) {
     },
     series: [{
       name: `Read Histogram`
-      // data: this.datain
     }]
-  })
+  }))
 }
 
 /**
@@ -333,11 +482,10 @@ function makeLiveHistogram (divId, chartTitle, yAxisTitle) {
  * @param yAxisTitle {string} The y axis title of the area chart
  */
 function makeAreaPlot (divName, chartTitle, yAxisTitle) {
-  return Highcharts.stockChart(divName, {
+  var th = mergeLiveStockChartTheme()
+  return Highcharts.stockChart(divName, Highcharts.merge(true, th, {
     chart: {
-      renderTo: `container-porehist` + this.title,
       type: `area`,
-      // type: 'spline',
       height: 350,
       marginRight: 200
     },
@@ -348,14 +496,13 @@ function makeAreaPlot (divName, chartTitle, yAxisTitle) {
       text: chartTitle
     },
     xAxis: {
-      range: 1 * 360 * 1000 // set range to last hour of data
+      range: 1 * 360 * 1000
     },
     rangeSelector: {
       enabled: true,
       selected: 2
     },
     yAxis: {
-      // max: 512,
       endOnTick: false,
       title: {
         text: `Channel Classifications`
@@ -366,7 +513,7 @@ function makeAreaPlot (divName, chartTitle, yAxisTitle) {
       align: `right`,
       verticalAlign: `top`,
       layout: `vertical`,
-      x: 10,
+      x: 10
     },
     plotOptions: {
       area: {
@@ -386,7 +533,7 @@ function makeAreaPlot (divName, chartTitle, yAxisTitle) {
       enabled: false
     },
     series: []
-  })
+  }))
 }
 
 // Todo can these spline chart creation functions be merged??
@@ -398,10 +545,15 @@ function makeAreaPlot (divName, chartTitle, yAxisTitle) {
  * @return {*} HighCharts api object
  */
 function makeLiveChart (divId, chartTitle, yAxisTitle) {
-  return Highcharts.stockChart(divId, {
+  var t = getLiveChartsThemeFromDom()
+  var th = mergeLiveStockChartTheme()
+  /* Fixed height: charts are constructed while the live tab is still .hidden, so container
+   * offsetHeight is 0 and Highcharts would otherwise measure a collapsed box. */
+  return Highcharts.stockChart(divId, Highcharts.merge(true, th, {
     chart: {
       type: `spline`,
-      zoomType: `x`
+      zoomType: `x`,
+      height: 420
     },
     boost: {
       useGPUTranslations: true
@@ -451,15 +603,14 @@ function makeLiveChart (divId, chartTitle, yAxisTitle) {
       plotLines: [{
         value: 0,
         width: 1,
-        color: `#cbd5e1`
+        color: t.border
       }]
-      // min: 0,
     },
     credits: {
       enabled: false
     },
     series: []
-  })
+  }))
 };
 
 /**

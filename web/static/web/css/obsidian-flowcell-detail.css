@@ -1152,6 +1152,151 @@
 }
 
 /* --------------------------------------------------------------------------
+   Live Event Data tab (#tab-live-event-data)
+   -------------------------------------------------------------------------- */
+
+.flowcell-detail-page #tab-live-event-data .live-event-tab-content {
+    --live-muted: #64748b;
+    --live-border: rgba(226, 232, 240, 0.85);
+}
+
+.flowcell-detail-page #tab-live-event-data .live-event-tab-row {
+    margin-bottom: 1.25rem;
+}
+
+.flowcell-detail-page #tab-live-event-data .live-event-tab-row:last-child {
+    margin-bottom: 0;
+}
+
+.flowcell-detail-page #tab-live-event-data .live-panel-card {
+    border: 1px solid var(--live-border);
+    border-radius: var(--radius-brand);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+.flowcell-detail-page #tab-live-event-data .live-card-header {
+    background: #fff;
+    border-bottom: 1px solid var(--live-border);
+    padding: 0.75rem 1rem;
+}
+
+.flowcell-detail-page #tab-live-event-data .live-card-title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--obsidian-dark);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.5rem;
+    line-height: 1.35;
+}
+
+.flowcell-detail-page #tab-live-event-data .live-card-title .fas,
+.flowcell-detail-page #tab-live-event-data .live-card-title .fa {
+    color: var(--obsidian);
+    font-size: 0.95em;
+}
+
+.flowcell-detail-page #tab-live-event-data .live-card-title__hint {
+    color: var(--live-muted);
+    cursor: help;
+    font-size: 0.9em;
+}
+
+.flowcell-detail-page #tab-live-event-data .live-card-body {
+    padding: 1rem 1rem 1.25rem;
+    background: #fff;
+}
+
+/* At least match Highcharts explicit heights in minotour_utils.js (stock ~420px, histogram 400px). */
+.flowcell-detail-page #tab-live-event-data .live-chart-host {
+    min-height: 440px;
+    padding: 0;
+    position: relative;
+}
+
+.flowcell-detail-page #tab-live-event-data .live-chart-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-height: 400px;
+    color: var(--live-muted);
+    font-weight: 600;
+    font-size: 0.9375rem;
+}
+
+.flowcell-detail-page #tab-live-event-data .live-chart-host .fa-spin {
+    color: var(--obsidian);
+}
+
+.flowcell-detail-page #tab-live-event-data .live-histogram-toolbar {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--live-border);
+}
+
+.flowcell-detail-page #tab-live-event-data .live-histogram-label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.75rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--obsidian-dark);
+}
+
+.flowcell-detail-page #tab-live-event-data .live-histogram-label__title {
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--live-muted);
+}
+
+.flowcell-detail-page #tab-live-event-data .live-histogram-label__value {
+    font-size: 0.875rem;
+    color: var(--obsidian-dark);
+}
+
+.flowcell-detail-page #tab-live-event-data .live-histogram-range {
+    width: 100%;
+    max-width: 100%;
+    height: 0.5rem;
+    border-radius: 4px;
+    accent-color: var(--obsidian);
+    cursor: pointer;
+}
+
+.flowcell-detail-page #tab-live-event-data .live-download-btn {
+    font-weight: 700;
+    border-radius: var(--radius-brand);
+}
+
+/* Highcharts text on Live tab (light default; themes override via compat / theme files) */
+.flowcell-detail-page #tab-live-event-data .highcharts-title,
+.flowcell-detail-page #tab-live-event-data .highcharts-subtitle,
+.flowcell-detail-page #tab-live-event-data .highcharts-axis-title {
+    fill: #0f172a;
+}
+
+.flowcell-detail-page #tab-live-event-data .highcharts-axis-labels text,
+.flowcell-detail-page #tab-live-event-data .highcharts-legend-item text {
+    fill: #64748b;
+}
+
+.flowcell-detail-page #tab-live-event-data .highcharts-grid-line {
+    stroke: rgba(226, 232, 240, 0.95);
+}
+
+.flowcell-detail-page #tab-live-event-data .highcharts-axis-line,
+.flowcell-detail-page #tab-live-event-data .highcharts-tick {
+    stroke: #cbd5e1;
+}
+
+/* --------------------------------------------------------------------------
    Sharing tab (#tab-sharing)
    -------------------------------------------------------------------------- */
 

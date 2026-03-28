@@ -1,35 +1,33 @@
 {% extends "web/template_private.html" %}
 {% load static %}
+
+{% block extra_head %}
+    {{ block.super }}
+    <link href="{% static 'web/libraries/vuetify.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'web/css/obsidian-remote-control.css' %}">
+{% endblock %}
+
 {% block javascript %}
     <script>
       setActiveNavbarItem(1);
     </script>
 {% endblock %}
 {% block private_main %}
-    <link href="{% static 'web/libraries/vuetify.min.css' %}" rel="stylesheet">
     <div class="content-wrapper private-main-surface">
         <section class="content">
-            <div class="container-fluid obsidian-page-inner">
-            {#            <div id="app">#}
+            <div class="container-fluid obsidian-page-inner remote-control-page">
+                <header class="remote-control-page__header">
+                    <h1 class="remote-control-page__title">MinKnow Control</h1>
+                    <p class="remote-control-page__lead">Live view of connected hosts, active runs, and device telemetry. Send test or custom messages and stop runs when required.</p>
+                </header>
             <div id="app">
                 {% verbatim %}
                 <template>
                     <v-app>
-                        <v-container
-                                class="fill-height"
-                                fluid
-                        >
-                            <v-row
-                                    align="center"
-                                    justify="center"
-                            >
-                                Currently Running Devices:
-                            </v-row>
-                            <v-row
-                                    align="center"
-                                    justify="center"
-                            >
-                                <template>
+                        <v-container class="remote-control-page__main pa-0" fluid>
+                            <div class="remote-control-page__section">
+                                <h2 class="remote-control-page__section-title">Currently running devices</h2>
+                                <div class="remote-control-page__table-shell">
                                     <v-simple-table dense>
                                         <template v-slot:default>
                                             <thead>
@@ -145,7 +143,8 @@
                                                     <button :id='item.id' @click="updateMinionToMessage(item.id)"
                                                             type='button' data-toggle="modal"
                                                             data-target="#custom-message"
-                                                            class='btn btn-primary btn-sm'><i
+                                                            class='btn btn-primary btn-sm remote-control-page__icon-btn'
+                                                            title="Send message"><i
                                                             class='fas fa-broadcast-tower'></i>
                                                     </button>
                                                 </td>
@@ -153,7 +152,8 @@
                                                     <button :id='item.id' @click="updateMinionToStop(item.id, item.name)"
                                                             type='button' data-toggle="modal"
                                                             data-target="#confirm-stop"
-                                                            class='btn btn-primary btn-sm'><i
+                                                            class='btn btn-sm remote-control-page__btn-stop'
+                                                            title="Stop run"><i
                                                             class='fa fa-ban'></i>
                                                     </button>
                                                 </td>
@@ -161,25 +161,12 @@
                                             </tbody>
                                         </template>
                                     </v-simple-table>
-                                </template>
-                            </v-row>
-                            <v-row
-                                    align="center"
-                                    justify="center"
-                            >
-                                <v-col>
-                                    <v-row
-                                            align="center"
-                                            justify="center"
-                                    >
-                                        Currently Inactive Devices:
-                                    </v-row>
-                                    <v-row
-                                            align="center"
-                                            justify="center"
-                                            class="mb-4"
-                                    >
-                                        <template>
+                            </div>
+                            </div>
+
+                            <div class="remote-control-page__section">
+                                <h2 class="remote-control-page__section-title">Currently inactive devices</h2>
+                                <div class="remote-control-page__table-shell">
                                             <v-simple-table dense>
                                                 <template v-slot:default>
                                                     <thead>
@@ -201,7 +188,8 @@
                                                             <button v-on:click="sendMessage($event, false)"
                                                                     :id='item.id'
                                                                     type='button'
-                                                                    class='btn btn-primary btn-sm'><i
+                                                                    class='btn btn-primary btn-sm remote-control-page__icon-btn'
+                                                                    title="Test communications"><i
                                                                     class='fas fa-broadcast-tower' :id='item.id'></i>
                                                             </button>
                                                         </td>
@@ -209,87 +197,86 @@
                                                     </tbody>
                                                 </template>
                                             </v-simple-table>
-                                        </template>
-                                    </v-row>
-                                    <v-row
-                                            align="end"
-                                            justify="center"
-                                    >
-                                        <v-alert
-                                                prominent
-                                                border="left"
-                                                elevation="2"
-                                                colored-border
-                                                icon="mdi-desktop-classic">
-                                            <v-row align="center">
-                                                <v-col class="grow">
-                                                    You have <strong>{{ computer_info.number }}</strong> computer(s)
-                                                    connected.<br>
-                                                    There are <strong>{{ numActive }}</strong> active and <strong>{{numInactive}}</strong>
-                                                    inactive positions.<br>
-                                                    {{ computer_info.message }}
-                                                </v-col>
-                                            </v-row>
-                                        </v-alert>
-                                    </v-row>
+                                </div>
+                            </div>
+
+                            <v-row class="remote-control-page__insight-grid mt-1" align="start">
+                                <v-col cols="12" md="5" lg="5">
+                                    <h2 class="remote-control-page__section-title">Connection summary</h2>
+                                    <v-alert
+                                            class="remote-control-page__summary-alert"
+                                            prominent
+                                            border="left"
+                                            elevation="2"
+                                            colored-border
+                                            icon="mdi-desktop-classic">
+                                        <v-row align="center">
+                                            <v-col class="grow">
+                                                You have <strong>{{ computer_info.number }}</strong> computer(s)
+                                                connected.<br>
+                                                There are <strong>{{ numActive }}</strong> active and <strong>{{ numInactive }}</strong>
+                                                inactive positions.<br>
+                                                {{ computer_info.message }}
+                                            </v-col>
+                                        </v-row>
+                                    </v-alert>
                                 </v-col>
-                                <v-col>
-                                    <template>
-                                        <v-container fluid>
-                                            <v-data-iterator
-                                                    :items="computers"
-                                                    :items-per-page.sync="itemsPerPage"
-                                                    :footer-props="{ itemsPerPageOptions }"
-                                            >
-                                                <template v-slot:default="props">
-                                                    <v-row>
-                                                        <v-col
-                                                                v-for="item in props.items"
-                                                                :key="item.ipaddress"
-                                                                cols="4"
-                                                                sm="4"
-                                                                md="4"
-                                                                lg="4"
-                                                        >
-                                                            <v-card>
-                                                                <v-card-text dense>
-                                                                    <h3>{{ item.computer }}</h3>
-                                                                    Device Type:{{ item.device_type}}<br>
-                                                                    MinKNOW Version:{{item.minknow_version}}<br>
-                                                                    <div v-if="item.warning">
-                                                                        <v-alert
-                                                                                dense
-                                                                                type="error">
-                                                                            Space Free:{{item.space_available |
-                                                                            humNum}}%<br>Stops:{{item.space_till_shutdown
-                                                                            | humNum}}%<br>
-                                                                        </v-alert>
-                                                                    </div>
-                                                                    <div v-else>
-                                                                        <v-alert
-                                                                                dense
-                                                                                type="success">
-                                                                            Space Free:{{item.space_available | humNum}}<br>Stops:{{item.space_till_shutdown
-                                                                            | humNum}}<br>
-                                                                        </v-alert>
-                                                                    </div>
-                                                                </v-card-text>
-                                                            </v-card>
-                                                        </v-col>
-                                                    </v-row>
-                                                </template>
-                                            </v-data-iterator>
-                                        </v-container>
-                                    </template>
+                                <v-col cols="12" md="7" lg="7">
+                                    <h2 class="remote-control-page__section-title">Computers</h2>
+                                    <v-container fluid class="pa-0">
+                                        <v-data-iterator
+                                                :items="computers"
+                                                :items-per-page.sync="itemsPerPage"
+                                                :footer-props="{ itemsPerPageOptions }"
+                                        >
+                                            <template v-slot:default="props">
+                                                <v-row>
+                                                    <v-col
+                                                            v-for="item in props.items"
+                                                            :key="item.ipaddress"
+                                                            cols="12"
+                                                            sm="6"
+                                                            md="6"
+                                                            lg="4"
+                                                    >
+                                                        <v-card>
+                                                            <v-card-text dense>
+                                                                <h3>{{ item.computer }}</h3>
+                                                                Device type: {{ item.device_type }}<br>
+                                                                MinKNOW version: {{ item.minknow_version }}<br>
+                                                                <div v-if="item.warning">
+                                                                    <v-alert
+                                                                            dense
+                                                                            type="error">
+                                                                        Space free: {{ item.space_available |
+                                                                        humNum }}%<br>Stops: {{ item.space_till_shutdown
+                                                                        | humNum }}%<br>
+                                                                    </v-alert>
+                                                                </div>
+                                                                <div v-else>
+                                                                    <v-alert
+                                                                            dense
+                                                                            type="success">
+                                                                        Space free: {{ item.space_available | humNum }}<br>Stops: {{ item.space_till_shutdown
+                                                                        | humNum }}<br>
+                                                                    </v-alert>
+                                                                </div>
+                                                            </v-card-text>
+                                                        </v-card>
+                                                    </v-col>
+                                                </v-row>
+                                            </template>
+                                        </v-data-iterator>
+                                    </v-container>
                                 </v-col>
                             </v-row>
                         </v-container>
                         <div class="modal fade" id="confirm-stop" tabindex="-1" role="dialog"
                              aria-labelledby="myModalLabel" aria-hidden="true">
                             <div class="modal-dialog">
-                                <div style="border-radius: 25px" class="modal-content">
+                                <div class="modal-content remote-control-page__modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title" id="exampleModalLabel">Confirm Run Stop?
+                                        <h5 class="modal-title" id="exampleModalLabel">Confirm run stop?
                                         </h5>
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                             <span aria-hidden="true">&times;</span>
@@ -317,9 +304,9 @@
                         <div class="modal fade" id="custom-message" tabindex="-1" role="dialog"
                              aria-labelledby="myModalLabel" aria-hidden="true">
                             <div class="modal-dialog" role="document">
-                                <div style="border-radius: 25px" class="modal-content">
+                                <div class="modal-content remote-control-page__modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title" id="exampleModalLabel">Enter custom message text
+                                        <h5 class="modal-title" id="exampleModalLabel">Custom message
                                         </h5>
                                         <button type="button" class="close" data-dismiss="modal"
                                                 aria-label="Close"><span
@@ -328,8 +315,8 @@
                                     </div>
                                     <div class="modal-body">
                                         <form>
-                                            <textarea style="width:100%" v-model="message"
-                                                      placeholder="Greetings"></textarea>
+                                            <textarea v-model="message"
+                                                      placeholder="Enter message text…"></textarea>
                                         </form>
                                     </div>
 
@@ -352,15 +339,19 @@
             <script src="{% static 'web/libraries/vue.min.js' %}"></script>
             <script src="{% static 'web/libraries/vuetify.min.js' %}"></script>
             <script>
-              const topPadding = $(".main-header").height() + 16;
+              const topPadding = ($("#tn").outerHeight() || 0) + 16;
               $(".content-wrapper").css("padding-top", `${topPadding}px`);
               const vuetify = new Vuetify({
                 theme: {
                   themes: {
                     light: {
-                      primary: "#E53935",
-                      secondary: "#FFCDD2",
-                      accent: "#3F51B5"
+                      primary: "#004B44",
+                      secondary: "#64748b",
+                      accent: "#0f766e",
+                      error: "#b91c1c",
+                      success: "#047857",
+                      warning: "#c2410c",
+                      info: "#0e7490"
                     },
                   },
                 },

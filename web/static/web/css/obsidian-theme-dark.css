@@ -523,6 +523,62 @@ html[data-theme="dark"] .flowcell-detail-page #tab-summary-data .dataTables_wrap
     color: #ecfdf5 !important;
 }
 
+/* Live Event Data tab */
+html[data-theme="dark"] .flowcell-detail-page #tab-live-event-data .live-card-header,
+html[data-theme="dark"] .flowcell-detail-page #tab-live-event-data .live-card-body {
+    background: #1e293b !important;
+    border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-live-event-data .live-card-title {
+    color: #ecfdf5 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-live-event-data .live-card-title .fas,
+html[data-theme="dark"] .flowcell-detail-page #tab-live-event-data .live-card-title .fa {
+    color: #5eead4 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-live-event-data .live-card-title__hint {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-live-event-data .live-histogram-label {
+    color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-live-event-data .live-histogram-label__title {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-live-event-data .live-histogram-label__value {
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-live-event-data .live-histogram-toolbar {
+    border-top-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-live-event-data .live-chart-placeholder {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-live-event-data .live-chart-host .fa-spin {
+    color: #5eead4 !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-live-event-data .live-download-btn {
+    background: #0d9488 !important;
+    border-color: #14b8a6 !important;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .flowcell-detail-page #tab-live-event-data .live-download-btn:hover {
+    background: #0f766e !important;
+    border-color: #2dd4bf !important;
+    color: #fff !important;
+}
+
 /* Notifications tab */
 html[data-theme="dark"] .flowcell-detail-page #tab-notifications .notifications-tab-content {
     --nt-obsidian: #5eead4;

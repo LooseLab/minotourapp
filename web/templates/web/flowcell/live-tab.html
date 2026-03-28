@@ -1,148 +1,156 @@
-<div class="card card-primary card-outline">
-    <div class="card-header">
-        <h3 class="card-title">
-            <i class="fas fa-tachometer-alt"></i>
-            Sequencing Yield
-            <i
-                    class="fa fa-question-circle masterTooltip" tooltip="This plot reports event yield direct from MinKNOW. It will scale by some proportion to actual base
+<div class="live-event-tab-content">
+    <div class="row live-event-tab-row">
+        <div class="col-md-12">
+            <div class="card obsidian-card live-panel-card">
+                <div class="card-header live-card-header">
+                    <h3 class="card-title live-card-title">
+                        <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+                        Sequencing yield
+                        <i class="fa fa-question-circle masterTooltip live-card-title__hint" aria-hidden="true"
+                           tooltip="This plot reports event yield direct from MinKNOW. It will scale by some proportion to actual base
             count.<br>
             Yield values are captured in real time as reported by MinKNOW and so are not cumulative if a run is
-            interrupted.">
-            </i>
-        </h3>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div id="chart-yield" class="col-md-12 highcharts"
-                 style="height:400px; display:block;">
-                <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+            interrupted."></i>
+                    </h3>
+                </div>
+                <div class="card-body live-card-body">
+                    <div class="row">
+                        <div id="chart-yield" class="col-md-12 live-chart-host highcharts" role="img" aria-label="Yield over time chart">
+                            <span class="live-chart-placeholder"><i class="fa fa-cog fa-spin fa-3x" aria-hidden="true"></i> Calculating yield</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<div class="card card-primary card-outline">
-    <div class="card-header">
-        <h3 class="card-title">
-            <i class="fas fa-tachometer-alt"></i>
-            Flowcell Occupancy
-        </h3>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div id="pore-states" class="col-md-12 highcharts"
-                 style="height:400px;display:block;">
-                <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
-                <i
-                        class="fa fa-question-circle masterTooltip" tooltip="This plot mimics the Duty time plots from MinKNOW. <br>
+
+    <div class="row live-event-tab-row">
+        <div class="col-md-12">
+            <div class="card obsidian-card live-panel-card">
+                <div class="card-header live-card-header">
+                    <h3 class="card-title live-card-title">
+                        <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+                        Flowcell occupancy
+                        <i class="fa fa-question-circle masterTooltip live-card-title__hint" aria-hidden="true"
+                           tooltip="This plot mimics the Duty time plots from MinKNOW. <br>
         However, it samples the actual occupancy at any moment as opposed to MinKNOW itself which stores time spent in
         each state. <br>
-        In the future we may also recover these data.">
-                </i>
+        In the future we may also recover these data."></i>
+                    </h3>
+                </div>
+                <div class="card-body live-card-body">
+                    <div class="row">
+                        <div id="pore-states" class="col-md-12 live-chart-host highcharts" role="img" aria-label="Pore states chart">
+                            <span class="live-chart-placeholder"><i class="fa fa-cog fa-spin fa-3x" aria-hidden="true"></i> Calculating read numbers</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<div class="card card-primary card-outline">
-    <div class="card-header">
-        <h3 class="card-title">
-            <i class="fas fa-tachometer-alt"></i>
-            Read Length Histogram
-            <i
-                    class="fa fa-question-circle masterTooltip" tooltip="The histogram data are derived from the same source as the MinKNOW read length histogram.<br>
+
+    <div class="row live-event-tab-row">
+        <div class="col-md-12">
+            <div class="card obsidian-card live-panel-card">
+                <div class="card-header live-card-header">
+                    <h3 class="card-title live-card-title">
+                        <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+                        Read length histogram
+                        <i class="fa fa-question-circle masterTooltip live-card-title__hint" aria-hidden="true"
+                           tooltip="The histogram data are derived from the same source as the MinKNOW read length histogram.<br>
         We currently report these in events, not bases.<br>
         Note that the histogram will dynamically scale as does the MinKNOW histogram.<br>
-        However these results will typically be visualised at higher resolution than Native MinKNOW.">
-            </i>
-        </h3>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div id="live-histogram" class="col-md-12 highcharts-container"
-                 style="width:100%; height:400px;display:block;">
-                <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
+        However these results will typically be visualised at higher resolution than Native MinKNOW."></i>
+                    </h3>
+                </div>
+                <div class="card-body live-card-body">
+                    <div class="row">
+                        <div id="live-histogram" class="col-md-12 live-chart-host live-chart-host--histogram highcharts-container" role="img" aria-label="Read length histogram">
+                            <span class="live-chart-placeholder"><i class="fa fa-cog fa-spin fa-3x" aria-hidden="true"></i> Calculating read numbers</span>
+                        </div>
+                    </div>
+                    <div class="live-histogram-toolbar">
+                        <label class="live-histogram-label" for="histogram-date-picker">
+                            <span class="live-histogram-label__title">Displayed date</span>
+                            <span id="displayed-date" class="live-histogram-label__value"></span>
+                        </label>
+                        <input id="histogram-date-picker" class="live-histogram-range" name="histogram-date-picker" min="0" step="1" value="0" type="range">
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="row">
-            <label for="histogram-date-picker"><span class="badge badge-info"><h6>Displayed date: <span
-                    id="displayed-date"></span></h6></span></label>
-            <input id="histogram-date-picker" style="width: 100%" name="histogram-date-picker" min="0" step="1"
-                   value="0" type="range">
-        </div>
     </div>
-</div>
 
-<div class="card card-primary card-outline">
-    <div class="card-header">
-        <h3 class="card-title">
-            <i class="fas fa-tachometer-alt"></i>
-            Strand Numbers and Occupancy
-            <i
-                    class="fa fa-question-circle masterTooltip" tooltip="The holy grail of Nanopore sequencing. You want to see a library with 90% occupancy or greater. Here we
+    <div class="row live-event-tab-row">
+        <div class="col-md-12">
+            <div class="card obsidian-card live-panel-card">
+                <div class="card-header live-card-header">
+                    <h3 class="card-title live-card-title">
+                        <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+                        Strand numbers and occupancy
+                        <i class="fa fa-question-circle masterTooltip live-card-title__hint" aria-hidden="true"
+                           tooltip="The holy grail of Nanopore sequencing. You want to see a library with 90% occupancy or greater. Here we
         calculate occupancy as (in strand)/(in strand + adapter + single)*100 <br>
-        If you are sequencing very short material (<500 bp) or very long (>250 kb) 90% occupancy is a challenge. <br>
+        If you are sequencing very short material (&lt;500 bp) or very long (&gt;250 kb) 90% occupancy is a challenge. <br>
         But - if you are only seeing 10% occupancy on a standard Nanopore library something is wrong (and most likely
         with your library prep steps).<br>
-        Check the number of adapter sequences observed as well.">
-            </i>
-        </h3>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div id="live-strand" class="col-md-6 highcharts"
-                 style="height:400px;display:block;">
-                <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Strand
+        Check the number of adapter sequences observed as well."></i>
+                    </h3>
+                </div>
+                <div class="card-body live-card-body">
+                    <div class="row">
+                        <div id="live-strand" class="col-md-6 live-chart-host highcharts" role="img" aria-label="Strand chart">
+                            <span class="live-chart-placeholder"><i class="fa fa-cog fa-spin fa-3x" aria-hidden="true"></i> Calculating strand</span>
+                        </div>
+                        <div id="live-occupancy" class="col-md-6 live-chart-host highcharts" role="img" aria-label="Occupancy chart">
+                            <span class="live-chart-placeholder"><i class="fa fa-cog fa-spin fa-3x" aria-hidden="true"></i> Calculating occupancy</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div id="live-occupancy" class="col-md-6 highcharts"
-                 style="height:400px;display:block;">
-                <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Occupancy
+        </div>
+    </div>
+
+    <div class="row live-event-tab-row">
+        <div class="col-md-12">
+            <div class="card obsidian-card live-panel-card">
+                <div class="card-header live-card-header">
+                    <h3 class="card-title live-card-title">
+                        <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+                        Voltage and temperature
+                        <i class="fa fa-question-circle masterTooltip live-card-title__hint" aria-hidden="true"
+                           tooltip="These plots monitor the ASIC and flowcell temperatures along with the voltages reported by MinKNOW during a
+        sequencing run."></i>
+                    </h3>
+                </div>
+                <div class="card-body live-card-body">
+                    <div class="row">
+                        <div id="live-temperature" class="col-md-6 live-chart-host highcharts" role="img" aria-label="Temperature chart">
+                            <span class="live-chart-placeholder"><i class="fa fa-cog fa-spin fa-3x" aria-hidden="true"></i> Calculating temperature</span>
+                        </div>
+                        <div id="live-voltage" class="col-md-6 live-chart-host highcharts" role="img" aria-label="Voltage chart">
+                            <span class="live-chart-placeholder"><i class="fa fa-cog fa-spin fa-3x" aria-hidden="true"></i> Calculating voltage</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row live-event-tab-row">
+        <div class="col-md-12">
+            <div class="card obsidian-card live-panel-card">
+                <div class="card-header live-card-header">
+                    <h3 class="card-title live-card-title">
+                        <i class="fas fa-download" aria-hidden="true"></i>
+                        Data download
+                    </h3>
+                </div>
+                <div class="card-body live-card-body">
+                    <a href="{% url 'flowcell_run_stats_download' pk=flowcell.id %}" target="_blank" rel="noopener noreferrer"
+                       class="btn btn-primary live-download-btn">Download CSV of these data</a>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<div class="card card-primary card-outline">
-    <div class="card-header">
-        <h3 class="card-title">
-            <i class="fas fa-tachometer-alt"></i>
-            Voltage and Temperature
-                        <i
-            class="fa fa-question-circle masterTooltip" tooltip="These plots monitor the ASIC and flowcell temperatures along with the voltages reported by MinKNOW during a
-        sequencing run.
-">
-            </i>
-        </h3>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div id="live-temperature" class="col-md-6 highcharts"
-                 style="height:400px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
-                Projections
-            </div>
-
-            <div id="live-voltage" class="col-md-6 highcharts"
-                 style="height:400px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
-                Projections
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card card-primary card-outline">
-    <div class="card-header">
-        <h3 class="card-title">
-            <i class="fas fa-tachometer-alt"></i>
-            Data Download
-        </h3>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-12">
-                <a href="{% url 'flowcell_run_stats_download' pk=flowcell.id %}" target="_blank"
-                   class="btn btn-primary">Download CSV of these data.</a>
-            </div>
-        </div>
-    </div>
-</div>
-
